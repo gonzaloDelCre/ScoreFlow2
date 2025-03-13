@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Persistence\Leagues\Mapper\" />
+    <Folder Include="Persistence\Leagues\Repositories\" />
+    <Folder Include="Persistence\Matches\Mapper\" />
+    <Folder Include="Persistence\Matches\Repositories\" />
+    <Folder Include="Persistence\MatchEvents\Mapper\" />
+    <Folder Include="Persistence\MatchEvents\Repositories\" />
+    <Folder Include="Persistence\MatchReferees\Mapper\" />
+    <Folder Include="Persistence\MatchReferees\Repositories\" />
+    <Folder Include="Persistence\Notifications\Mapper\" />
+    <Folder Include="Persistence\Notifications\Repositories\" />
+    <Folder Include="Persistence\PlayerStatistics\Mapper\" />
+    <Folder Include="Persistence\PlayerStatistics\Repositories\" />
+    <Folder Include="Persistence\Players\Mapper\" />
+    <Folder Include="Persistence\Players\Repositories\" />
+    <Folder Include="Persistence\Referees\Mapper\" />
+    <Folder Include="Persistence\Referees\Repositories\" />
+    <Folder Include="Persistence\Standings\Mapper\" />
+    <Folder Include="Persistence\Standings\Repositories\" />
+    <Folder Include="Persistence\TeamLeagues\Mapper\" />
+    <Folder Include="Persistence\TeamLeagues\Repositories\" />
+    <Folder Include="Persistence\Teams\Mapper\" />
+    <Folder Include="Persistence\Teams\Repositories\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+  </ItemGroup>
+
+</Project>
