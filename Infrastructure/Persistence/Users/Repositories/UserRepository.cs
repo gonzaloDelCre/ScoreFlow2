@@ -1,9 +1,10 @@
 ﻿using Domain.Entities.Users;
 using Domain.Ports.Users;
 using Infrastructure.Persistence.Conection;
-using Microsoft.Extensions.Logging;
 using Infrastructure.Persistence.Users.Mapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Persistence.Users.Repositories
 {
@@ -20,12 +21,19 @@ namespace Infrastructure.Persistence.Users.Repositories
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Get All Users
+        /// </summary>
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             try
             {
-                var dbUsers = await _context.Users.ToListAsync();
-                return dbUsers.Select(_mapper.MapToDomain);
+                string sql = "SELECT * FROM Users";
+                var dbUsers = await _context.Users
+                    .FromSqlRaw(sql)
+                    .ToListAsync();
+
+                return dbUsers.Select(dbUser => _mapper.MapToDomain(dbUser)).ToList();
             }
             catch (Exception ex)
             {
@@ -34,28 +42,77 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-        public async Task<User?> GetByIdAsync(int id)
+        /// <summary>
+        /// Get User By Id
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<User?> GetByIdAsync(UserID userId)
         {
             try
             {
-                var dbUser = await _context.Users.FindAsync(id);
+                string sql = "SELECT * FROM Users WHERE UserID = @UserID";
+                var parameter = new SqlParameter("@UserID", userId.Value);
+
+                var dbUsers = await _context.Users
+                    .FromSqlRaw(sql, parameter)
+                    .ToListAsync();
+
+                var dbUser = dbUsers.FirstOrDefault();
                 return dbUser != null ? _mapper.MapToDomain(dbUser) : null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener el usuario con ID {UserID}", id);
+                _logger.LogError(ex, "Error al obtener el usuario con ID {UserID}", userId.Value);
                 return null;
             }
         }
 
+        /// <summary>
+        /// Create User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task<User> AddAsync(User user)
         {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user), "El usuario no puede ser null");
+
             try
             {
                 var userEntity = _mapper.MapToEntity(user);
-                _context.Users.Add(userEntity);
-                await _context.SaveChangesAsync();
-                return _mapper.MapToDomain(userEntity);
+
+                var role = userEntity.Role != null ? userEntity.Role.ToString() : "Espectador";
+
+                string insertSql = @"INSERT INTO Users (FullName, Email, PasswordHash, CreatedAt, Role) 
+                             VALUES (@FullName, @Email, @PasswordHash, @CreatedAt, @Role);";
+
+                var parameters = new[]
+                {
+                    new SqlParameter("@FullName", userEntity.FullName),
+                    new SqlParameter("@Email", userEntity.Email),
+                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
+                    new SqlParameter("@CreatedAt", userEntity.CreatedAt),
+                    new SqlParameter("@Role", role)
+                };
+
+                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
+
+                string selectSql = "SELECT TOP 1 UserID FROM Users ORDER BY UserID DESC";
+                var newUserId = await _context.Users
+                    .FromSqlRaw(selectSql)
+                    .Select(u => u.UserID)
+                    .FirstOrDefaultAsync();
+
+                return new User(
+                    new UserID(newUserId),
+                    user.FullName,
+                    user.Email,
+                    user.PasswordHash,
+                    user.Role,
+                    user.CreatedAt
+                );
             }
             catch (Exception ex)
             {
@@ -64,21 +121,83 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        /// <summary>
+        /// Delete User By ID
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<bool> DeleteAsync(UserID userId)
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null) return false;
+                string sql = "DELETE FROM Users WHERE UserID = @UserID";
+                var parameter = new SqlParameter("@UserID", userId.Value);
 
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-                return true;
+                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar el usuario con ID {UserID}", id);
+                _logger.LogError(ex, "Error al eliminar el usuario con ID {UserID}", userId.Value);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Update User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public async Task UpdateAsync(User user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user), "El usuario no puede ser null");
+
+            try
+            {
+                var userEntity = _mapper.MapToEntity(user);
+
+                string updateSql = @"UPDATE Users 
+                                     SET FullName = @FullName, Email = @Email, PasswordHash = @PasswordHash, CreatedAt = @CreatedAt
+                                     WHERE UserID = @UserID";
+
+                var parameters = new[]
+                {
+                    new SqlParameter("@UserID", userEntity.UserID),
+                    new SqlParameter("@FullName", userEntity.FullName),
+                    new SqlParameter("@Email", userEntity.Email),
+                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
+                    new SqlParameter("@CreatedAt", userEntity.CreatedAt)
+                };
+
+                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario con ID {UserID}", user.UserID.Value);
+                throw;
+            }
+        }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            try
+            {
+                string sql = "SELECT * FROM Users WHERE Email = @Email";
+                var parameter = new SqlParameter("@Email", email);
+
+                var dbUsers = await _context.Users
+                    .FromSqlRaw(sql, parameter)
+                    .ToListAsync();
+
+                var dbUser = dbUsers.FirstOrDefault();
+                return dbUser != null ? _mapper.MapToDomain(dbUser) : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el usuario con correo electrónico {Email}", email);
+                return null;
             }
         }
     }

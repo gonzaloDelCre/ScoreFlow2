@@ -1,10 +1,25 @@
 ﻿using Domain.Entities.Users;
+using Domain.Enum;
 using Infrastructure.Persistence.Users.Entities;
 
 namespace Infrastructure.Persistence.Users.Mapper
 {
     public class UserMapper
     {
+        //Transform User domain to UserEntity persistance
+        public UserEntity MapToEntity(User user)
+        {
+            return new UserEntity
+            {
+                UserID = user.UserID.Value,
+                FullName = user.FullName.Value,
+                Email = user.Email.Value,
+                PasswordHash = user.PasswordHash.Value,
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        //Transform UserEntity persistance to User domain
         public User MapToDomain(UserEntity entity)
         {
             return new User(
@@ -12,20 +27,9 @@ namespace Infrastructure.Persistence.Users.Mapper
                 new UserFullName(entity.FullName),
                 new UserEmail(entity.Email),
                 new UserPasswordHash(entity.PasswordHash),
+                Enum.Parse<UserRole>(entity.Role), 
                 entity.CreatedAt
             );
-        }
-
-        public UserEntity MapToEntity(User domain)
-        {
-            return new UserEntity
-            {
-                UserID = domain.UserID.Value,
-                FullName = domain.FullName.Value,
-                Email = domain.Email.Value,
-                PasswordHash = domain.PasswordHash.Value,
-                CreatedAt = domain.CreatedAt
-            };
         }
     }
 }

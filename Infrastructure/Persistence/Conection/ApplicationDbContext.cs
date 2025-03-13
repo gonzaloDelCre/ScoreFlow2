@@ -18,7 +18,7 @@ namespace Infrastructure.Persistence.Conection
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        // 🔹 Definir las tablas
+        // Definir las tablas
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<Player> Players { get; set; }
@@ -34,11 +34,10 @@ namespace Infrastructure.Persistence.Conection
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configurar claves compuestas
             modelBuilder.Entity<TeamLeague>().HasKey(tl => new { tl.TeamID, tl.LeagueID });
             modelBuilder.Entity<MatchReferee>().HasKey(mr => new { mr.MatchID, mr.RefereeID });
 
-            // Configurar relaciones y restricciones de eliminación
+            // Configurar relaciones y restricciones
             modelBuilder.Entity<Team>()
                 .HasOne(t => t.Coach)
                 .WithMany()
@@ -122,18 +121,16 @@ namespace Infrastructure.Persistence.Conection
 
             modelBuilder.Entity<MatchReferee>()
                 .HasOne(mr => mr.Match)
-                .WithMany(m => m.MatchReferees) // Asegúrate de tener esta colección en la entidad Match
+                .WithMany(m => m.MatchReferees) 
                 .HasForeignKey(mr => mr.MatchID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MatchReferee>()
                 .HasOne(mr => mr.Referee)
-                .WithMany(r => r.MatchReferees) // Asegúrate de tener esta colección en la entidad Referee
+                .WithMany(r => r.MatchReferees) 
                 .HasForeignKey(mr => mr.RefereeID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
-            // Configurar índices únicos
             modelBuilder.Entity<UserEntity>()
                 .HasIndex(u => u.Email)
                 .IsUnique();

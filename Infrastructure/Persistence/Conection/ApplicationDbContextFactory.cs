@@ -20,7 +20,6 @@ namespace Infrastructure.Persistence.Conection
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            // Establece explícitamente el ensamblado de migraciones
             optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("Infrastructure"));
 
             return new ApplicationDbContext(optionsBuilder.Options);

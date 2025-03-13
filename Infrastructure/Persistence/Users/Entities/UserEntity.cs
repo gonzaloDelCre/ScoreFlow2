@@ -20,7 +20,7 @@ namespace Infrastructure.Persistence.Users.Entities
         public string PasswordHash { get; set; }
 
         [Required]
-        public UserRole Role { get; set; }
+        public string Role { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
