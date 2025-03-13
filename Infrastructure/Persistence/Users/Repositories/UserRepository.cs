@@ -1,5 +1,6 @@
 ﻿using Domain.Entities.Users;
 using Domain.Ports.Users;
+using Domain.Shared;
 using Infrastructure.Persistence.Conection;
 using Infrastructure.Persistence.Users.Mapper;
 using Microsoft.Data.SqlClient;

@@ -24,6 +24,6 @@ namespace Infrastructure.Persistence.Users.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<Notification> Notifications { get; set; }
+        public ICollection<NotificationEntity> Notifications { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Domain.Entities.Users;
+using Domain.Shared;
 
 namespace Domain.Ports.Users
 {

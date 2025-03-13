@@ -1,12 +1,7 @@
 ﻿using Application.Users.DTOs;
 using Application.Users.Mapper;
-using Domain.Entities.Users;
 using Domain.Ports.Users;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Domain.Shared;
 
 namespace Application.Users.UseCases
 {

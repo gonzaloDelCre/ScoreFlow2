@@ -1,23 +1,36 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using Domain.Entities.Players;
+﻿using Domain.Entities.Players;
 using Domain.Entities.Matches;
+using Domain.Shared;
 
 namespace Domain.Entities.PlayerStatistics
 {
     public class PlayerStatistic
     {
-        public int PlayerStatisticID { get; set; }
-        public int MatchID { get; set; }
-        public int PlayerID { get; set; }
-        public int Goals { get; set; }
-        public int Assists { get; set; }
-        public int YellowCards { get; set; }
-        public int RedCards { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public PlayerStatisticID PlayerStatisticID { get; private set; }
+        public MatchID MatchID { get; private set; }
+        public PlayerID PlayerID { get; private set; }
+        public Goals Goals { get; private set; }
+        public Assists Assists { get; private set; }
+        public YellowCards YellowCards { get; private set; }
+        public RedCards RedCards { get; private set; }
+        public DateTime CreatedAt { get; private set; }
 
-        public Match Match { get; set; }
-        public Player Player { get; set; }
+        public Match Match { get; private set; }
+        public Player Player { get; private set; }
+
+        public PlayerStatistic(PlayerStatisticID playerStatisticID, MatchID matchID, PlayerID playerID, Goals goals, Assists assists, YellowCards yellowCards, RedCards redCards, Match match, Player player, DateTime createdAt)
+        {
+            PlayerStatisticID = playerStatisticID ?? throw new ArgumentNullException(nameof(playerStatisticID));
+            MatchID = matchID ?? throw new ArgumentNullException(nameof(matchID));
+            PlayerID = playerID ?? throw new ArgumentNullException(nameof(playerID));
+            Goals = goals ?? throw new ArgumentNullException(nameof(goals));
+            Assists = assists ?? throw new ArgumentNullException(nameof(assists));
+            YellowCards = yellowCards ?? throw new ArgumentNullException(nameof(yellowCards));
+            RedCards = redCards ?? throw new ArgumentNullException(nameof(redCards));
+            Match = match ?? throw new ArgumentNullException(nameof(match));
+            Player = player ?? throw new ArgumentNullException(nameof(player));
+            CreatedAt = createdAt == default ? DateTime.UtcNow : createdAt;
+        }
     }
 
 }

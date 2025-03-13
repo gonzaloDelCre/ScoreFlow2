@@ -20,112 +20,112 @@ namespace Infrastructure.Persistence.Conection
 
         // Definir las tablas
         public DbSet<UserEntity> Users { get; set; }
-        public DbSet<Team> Teams { get; set; }
-        public DbSet<Player> Players { get; set; }
-        public DbSet<Match> Matches { get; set; }
-        public DbSet<MatchEvent> MatchEvents { get; set; }
-        public DbSet<PlayerStatistic> PlayerStatistics { get; set; }
-        public DbSet<League> Leagues { get; set; }
-        public DbSet<TeamLeague> TeamLeagues { get; set; }
-        public DbSet<Standing> Standings { get; set; }
-        public DbSet<Notification> Notifications { get; set; }
-        public DbSet<Referee> Referees { get; set; }
-        public DbSet<MatchReferee> MatchReferees { get; set; }
+        public DbSet<TeamEntity> Teams { get; set; }
+        public DbSet<PlayerEntity> Players { get; set; }
+        public DbSet<MatchEntity> Matches { get; set; }
+        public DbSet<MatchEventEntity> MatchEvents { get; set; }
+        public DbSet<PlayerStatisticEntity> PlayerStatistics { get; set; }
+        public DbSet<LeagueEntity> Leagues { get; set; }
+        public DbSet<TeamLeagueEntity> TeamLeagues { get; set; }
+        public DbSet<StandingEntity> Standings { get; set; }
+        public DbSet<NotificationEntity> Notifications { get; set; }
+        public DbSet<RefereeEntity> Referees { get; set; }
+        public DbSet<MatchRefereeEntity> MatchReferees { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<TeamLeague>().HasKey(tl => new { tl.TeamID, tl.LeagueID });
-            modelBuilder.Entity<MatchReferee>().HasKey(mr => new { mr.MatchID, mr.RefereeID });
+            modelBuilder.Entity<TeamLeagueEntity>().HasKey(tl => new { tl.TeamID, tl.LeagueID });
+            modelBuilder.Entity<MatchRefereeEntity>().HasKey(mr => new { mr.MatchID, mr.RefereeID });
 
             // Configurar relaciones y restricciones
-            modelBuilder.Entity<Team>()
+            modelBuilder.Entity<TeamEntity>()
                 .HasOne(t => t.Coach)
                 .WithMany()
                 .HasForeignKey(t => t.CoachID)
                 .OnDelete(DeleteBehavior.Restrict); 
 
-            modelBuilder.Entity<Player>()
+            modelBuilder.Entity<PlayerEntity>()
                 .HasOne(p => p.Team)
                 .WithMany()
                 .HasForeignKey(p => p.TeamID)
                 .OnDelete(DeleteBehavior.Cascade);  
 
-            modelBuilder.Entity<Match>()
+            modelBuilder.Entity<MatchEntity>()
                 .HasOne(m => m.Team1)
                 .WithMany()
                 .HasForeignKey(m => m.Team1ID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Match>()
+            modelBuilder.Entity<MatchEntity>()
                 .HasOne(m => m.Team2)
                 .WithMany()
                 .HasForeignKey(m => m.Team2ID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<MatchEvent>()
+            modelBuilder.Entity<MatchEventEntity>()
                 .HasOne(me => me.Match)
                 .WithMany()
                 .HasForeignKey(me => me.MatchID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<MatchEvent>()
+            modelBuilder.Entity<MatchEventEntity>()
                 .HasOne(me => me.Player)
                 .WithMany()
                 .HasForeignKey(me => me.PlayerID)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<PlayerStatistic>()
+            modelBuilder.Entity<PlayerStatisticEntity>()
                 .HasOne(ps => ps.Match)
                 .WithMany()
                 .HasForeignKey(ps => ps.MatchID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<PlayerStatistic>()
+            modelBuilder.Entity<PlayerStatisticEntity>()
                 .HasOne(ps => ps.Player)
                 .WithMany()
                 .HasForeignKey(ps => ps.PlayerID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<TeamLeague>()
+            modelBuilder.Entity<TeamLeagueEntity>()
                 .HasOne(tl => tl.Team)
                 .WithMany()
                 .HasForeignKey(tl => tl.TeamID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<TeamLeague>()
+            modelBuilder.Entity<TeamLeagueEntity>()
                 .HasOne(tl => tl.League)
                 .WithMany()
                 .HasForeignKey(tl => tl.LeagueID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Standing>()
+            modelBuilder.Entity<StandingEntity>()
                 .HasOne(s => s.League)
                 .WithMany()
                 .HasForeignKey(s => s.LeagueID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Standing>()
+            modelBuilder.Entity<StandingEntity>()
                 .HasOne(s => s.Team)
                 .WithMany()
                 .HasForeignKey(s => s.TeamID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Notification>()
+            modelBuilder.Entity<NotificationEntity>()
                 .HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<MatchReferee>()
+            modelBuilder.Entity<MatchRefereeEntity>()
                 .HasKey(mr => new { mr.MatchID, mr.RefereeID });
 
-            modelBuilder.Entity<MatchReferee>()
+            modelBuilder.Entity<MatchRefereeEntity>()
                 .HasOne(mr => mr.Match)
                 .WithMany(m => m.MatchReferees) 
                 .HasForeignKey(mr => mr.MatchID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<MatchReferee>()
+            modelBuilder.Entity<MatchRefereeEntity>()
                 .HasOne(mr => mr.Referee)
                 .WithMany(r => r.MatchReferees) 
                 .HasForeignKey(mr => mr.RefereeID)
@@ -138,9 +138,9 @@ namespace Infrastructure.Persistence.Conection
             // Configurar restricciones de longitud en `VARCHAR`
             modelBuilder.Entity<UserEntity>().Property(u => u.FullName).HasMaxLength(100);
             modelBuilder.Entity<UserEntity>().Property(u => u.Email).HasMaxLength(255);
-            modelBuilder.Entity<Team>().Property(t => t.Name).HasMaxLength(100);
-            modelBuilder.Entity<League>().Property(l => l.Name).HasMaxLength(100);
-            modelBuilder.Entity<Referee>().Property(r => r.Name).HasMaxLength(100);
+            modelBuilder.Entity<TeamEntity>().Property(t => t.Name).HasMaxLength(100);
+            modelBuilder.Entity<LeagueEntity>().Property(l => l.Name).HasMaxLength(100);
+            modelBuilder.Entity<RefereeEntity>().Property(r => r.Name).HasMaxLength(100);
 
         }
 

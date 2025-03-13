@@ -1,6 +1,7 @@
 ﻿using Application.Users.DTOs;
 using Domain.Entities.Users;
 using Domain.Enum;
+using Domain.Shared;
 
 namespace Application.Users.Mapper
 {

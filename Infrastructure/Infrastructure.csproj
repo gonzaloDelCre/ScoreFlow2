@@ -7,28 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Leagues\Mapper\" />
     <Folder Include="Persistence\Leagues\Repositories\" />
-    <Folder Include="Persistence\Matches\Mapper\" />
     <Folder Include="Persistence\Matches\Repositories\" />
-    <Folder Include="Persistence\MatchEvents\Mapper\" />
     <Folder Include="Persistence\MatchEvents\Repositories\" />
-    <Folder Include="Persistence\MatchReferees\Mapper\" />
     <Folder Include="Persistence\MatchReferees\Repositories\" />
-    <Folder Include="Persistence\Notifications\Mapper\" />
     <Folder Include="Persistence\Notifications\Repositories\" />
-    <Folder Include="Persistence\PlayerStatistics\Mapper\" />
     <Folder Include="Persistence\PlayerStatistics\Repositories\" />
-    <Folder Include="Persistence\Players\Mapper\" />
     <Folder Include="Persistence\Players\Repositories\" />
-    <Folder Include="Persistence\Referees\Mapper\" />
     <Folder Include="Persistence\Referees\Repositories\" />
-    <Folder Include="Persistence\Standings\Mapper\" />
     <Folder Include="Persistence\Standings\Repositories\" />
-    <Folder Include="Persistence\TeamLeagues\Mapper\" />
     <Folder Include="Persistence\TeamLeagues\Repositories\" />
-    <Folder Include="Persistence\Teams\Mapper\" />
-    <Folder Include="Persistence\Teams\Repositories\" />
   </ItemGroup>
 
   <ItemGroup>

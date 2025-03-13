@@ -1,6 +1,7 @@
 ﻿using Domain.Entities.Users;
 using Domain.Enum;
 using Infrastructure.Persistence.Users.Entities;
+using Domain.Shared;
 
 namespace Infrastructure.Persistence.Users.Mapper
 {
@@ -15,6 +16,7 @@ namespace Infrastructure.Persistence.Users.Mapper
                 FullName = user.FullName.Value,
                 Email = user.Email.Value,
                 PasswordHash = user.PasswordHash.Value,
+                Role = user.Role.ToString(),
                 CreatedAt = user.CreatedAt
             };
         }

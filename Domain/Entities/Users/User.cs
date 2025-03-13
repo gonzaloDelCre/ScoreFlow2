@@ -1,7 +1,6 @@
 ﻿using Domain.Entities.Notifications;
 using Domain.Enum;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
+using Domain.Shared;
 
 namespace Domain.Entities.Users
 {
