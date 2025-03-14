@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Infrastructure.Persistence.Standings.Entities;
+using Infrastructure.Persistence.TeamLeagues.Entities;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence.Leagues.Entities
 {
@@ -17,6 +14,11 @@ namespace Infrastructure.Persistence.Leagues.Entities
 
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+
+        // Relations
+        public ICollection<TeamLeagueEntity> TeamLeagues { get; set; } = new List<TeamLeagueEntity>();
+        public ICollection<StandingEntity> Standings { get; set; } = new List<StandingEntity>();
     }
 }
 

@@ -7,29 +7,55 @@ using Domain.Shared;
 
 namespace Infrastructure.Persistence.Teams.Mapper
 {
-    public class TeamMapper
+    public static class TeamMapper
     {
-        public TeamEntity MapToEntity(Team team)
+        public static Team ToDomain(TeamEntity entity, UserEntity? coachEntity = null)
         {
-            return new TeamEntity
+            if (entity == null)
             {
-                TeamID = team.TeamID,
-                Name = team.Name,
-                Logo = team.Logo,
-                CoachID = team.Coach.UserID.Value,
-                CreatedAt = team.CreatedAt
-            };
+                return null;
+            }
+
+            var teamName = new TeamName(entity.Name);
+            User coach = null;
+
+            if (coachEntity != null)
+            {
+                coach = new User(
+                    new UserID(coachEntity.UserID),
+                    new UserFullName(coachEntity.FullName),
+                    new UserEmail(coachEntity.Email),
+                    new UserPasswordHash(coachEntity.PasswordHash),
+                    Enum.Parse<UserRole>(coachEntity.Role),
+                    coachEntity.CreatedAt
+                );
+            }
+
+            return new Team(
+                new TeamID(entity.TeamID),
+                teamName,
+                coach,
+                entity.CreatedAt,
+                entity.Logo
+            );
         }
 
-        public Team MapToDomain(TeamEntity entity, User coach)
+
+        public static TeamEntity ToEntity(Team domain)
         {
-            return new Team(
-                entity.TeamID,
-                entity.Name,
-                entity.Logo,
-                coach,
-                entity.CreatedAt
-            );
+            if (domain == null)
+            {
+                return null;
+            }
+
+            return new TeamEntity
+            {
+                TeamID = domain.TeamID.Value,        // Convertimos TeamID a int
+                Name = domain.Name.Value,            // Convertimos TeamName a string
+                CoachID = domain.Coach?.UserID.Value ?? 0,  // Convertimos el CoachID si existe
+                CreatedAt = domain.CreatedAt,        // Fecha de creación
+                Logo = domain.Logo                   // Logo
+            };
         }
     }
 }

@@ -1,15 +1,16 @@
 ﻿using Domain.Entities.Matches;
+using Domain.Shared;
 
 namespace Domain.Ports.Matches
 {
     public interface IMatchRepository
     {
-        Task<Match?> GetByIdAsync(int matchId);
+        Task<Match?> GetByIdAsync(MatchID matchId);
         Task<IEnumerable<Match>> GetAllAsync();
-        Task<IEnumerable<Match>> GetByTeamIdAsync(int teamId);
-        Task<IEnumerable<Match>> GetByLeagueIdAsync(int leagueId);
+        Task<IEnumerable<Match>> GetByTeamIdAsync(MatchID teamId);  
+        Task<IEnumerable<Match>> GetByLeagueIdAsync(MatchID leagueId); 
         Task<Match> AddAsync(Match match);
         Task UpdateAsync(Match match);
-        Task<bool> DeleteAsync(int matchId);
+        Task<bool> DeleteAsync(MatchID matchId);
     }
 }

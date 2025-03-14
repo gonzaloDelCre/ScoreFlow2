@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\Leagues\Repositories\" />
-    <Folder Include="Persistence\Matches\Repositories\" />
     <Folder Include="Persistence\MatchEvents\Repositories\" />
     <Folder Include="Persistence\MatchReferees\Repositories\" />
     <Folder Include="Persistence\Notifications\Repositories\" />

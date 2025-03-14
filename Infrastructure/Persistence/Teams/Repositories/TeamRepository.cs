@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Domain.Ports.Teams;
 using Domain.Shared;
+using Microsoft.Data.SqlClient;
 
 namespace Infrastructure.Persistence.Teams.Repositories
 {
@@ -12,40 +13,32 @@ namespace Infrastructure.Persistence.Teams.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<TeamRepository> _logger;
-        private readonly TeamMapper _mapper;
 
-        public TeamRepository(ApplicationDbContext context, ILogger<TeamRepository> logger, TeamMapper mapper)
+        public TeamRepository(ApplicationDbContext context, ILogger<TeamRepository> logger)
         {
             _context = context;
             _logger = logger;
-            _mapper = mapper;
         }
 
         public async Task<IEnumerable<Team>> GetAllAsync()
         {
             try
             {
-                // Obtener todos los equipos de la base de datos
+                string sql = "SELECT * FROM Teams";
                 var dbTeams = await _context.Teams
+                    .FromSqlRaw(sql)
                     .ToListAsync();
 
-                // Obtener los entrenadores relacionados a los equipos
                 var coachIds = dbTeams.Select(t => t.CoachID).Distinct().ToList();
                 var dbCoaches = await _context.Users
                     .Where(u => coachIds.Contains(u.UserID))
                     .ToListAsync();
 
-                // Mapear los equipos y sus entrenadores
-                var teams = dbTeams.Select(dbTeam =>
+                return dbTeams.Select(dbTeam =>
                 {
-                    // Obtener el coach correspondiente al equipo
                     var coachEntity = dbCoaches.FirstOrDefault(c => c.UserID == dbTeam.CoachID);
-
-                    // Mapear el equipo y el coach a dominio
-                    return _mapper.MapToDomain(dbTeam, coachEntity);
+                    return TeamMapper.ToDomain(dbTeam, coachEntity); // Se usa directamente el método estático
                 }).ToList();
-
-                return teams;
             }
             catch (Exception ex)
             {
@@ -58,21 +51,23 @@ namespace Infrastructure.Persistence.Teams.Repositories
         {
             try
             {
-                var dbTeam = await _context.Teams
-                    .Include(t => t.Coach)  // Incluir la relación con el entrenador (Coach)
-                    .FirstOrDefaultAsync(t => t.TeamID == teamId.Value);
+                string sql = "SELECT * FROM Teams WHERE TeamID = @TeamID";
+                var parameter = new SqlParameter("@TeamID", teamId.Value);
 
+                var dbTeams = await _context.Teams
+                    .FromSqlRaw(sql, parameter)
+                    .ToListAsync();
+
+                var dbTeam = dbTeams.FirstOrDefault();
                 if (dbTeam == null)
                 {
                     return null;
                 }
 
-                // Obtener el entrenador (UserEntity)
                 var coachEntity = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserID == dbTeam.CoachID);
 
-                // Convertir la entidad de persistencia a dominio, pasando la entidad del entrenador también
-                return _mapper.MapToDomain(dbTeam, coachEntity);
+                return TeamMapper.ToDomain(dbTeam, coachEntity); // Se usa directamente el método estático
             }
             catch (Exception ex)
             {
@@ -83,29 +78,39 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
         public async Task<Team> AddAsync(Team team)
         {
+            if (team == null)
+                throw new ArgumentNullException(nameof(team), "El equipo no puede ser null");
+
             try
             {
-                // Convertir la entidad de dominio a la entidad de persistencia
-                var teamEntity = _mapper.MapToEntity(team);
+                var teamEntity = TeamMapper.ToEntity(team); // Se usa directamente el método estático
 
-                // Si el equipo tiene un Coach asociado, asegúrate de que la relación esté correctamente configurada
-                if (team.Coach != null)
+                string insertSql = @"INSERT INTO Teams (Name, CoachID, CreatedAt, Logo) 
+                                     VALUES (@Name, @CoachID, @CreatedAt, @Logo);";
+
+                var parameters = new[]
                 {
-                    // Asegúrate de que el CoachID esté correctamente asignado
-                    teamEntity.CoachID = team.Coach.UserID.Value;
-                }
+                    new SqlParameter("@Name", teamEntity.Name),
+                    new SqlParameter("@CoachID", teamEntity.CoachID),
+                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
+                    new SqlParameter("@Logo", teamEntity.Logo ?? (object)DBNull.Value)
+                };
 
-                // Agregar el equipo a la base de datos
-                await _context.Teams.AddAsync(teamEntity);
-                await _context.SaveChangesAsync();
+                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
 
-                // Obtener la entidad persistente del equipo (incluyendo la relación con el Coach)
-                var teamEntityFromDb = await _context.Teams
-                    .Include(t => t.Coach) // Incluir el Coach
-                    .FirstOrDefaultAsync(t => t.TeamID == teamEntity.TeamID);
+                string selectSql = "SELECT TOP 1 TeamID FROM Teams ORDER BY TeamID DESC";
+                var newTeamId = await _context.Teams
+                    .FromSqlRaw(selectSql)
+                    .Select(t => t.TeamID)
+                    .FirstOrDefaultAsync();
 
-                // Regresar la entidad de dominio mapeada
-                return _mapper.MapToDomain(teamEntityFromDb, teamEntityFromDb?.Coach);
+                return new Team(
+                    new TeamID(newTeamId),
+                    team.Name,
+                    team.Coach,
+                    team.CreatedAt,
+                    team.Logo
+                );
             }
             catch (Exception ex)
             {
@@ -114,16 +119,29 @@ namespace Infrastructure.Persistence.Teams.Repositories
             }
         }
 
-
         public async Task UpdateAsync(Team team)
         {
+            if (team == null)
+                throw new ArgumentNullException(nameof(team), "El equipo no puede ser null");
+
             try
             {
-                // Convertimos la entidad de dominio a la entidad de persistencia
-                var teamEntity = _mapper.MapToEntity(team);
+                var teamEntity = TeamMapper.ToEntity(team); // Se usa directamente el método estático
 
-                _context.Teams.Update(teamEntity);
-                await _context.SaveChangesAsync();
+                string updateSql = @"UPDATE Teams 
+                                     SET Name = @Name, CoachID = @CoachID, CreatedAt = @CreatedAt, Logo = @Logo
+                                     WHERE TeamID = @TeamID";
+
+                var parameters = new[]
+                {
+                    new SqlParameter("@TeamID", teamEntity.TeamID),
+                    new SqlParameter("@Name", teamEntity.Name),
+                    new SqlParameter("@CoachID", teamEntity.CoachID),
+                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
+                    new SqlParameter("@Logo", teamEntity.Logo ?? (object)DBNull.Value)
+                };
+
+                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
             }
             catch (Exception ex)
             {
@@ -136,16 +154,11 @@ namespace Infrastructure.Persistence.Teams.Repositories
         {
             try
             {
-                var teamEntity = await _context.Teams
-                    .FirstOrDefaultAsync(t => t.TeamID == teamId.Value);
+                string sql = "DELETE FROM Teams WHERE TeamID = @TeamID";
+                var parameter = new SqlParameter("@TeamID", teamId.Value);
 
-                if (teamEntity != null)
-                {
-                    _context.Teams.Remove(teamEntity);
-                    await _context.SaveChangesAsync();
-                    return true;
-                }
-                return false;
+                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {

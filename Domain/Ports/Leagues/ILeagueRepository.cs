@@ -12,6 +12,7 @@ namespace Domain.Ports.Leagues
     {
         Task<League?> GetByIdAsync(LeagueID leagueId);
         Task<IEnumerable<League>> GetAllAsync();
+        Task<League?> GetByNameAsync(string name);
         Task<League> AddAsync(League league);
         Task UpdateAsync(League league);
         Task<bool> DeleteAsync(LeagueID leagueId);

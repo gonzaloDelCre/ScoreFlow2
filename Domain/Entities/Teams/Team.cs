@@ -17,14 +17,24 @@ namespace Domain.Entities.Teams
         public ICollection<TeamLeague> TeamLeagues { get; set; } = new List<TeamLeague>();
         public ICollection<Standing> Standings { get; set; } = new List<Standing>();
 
-        public Team(TeamID teamID, TeamName name, User? coach, DateTime createdAt)
+        public string Logo { get; set; } = string.Empty;
+
+        public Team(TeamID teamID, TeamName name, User? coach, DateTime createdAt, string logo)
         {
             TeamID = teamID;
             Name = name;
             Coach = coach;
             CreatedAt = createdAt;
+            Logo = logo;
         }
+        public void Update(TeamName name, string logo)
+        {
+            if (name != null)
+                Name = name; // Actualizamos el nombre
 
+            if (!string.IsNullOrWhiteSpace(logo))
+                Logo = logo; // Actualizamos el logo
+        }
     }
 
 }

@@ -1,4 +1,5 @@
 ﻿using Domain.Entities.Leagues;
+using Domain.Shared;
 using Infrastructure.Persistence.Leagues.Entities;
 
 namespace Infrastructure.Persistence.Leagues.Mapper
@@ -7,10 +8,13 @@ namespace Infrastructure.Persistence.Leagues.Mapper
     {
         public LeagueEntity MapToEntity(League league)
         {
+            if (league == null)
+                throw new ArgumentNullException(nameof(league), "La entidad de dominio League no puede ser nula.");
+
             return new LeagueEntity
             {
-                LeagueID = league.LeagueID,
-                Name = league.Name,
+                LeagueID = league.LeagueID.Value,
+                Name = league.Name.Value,
                 Description = league.Description,
                 CreatedAt = league.CreatedAt
             };
@@ -18,9 +22,12 @@ namespace Infrastructure.Persistence.Leagues.Mapper
 
         public League MapToDomain(LeagueEntity entity)
         {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity), "La entidad persistente LeagueEntity no puede ser nula.");
+
             return new League(
-                entity.LeagueID,
-                entity.Name,
+                new LeagueID(entity.LeagueID),
+                new LeagueName(entity.Name),
                 entity.Description,
                 entity.CreatedAt
             );

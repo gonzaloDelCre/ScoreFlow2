@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations;
 using Domain.Enum;
 using Infrastructure.Persistence.Teams.Entities;
 using Infrastructure.Persistence.MatchReferees.Entities;
+using Infrastructure.Persistence.MatchEvents.Entities;
+using Infrastructure.Persistence.PlayerStatistics.Entities;
 
 namespace Infrastructure.Persistence.Matches.Entities
 {
@@ -30,10 +32,11 @@ namespace Infrastructure.Persistence.Matches.Entities
         [Required]
         public MatchStatus Status { get; set; }
 
-        public string Location { get; set; }
+        public string Location { get; set; } 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<MatchRefereeEntity> MatchReferees { get; set; }
-
+        public ICollection<MatchEventEntity> MatchEvents { get; set; }
+        public ICollection<PlayerStatisticEntity> PlayerStatistics { get; set; }
     }
 }

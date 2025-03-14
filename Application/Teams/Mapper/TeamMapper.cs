@@ -1,47 +1,56 @@
 ﻿using Application.Teams.DTOs;
-using Domain.Entities.Players;
-using Domain.Entities.Standings;
-using Domain.Entities.TeamLeagues;
 using Domain.Entities.Teams;
 using Domain.Entities.Users;
+using Domain.Enum;
 using Domain.Shared;
 
 namespace Application.Teams.Mapper
 {
-    public static class TeamMapper
+    public class TeamMapper
     {
-        // Transformar TeamDTO a Team (dominio)
-        public static Team ToDomain(TeamDTO teamDTO, User? coach = null,
-            ICollection<Player>? players = null,
-            ICollection<TeamLeague>? teamLeagues = null,
-            ICollection<Standing>? standings = null)
+        // Mapea una entidad Team a un DTO de respuesta (para enviar datos)
+        public TeamResponseDTO MapToDTO(Team team)
         {
-            return new Team(
-                new TeamID(teamDTO.TeamID),
-                new TeamName(teamDTO.Name),
-                coach,
-                teamDTO.CreatedAt
-            )
+            if (team == null)
+                throw new ArgumentNullException(nameof(team), "La entidad de dominio Team no puede ser nula.");
+
+            return new TeamResponseDTO
             {
-                Players = players ?? new List<Player>(),
-                TeamLeagues = teamLeagues ?? new List<TeamLeague>(),
-                Standings = standings ?? new List<Standing>()
+                TeamID = team.TeamID.Value,  // Accede a Value
+                TeamName = team.Name.Value,  // Accede a Value
+                LogoUrl = team.Logo,
+                CoachID = team.Coach?.UserID.Value ?? 0, // Accede a Value si existe el Coach
+                CoachName = team.Coach?.FullName.Value ?? string.Empty,
+                CreatedAt = team.CreatedAt
             };
         }
 
-        // Transformar Team (dominio) a TeamDTO
-        public static TeamDTO ToDTO(Team team)
+        // Mapea un DTO de solicitud (para crear o actualizar un equipo) a la entidad de dominio
+        public Team MapToDomain(TeamRequestDTO teamDTO, User? coach = null, Team? existingTeam = null)
         {
-            return new TeamDTO
+            if (teamDTO == null)
+                throw new ArgumentNullException(nameof(teamDTO), "El DTO TeamRequestDTO no puede ser nulo.");
+
+            // Si tenemos un equipo existente, actualizamos los valores
+            if (existingTeam != null)
             {
-                TeamID = team.TeamID.Value,
-                Name = team.Name.Value,
-                CoachID = team.Coach?.UserID.Value, 
-                CreatedAt = team.CreatedAt,
-                PlayerIDs = team.Players.Select(p => p.PlayerID).ToList(),
-                TeamLeagueIDs = team.TeamLeagues.Select(tl => tl.TeamLeagueID.Value).ToList(),
-                StandingIDs = team.Standings.Select(s => s.StandingID.Value).ToList()
-            };
+                return new Team(
+                    existingTeam.TeamID, // Mantener el ID existente
+                    new TeamName(teamDTO.Name), // Nuevo nombre
+                    coach, // Coach puede ser nulo si no se pasa
+                    existingTeam.CreatedAt, // Mantener la fecha de creación
+                    teamDTO.Logo // Logo del equipo
+                );
+            }
+
+            // Si no hay equipo existente, creamos un nuevo equipo
+            return new Team(
+                new TeamID(0), // El ID será asignado después en el repositorio
+                new TeamName(teamDTO.Name), // Nombre
+                coach, // Coach puede ser nulo si no se pasa
+                DateTime.UtcNow, // Fecha de creación actual
+                teamDTO.Logo // Logo del equipo
+            );
         }
     }
 }
