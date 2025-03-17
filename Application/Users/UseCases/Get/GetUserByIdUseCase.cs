@@ -2,8 +2,9 @@
 using Application.Users.Mapper;
 using Domain.Ports.Users;
 using Domain.Shared;
+using System.Threading.Tasks;
 
-namespace Application.Users.UseCases
+namespace Application.Users.UseCases.Get
 {
     public class GetUserByIdUseCase
     {
@@ -14,10 +15,10 @@ namespace Application.Users.UseCases
             _userRepository = userRepository;
         }
 
-        public async Task<UserDTO> ExecuteAsync(int userId)
+        public async Task<UserResponseDTO?> ExecuteAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(new UserID(userId));
-            return user != null ? UserMapper.ToDTO(user) : null;
+            return user != null ? UserMapper.ToResponseDTO(user) : null;
         }
     }
 }

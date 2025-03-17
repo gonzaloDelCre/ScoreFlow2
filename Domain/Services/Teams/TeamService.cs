@@ -1,6 +1,6 @@
 ﻿using Domain.Entities.Teams;
 using Domain.Ports.Teams;
-using Domain.Ports.Users; // Asegúrate de que este namespace esté presente
+using Domain.Ports.Users; 
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
 using System;
@@ -12,14 +12,13 @@ namespace Domain.Services.Teams
     public class TeamService
     {
         private readonly ITeamRepository _teamRepository;
-        private readonly IUserRepository _userRepository; // Repositorio de Usuarios
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<TeamService> _logger;
 
-        // Constructor actualizado para recibir IUserRepository
         public TeamService(ITeamRepository teamRepository, IUserRepository userRepository, ILogger<TeamService> logger)
         {
             _teamRepository = teamRepository;
-            _userRepository = userRepository; // Inyección del repositorio de usuarios
+            _userRepository = userRepository;
             _logger = logger;
         }
 
@@ -31,19 +30,17 @@ namespace Domain.Services.Teams
             if (string.IsNullOrWhiteSpace(logoUrl))
                 throw new ArgumentException("La URL del logo es obligatoria.");
 
-            // Convertir coachID en un UserID
-            var userId = new UserID(coachID);  // Asumimos que UserID es un tipo de valor que recibe un int
+            var userId = new UserID(coachID);
 
-            // Buscar el coach usando el repositorio de usuarios
-            var coach = await _userRepository.GetByIdAsync(userId);  // Ahora usamos UserID en lugar de coachID
+            var coach = await _userRepository.GetByIdAsync(userId);
 
             if (coach == null)
                 throw new ArgumentException("El entrenador con el ID proporcionado no existe.");
 
             var team = new Team(
-                new TeamID(1),
+                new TeamID(0), 
                 new TeamName(teamName),
-                coach,  // Asignamos el entrenador
+                coach,
                 DateTime.UtcNow,
                 logoUrl
             );
@@ -51,7 +48,6 @@ namespace Domain.Services.Teams
             await _teamRepository.AddAsync(team);
             return team;
         }
-
 
         public async Task<Team?> GetTeamByIdAsync(TeamID teamId)
         {

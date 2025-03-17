@@ -1,27 +1,26 @@
 ﻿using Application.Leagues.DTOs;
 using Application.Leagues.Mapper;
 using Domain.Ports.Leagues;
+using Domain.Services.Leagues;
 using Domain.Shared;
+using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Get
 {
     public class GetLeagueById
     {
-        private readonly ILeagueRepository _leagueRepository;
+        private readonly LeagueService _leagueService;
         private readonly LeagueMapper _mapper;
 
-        public GetLeagueById(ILeagueRepository leagueRepository, LeagueMapper mapper)
+        public GetLeagueById(LeagueService leagueService, LeagueMapper mapper)
         {
-            _leagueRepository = leagueRepository;
+            _leagueService = leagueService;
             _mapper = mapper;
         }
 
-        public async Task<LeagueResponseDTO?> Execute(LeagueID leagueId)
+        public async Task<LeagueResponseDTO?> ExecuteAsync(LeagueID leagueId)
         {
-            if (leagueId == null)
-                throw new ArgumentException("El ID de la liga no puede ser nulo.");
-
-            var league = await _leagueRepository.GetByIdAsync(leagueId);
+            var league = await _leagueService.GetLeagueByIdAsync(leagueId);
             return league != null ? _mapper.MapToDTO(league) : null;
         }
     }

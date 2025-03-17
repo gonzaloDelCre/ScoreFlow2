@@ -20,7 +20,7 @@ namespace Infrastructure.Persistence.Players.Entities
         public TeamEntity Team { get; set; }
 
         public string Position { get; set; }
-        public int? Dorsal { get; set; }
+        public string Name { get; set; } 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

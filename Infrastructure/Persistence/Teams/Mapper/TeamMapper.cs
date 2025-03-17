@@ -50,11 +50,11 @@ namespace Infrastructure.Persistence.Teams.Mapper
 
             return new TeamEntity
             {
-                TeamID = domain.TeamID.Value,        // Convertimos TeamID a int
-                Name = domain.Name.Value,            // Convertimos TeamName a string
-                CoachID = domain.Coach?.UserID.Value ?? 0,  // Convertimos el CoachID si existe
-                CreatedAt = domain.CreatedAt,        // Fecha de creación
-                Logo = domain.Logo                   // Logo
+                TeamID = domain.TeamID.Value,       
+                Name = domain.Name.Value,           
+                CoachID = domain.Coach?.UserID.Value ?? 0,  
+                CreatedAt = domain.CreatedAt,       
+                Logo = domain.Logo                
             };
         }
     }

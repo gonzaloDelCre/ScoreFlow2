@@ -25,13 +25,11 @@ namespace API.Controllers.Teams
             {
                 var result = await _useCaseHandler.Execute(actionDTO);
 
-                // Si la acción es "getall" o "getbyid", devolvemos los datos directamente
                 if (actionDTO.Action.ToLower() == "getall" || actionDTO.Action.ToLower() == "getbyid")
                 {
                     return Ok(result);
                 }
 
-                // En caso de acción de creación, actualización o eliminación, retornamos una respuesta Created
                 return CreatedAtAction(nameof(ExecuteTeamAction), new { action = actionDTO.Action }, result);
             }
             catch (Exception ex)
@@ -41,4 +39,3 @@ namespace API.Controllers.Teams
         }
     }
 }
-

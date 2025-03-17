@@ -2,9 +2,6 @@
 using Domain.Services.Teams;
 using Domain.Shared;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Teams.UseCases.Delete
@@ -18,7 +15,6 @@ namespace Application.Teams.UseCases.Delete
             _teamService = teamService;
         }
 
-        // Ejecuta la eliminación de un equipo por su ID
         public async Task<bool> Execute(TeamID teamID)
         {
             if (teamID == null)

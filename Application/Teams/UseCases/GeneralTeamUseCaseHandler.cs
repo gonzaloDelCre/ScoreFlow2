@@ -18,14 +18,14 @@ namespace Application.Teams.UseCases
         private readonly CreateTeam _createTeam;
         private readonly UpdateTeam _updateTeam;
         private readonly DeleteTeam _deleteTeam;
-        private readonly GetAllTeams _getAllTeams; // Agregado el servicio para obtener todos los equipos
+        private readonly GetAllTeams _getAllTeams;
 
         public GeneralTeamUseCaseHandler(
             GetTeamById getTeamById,
             CreateTeam createTeam,
             UpdateTeam updateTeam,
             DeleteTeam deleteTeam,
-            GetAllTeams getAllTeams) // Inyectamos el caso de uso para obtener todos los equipos
+            GetAllTeams getAllTeams)
         {
             _getTeamById = getTeamById;
             _createTeam = createTeam;
@@ -36,54 +36,33 @@ namespace Application.Teams.UseCases
 
         public async Task<object> Execute(TeamActionDTO actionDTO)
         {
-            // Validación inicial de la acción
             if (string.IsNullOrWhiteSpace(actionDTO.Action))
                 throw new ArgumentException("La acción no puede estar vacía.");
 
             switch (actionDTO.Action.ToLower())
             {
                 case "getall":
-                    return await _getAllTeams.Execute(); // Llamamos a GetAllTeams
+                    return await _getAllTeams.ExecuteAsync();
 
                 case "getbyid":
                     if (actionDTO.TeamID == null)
                         throw new ArgumentException("El ID del equipo es necesario para obtenerlo.");
-
-                    var teamId = new TeamID(actionDTO.TeamID.Value);
-                    var team = await _getTeamById.Execute(teamId);
-
-                    if (team == null)
-                        throw new ArgumentException("El equipo no existe.");
-
-                    return team;
+                    return await _getTeamById.ExecuteAsync(new TeamID(actionDTO.TeamID.Value));
 
                 case "add":
                     if (actionDTO.Team == null)
                         throw new ArgumentException("Los detalles del equipo son necesarios para agregarlo.");
-
-                    var teamRequestDTO = actionDTO.Team;
-
-                    return await _createTeam.Execute(teamRequestDTO); // Usamos CreateTeam para agregar
+                    return await _createTeam.Execute(actionDTO.Team);
 
                 case "update":
                     if (actionDTO.Team == null)
                         throw new ArgumentException("Los detalles del equipo son necesarios para actualizarlo.");
-
-                    var teamUpdateDTO = actionDTO.Team;
-
-                    return await _updateTeam.Execute(teamUpdateDTO);
+                    return await _updateTeam.Execute(actionDTO.Team,actionDTO.TeamID.Value);
 
                 case "delete":
                     if (actionDTO.TeamID == null)
                         throw new ArgumentException("El ID del equipo es necesario para eliminarlo.");
-
-                    var deleteTeamId = new TeamID(actionDTO.TeamID.Value);
-                    var existingTeamForDelete = await _getTeamById.Execute(deleteTeamId);
-
-                    if (existingTeamForDelete == null)
-                        throw new ArgumentException("El equipo a eliminar no existe.");
-
-                    return await _deleteTeam.Execute(deleteTeamId);
+                    return await _deleteTeam.Execute(new TeamID(actionDTO.TeamID.Value));
 
                 default:
                     throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");

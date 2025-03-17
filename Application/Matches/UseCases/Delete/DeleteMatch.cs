@@ -2,9 +2,6 @@
 using Domain.Services.Matches;
 using Domain.Shared;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Matches.UseCases.Delete
@@ -18,7 +15,6 @@ namespace Application.Matches.UseCases.Delete
             _matchService = matchService;
         }
 
-        // Ejecuta la eliminación de un partido por su ID
         public async Task<bool> Execute(MatchID matchID)
         {
             if (matchID == null)

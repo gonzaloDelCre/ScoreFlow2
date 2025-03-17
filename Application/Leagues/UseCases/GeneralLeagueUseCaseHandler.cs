@@ -11,14 +11,14 @@ namespace Application.Leagues.UseCases
     {
         private readonly GetAllLeagues _getAllLeagues;
         private readonly GetLeagueById _getLeagueById;
-        private readonly AddLeague _addLeague;
+        private readonly CreateLeague _addLeague;
         private readonly UpdateLeague _updateLeague;
         private readonly DeleteLeague _deleteLeague;
 
         public GeneralLeagueUseCaseHandler(
             GetAllLeagues getAllLeagues,
             GetLeagueById getLeagueById,
-            AddLeague addLeague,
+            CreateLeague addLeague,
             UpdateLeague updateLeague,
             DeleteLeague deleteLeague)
         {
@@ -31,45 +31,33 @@ namespace Application.Leagues.UseCases
 
         public async Task<object> Execute(LeagueActionDTO actionDTO)
         {
+            if (string.IsNullOrWhiteSpace(actionDTO.Action))
+                throw new ArgumentException("La acción no puede estar vacía.");
+
             switch (actionDTO.Action.ToLower())
             {
                 case "getall":
-                    return await _getAllLeagues.Execute();
+                    return await _getAllLeagues.ExecuteAsync();
 
                 case "getbyid":
                     if (actionDTO.LeagueID == null)
                         throw new ArgumentException("El ID de la liga es necesario para obtenerla.");
-                    var leagueId = new LeagueID(actionDTO.LeagueID.Value);
-                    return await _getLeagueById.Execute(leagueId);
+                    return await _getLeagueById.ExecuteAsync(new LeagueID(actionDTO.LeagueID.Value));
 
                 case "add":
                     if (actionDTO.League == null)
                         throw new ArgumentException("Los detalles de la liga son necesarios para agregarla.");
-                    var leagueRequestDTO = actionDTO.League;
-                    var existingLeagueForAdd = await _getAllLeagues.Execute();
-                    if (existingLeagueForAdd.Any(l => l.Name == leagueRequestDTO.Name))
-                    {
-                        // Si la liga ya existe, se actualiza en lugar de agregarla
-                        return await _updateLeague.Execute(leagueRequestDTO);
-                    }
-                    return await _addLeague.Execute(leagueRequestDTO); // Si no existe, agregamos
+                    return await _addLeague.Execute(actionDTO.League);
 
                 case "update":
                     if (actionDTO.League == null)
                         throw new ArgumentException("Los detalles de la liga son necesarios para actualizarla.");
-                    var leagueUpdateDTO = actionDTO.League;
-                    var existingLeagueForUpdate = await _getAllLeagues.Execute();
-                    if (existingLeagueForUpdate.Any(l => l.Name == leagueUpdateDTO.Name))
-                    {
-                        return await _updateLeague.Execute(leagueUpdateDTO);
-                    }
-                    throw new ArgumentException("La liga a actualizar no existe.");
+                    return await _updateLeague.Execute(actionDTO.League, actionDTO.LeagueID.Value);
 
                 case "delete":
                     if (actionDTO.LeagueID == null)
                         throw new ArgumentException("El ID de la liga es necesario para eliminarla.");
-                    var deleteLeagueId = new LeagueID(actionDTO.LeagueID.Value);
-                    return await _deleteLeague.Execute(deleteLeagueId);
+                    return await _deleteLeague.Execute(new LeagueID(actionDTO.LeagueID.Value));
 
                 default:
                     throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");

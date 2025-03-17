@@ -1,44 +1,45 @@
 ﻿using Application.Leagues.DTOs;
-using Application.Leagues.Mapper;
 using Domain.Entities.Leagues;
 using Domain.Ports.Leagues;
 using Domain.Services.Leagues;
+using Domain.Shared;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Update
 {
     public class UpdateLeague
     {
-        private readonly ILeagueRepository _leagueRepository;
+        private readonly LeagueService _leagueService;
 
-        public UpdateLeague(ILeagueRepository leagueRepository)
+        public UpdateLeague(LeagueService leagueService)
         {
-            _leagueRepository = leagueRepository;
+            _leagueService = leagueService;
         }
 
-        // Ejecuta la actualización de una liga existente
-        public async Task<League> Execute(LeagueRequestDTO leagueDTO)
+        public async Task<LeagueResponseDTO> Execute(LeagueRequestDTO leagueDTO, int leagueId)
         {
-            var existingLeague = await _leagueRepository.GetByNameAsync(leagueDTO.Name);
-            if (existingLeague == null)
-            {
-                throw new InvalidOperationException("La liga no existe. No se puede actualizar.");
-            }
+            if (leagueDTO == null)
+                throw new ArgumentNullException(nameof(leagueDTO), "La liga no puede ser nula.");
 
-            // Si la liga existe, actualizarla
+            var existingLeague = await _leagueService.GetLeagueByIdAsync(new LeagueID(leagueId));
+            if (existingLeague == null)
+                throw new InvalidOperationException("La liga no existe. No se puede actualizar.");
+
             existingLeague.Update(
                 new LeagueName(leagueDTO.Name),
                 leagueDTO.Description,
                 leagueDTO.CreatedAt
             );
 
-            await _leagueRepository.UpdateAsync(existingLeague);
-            return existingLeague;
+            await _leagueService.UpdateLeagueAsync(existingLeague);
+            return new LeagueResponseDTO
+            {
+                LeagueID = existingLeague.LeagueID.Value,
+                Name = existingLeague.Name.Value,
+                Description = existingLeague.Description,
+                CreatedAt = existingLeague.CreatedAt
+            };
         }
     }
-
 }

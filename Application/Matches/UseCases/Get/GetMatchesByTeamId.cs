@@ -1,10 +1,9 @@
 ﻿using Application.Matches.DTOs;
+using Domain.Ports.Matches;
 using Domain.Services.Matches;
 using Domain.Shared;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Matches.UseCases.Get
@@ -18,8 +17,7 @@ namespace Application.Matches.UseCases.Get
             _matchService = matchService;
         }
 
-        // Ejecuta la obtención de partidos para un equipo específico
-        public async Task<IEnumerable<MatchResponseDTO>> Execute(MatchID teamId)
+        public async Task<IEnumerable<MatchResponseDTO>> ExecuteAsync(MatchID teamId)
         {
             var matches = await _matchService.GetMatchesByTeamIdAsync(teamId);
             return matches.Select(match => new MatchResponseDTO

@@ -9,106 +9,44 @@ namespace API.Controllers.Users
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly CreateUserUseCase _createUserUseCase;
-        private readonly GetAllUsersUseCase _getAllUsersUseCase;
-        private readonly GetUserByIdUseCase _getUserByIdUseCase;
-        private readonly UpdateUserUseCase _updateUserUseCase;
-        private readonly DeleteUserUseCase _deleteUserUseCase;
-        private readonly GeneralUserUseCase _generalUserUseCase;
+        private readonly GeneralUserUseCaseHandler _useCaseHandler;
 
-        public UserController(
-            CreateUserUseCase createUserUseCase,
-            GetAllUsersUseCase getAllUsersUseCase,
-            GetUserByIdUseCase getUserByIdUseCase,
-            UpdateUserUseCase updateUserUseCase,
-            DeleteUserUseCase deleteUserUseCase,
-            GeneralUserUseCase generalUserUseCase)
+        public UserController(GeneralUserUseCaseHandler useCaseHandler)
         {
-            _createUserUseCase = createUserUseCase;
-            _getAllUsersUseCase = getAllUsersUseCase;
-            _getUserByIdUseCase = getUserByIdUseCase;
-            _updateUserUseCase = updateUserUseCase;
-            _deleteUserUseCase = deleteUserUseCase;
-            _generalUserUseCase = generalUserUseCase;
+            _useCaseHandler = useCaseHandler;
         }
 
-        /// <summary>
-        /// Create User
-        /// </summary>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        [HttpPost("Crear Usuario")]
-        public async Task<IActionResult> CreateOrUpdateUser([FromBody] UserDTO userDTO)
+        [HttpPost]
+        public async Task<IActionResult> ExecuteUserAction([FromBody] UserActionDTO userDTO)
         {
             if (userDTO == null)
             {
                 return BadRequest("User data is required.");
             }
 
-            var user = await _generalUserUseCase.ExecuteAsync(userDTO);
-
-            return Ok(user);
-        }
-
-        /// <summary>
-        /// Get All Users
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("Recoger Usuarios")]
-        public async Task<IActionResult> GetAllUsers()
-        {
-            var users = await _getAllUsersUseCase.ExecuteAsync();
-            return Ok(users);
-        }
-
-        /// <summary>
-        /// Get User by Id
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        [HttpGet("Recoger Usuario por ID")]
-        public async Task<IActionResult> GetUserById(int userId)
-        {
-            var userDTO = await _getUserByIdUseCase.ExecuteAsync(userId);
-            if (userDTO == null)
+            try
             {
-                return NotFound();
-            }
-            return Ok(userDTO);
-        }
+                var result = await _useCaseHandler.ExecuteAsync(userDTO);
 
-        /// <summary>
-        /// Update User
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        [HttpPut("Actualizar Usuario")]
-        public async Task<IActionResult> UpdateUser(int userId, [FromBody] UserDTO userDTO)
-        {
-            userDTO.UserID = userId;
-            var updatedUser = await _updateUserUseCase.ExecuteAsync(userDTO);
-            if (updatedUser == null)
-            {
-                return NotFound();
-            }
-            return Ok(updatedUser);
-        }
+                if (userDTO.Action.ToLower() == "getall" || userDTO.Action.ToLower() == "getbyid")
+                {
+                    return Ok(result);
+                }
+                else if (userDTO.Action.ToLower() == "add" || userDTO.Action.ToLower() == "update")
+                {
+                    return CreatedAtAction(nameof(ExecuteUserAction), new { action = userDTO.Action }, result);
+                }
+                else if (userDTO.Action.ToLower() == "delete")
+                {
+                    return NoContent();
+                }
 
-        /// <summary>
-        /// Delete User
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        [HttpDelete("Eliminar un usuario")]
-        public async Task<IActionResult> DeleteUser(int userId)
-        {
-            var result = await _deleteUserUseCase.ExecuteAsync(userId);
-            if (!result)
-            {
-                return NotFound();
+                return BadRequest($"Action '{userDTO.Action}' is not supported.");
             }
-            return NoContent();
+            catch (Exception ex)
+            {
+                return BadRequest($"Error: {ex.Message}");
+            }
         }
     }
 }

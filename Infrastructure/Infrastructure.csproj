@@ -10,8 +10,6 @@
     <Folder Include="Persistence\MatchEvents\Repositories\" />
     <Folder Include="Persistence\MatchReferees\Repositories\" />
     <Folder Include="Persistence\Notifications\Repositories\" />
-    <Folder Include="Persistence\PlayerStatistics\Repositories\" />
-    <Folder Include="Persistence\Players\Repositories\" />
     <Folder Include="Persistence\Referees\Repositories\" />
     <Folder Include="Persistence\Standings\Repositories\" />
     <Folder Include="Persistence\TeamLeagues\Repositories\" />

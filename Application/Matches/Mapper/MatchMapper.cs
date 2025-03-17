@@ -4,16 +4,11 @@ using Domain.Enum;
 using Domain.Ports.Teams;
 using Domain.Shared;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Matches.Mapper
 {
     public class MatchMapper
     {
-        // Mapea una entidad Match a un DTO de respuesta
         public MatchResponseDTO MapToDTO(Match match)
         {
             if (match == null)
@@ -31,20 +26,17 @@ namespace Application.Matches.Mapper
             };
         }
 
-        // Método asincrónico para mapear un DTO de solicitud (MatchRequestDTO) a la entidad de dominio
         public async Task<Match> MapToDomainAsync(MatchRequestDTO matchDTO, ITeamRepository teamRepository)
         {
             if (matchDTO == null)
                 throw new ArgumentNullException(nameof(matchDTO), "El DTO MatchRequestDTO no puede ser nulo.");
 
-            // Usamos GetByIdAsync para obtener los equipos, que es un método asincrónico
             var team1 = await teamRepository.GetByIdAsync(new TeamID(matchDTO.Team1ID));
             var team2 = await teamRepository.GetByIdAsync(new TeamID(matchDTO.Team2ID));
 
             if (team1 == null || team2 == null)
                 throw new InvalidOperationException("Uno o ambos equipos no existen.");
 
-            // Convertir el status de string a MatchStatus (enum)
             MatchStatus status;
             try
             {
@@ -66,4 +58,3 @@ namespace Application.Matches.Mapper
         }
     }
 }
-

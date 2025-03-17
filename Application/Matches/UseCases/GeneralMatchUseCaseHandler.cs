@@ -32,67 +32,33 @@ namespace Application.Matches.UseCases
 
         public async Task<object> Execute(MatchActionDTO actionDTO)
         {
-            // Validación inicial de la acción
             if (string.IsNullOrWhiteSpace(actionDTO.Action))
                 throw new ArgumentException("La acción no puede estar vacía.");
 
             switch (actionDTO.Action.ToLower())
             {
                 case "getall":
-                    return await _getAllMatches.Execute();
+                    return await _getAllMatches.ExecuteAsync();
 
                 case "getbyid":
                     if (actionDTO.MatchID == null)
                         throw new ArgumentException("El ID del partido es necesario para obtenerlo.");
-
-                    var matchId = new MatchID(actionDTO.MatchID.Value);
-                    var match = await _getMatchById.Execute(matchId);
-
-                    if (match == null)
-                        throw new ArgumentException("El partido no existe.");
-
-                    return match;
+                    return await _getMatchById.ExecuteAsync(new MatchID(actionDTO.MatchID.Value));
 
                 case "add":
                     if (actionDTO.Match == null)
                         throw new ArgumentException("Los detalles del partido son necesarios para agregarlo.");
-
-                    var matchRequestDTO = actionDTO.Match;
-                    var existingMatchesForAdd = await _getAllMatches.Execute();
-
-                    // Verificar si el partido ya existe
-                    if (existingMatchesForAdd.Any(m => m.MatchID.Value == matchRequestDTO.MatchID))
-                    {
-                        // Si el partido ya existe, se actualiza en lugar de agregarlo
-                        return await _updateMatch.Execute(matchRequestDTO);
-                    }
-                    return await _addMatch.Execute(matchRequestDTO); // Si no existe, lo agregamos
+                    return await _addMatch.Execute(actionDTO.Match);
 
                 case "update":
                     if (actionDTO.Match == null)
                         throw new ArgumentException("Los detalles del partido son necesarios para actualizarlo.");
-
-                    var matchUpdateDTO = actionDTO.Match;
-                    var existingMatchesForUpdate = await _getAllMatches.Execute();
-
-                    // Verificar si el partido existe para actualizar
-                    if (existingMatchesForUpdate.Any(m => m.MatchID.Value == matchUpdateDTO.MatchID))
-                    {
-                        return await _updateMatch.Execute(matchUpdateDTO);
-                    }
-                    throw new ArgumentException("El partido a actualizar no existe.");
+                    return await _updateMatch.Execute(actionDTO.Match);
 
                 case "delete":
                     if (actionDTO.MatchID == null)
                         throw new ArgumentException("El ID del partido es necesario para eliminarlo.");
-
-                    var deleteMatchId = new MatchID(actionDTO.MatchID.Value);
-                    var existingMatchForDelete = await _getMatchById.Execute(deleteMatchId);
-
-                    if (existingMatchForDelete == null)
-                        throw new ArgumentException("El partido a eliminar no existe.");
-
-                    return await _deleteMatch.Execute(deleteMatchId);
+                    return await _deleteMatch.Execute(new MatchID(actionDTO.MatchID.Value));
 
                 default:
                     throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");

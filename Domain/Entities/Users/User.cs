@@ -26,6 +26,13 @@ namespace Domain.Entities.Users
             Notifications = new List<Notification>();
         }
 
+        public void Update(UserFullName fullName, UserEmail email, UserPasswordHash passwordHash)
+        {
+            FullName = fullName ?? FullName;
+            Email = new UserEmail(email.Value);
+            PasswordHash = passwordHash ?? PasswordHash;
+        }
+
         public User() => Notifications = new List<Notification>();
 
         public void UpdateFullName(string fullName)

@@ -27,10 +27,9 @@ namespace API.Controllers.MatchController
 
                 if (actionDTO.Action.ToLower() == "getall" || actionDTO.Action.ToLower() == "getbyid")
                 {
-                    return Ok(result);  
+                    return Ok(result);
                 }
 
-                
                 return CreatedAtAction(nameof(ExecuteMatchAction), new { action = actionDTO.Action }, result);
             }
             catch (Exception ex)
@@ -40,4 +39,3 @@ namespace API.Controllers.MatchController
         }
     }
 }
-

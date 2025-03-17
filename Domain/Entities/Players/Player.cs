@@ -36,6 +36,17 @@ namespace Domain.Entities.Players
             PlayerStatistics = new List<PlayerStatistic>();
         }
 
+        public void Update(PlayerName name, TeamID teamID, PlayerPosition position, DateTime createdAt)
+        {
+            if (name == null)
+                throw new ArgumentNullException(nameof(name), "El nombre del jugador no puede ser nulo.");
 
+            Name = name;
+            TeamID = teamID;
+            Position = position;
+            CreatedAt = createdAt;
+        }
+
+        public string GetName() => Name.Value;
     }
 }

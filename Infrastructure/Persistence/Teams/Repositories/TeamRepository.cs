@@ -37,7 +37,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 return dbTeams.Select(dbTeam =>
                 {
                     var coachEntity = dbCoaches.FirstOrDefault(c => c.UserID == dbTeam.CoachID);
-                    return TeamMapper.ToDomain(dbTeam, coachEntity); // Se usa directamente el método estático
+                    return TeamMapper.ToDomain(dbTeam, coachEntity); 
                 }).ToList();
             }
             catch (Exception ex)
@@ -67,7 +67,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 var coachEntity = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserID == dbTeam.CoachID);
 
-                return TeamMapper.ToDomain(dbTeam, coachEntity); // Se usa directamente el método estático
+                return TeamMapper.ToDomain(dbTeam, coachEntity); 
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                var teamEntity = TeamMapper.ToEntity(team); // Se usa directamente el método estático
+                var teamEntity = TeamMapper.ToEntity(team); 
 
                 string insertSql = @"INSERT INTO Teams (Name, CoachID, CreatedAt, Logo) 
                                      VALUES (@Name, @CoachID, @CreatedAt, @Logo);";
@@ -126,7 +126,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                var teamEntity = TeamMapper.ToEntity(team); // Se usa directamente el método estático
+                var teamEntity = TeamMapper.ToEntity(team);
 
                 string updateSql = @"UPDATE Teams 
                                      SET Name = @Name, CoachID = @CoachID, CreatedAt = @CreatedAt, Logo = @Logo

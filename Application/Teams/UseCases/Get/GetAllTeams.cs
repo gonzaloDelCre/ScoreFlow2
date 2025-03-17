@@ -1,7 +1,6 @@
 ﻿using Application.Teams.DTOs;
 using Domain.Ports.Teams;
 using Domain.Services.Teams;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,24 +15,16 @@ namespace Application.Teams.UseCases.Get
             _teamService = teamService;
         }
 
-        // Ejecuta la obtención de todos los equipos
-        public async Task<IEnumerable<TeamResponseDTO>> Execute()
+        public async Task<IEnumerable<TeamResponseDTO>> ExecuteAsync()
         {
             var teams = await _teamService.GetAllTeamsAsync();
-            var result = new List<TeamResponseDTO>();
-
-            foreach (var team in teams)
+            return teams.Select(team => new TeamResponseDTO
             {
-                result.Add(new TeamResponseDTO
-                {
-                    TeamID = team.TeamID.Value,
-                    TeamName = team.Name.Value,  // Accedemos al valor de TeamName
-                    LogoUrl = team.Logo,         // Accedemos al logo
-                    CreatedAt = team.CreatedAt
-                });
-            }
-
-            return result;
+                TeamID = team.TeamID.Value,
+                TeamName = team.Name.Value,
+                LogoUrl = team.Logo,
+                CreatedAt = team.CreatedAt
+            });
         }
     }
 }

@@ -1,11 +1,8 @@
 ﻿using Application.Matches.DTOs;
-using Application.Matches.Mapper;
 using Domain.Ports.Matches;
 using Domain.Services.Matches;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Matches.UseCases.Get
@@ -19,8 +16,7 @@ namespace Application.Matches.UseCases.Get
             _matchService = matchService;
         }
 
-        // Ejecuta la obtención de todos los partidos
-        public async Task<IEnumerable<MatchResponseDTO>> Execute()
+        public async Task<IEnumerable<MatchResponseDTO>> ExecuteAsync()
         {
             var matches = await _matchService.GetAllMatchesAsync();
             return matches.Select(match => new MatchResponseDTO
@@ -29,7 +25,7 @@ namespace Application.Matches.UseCases.Get
                 Team1 = match.Team1,
                 Team2 = match.Team2,
                 MatchDate = match.MatchDate,
-                Status = match.Status.ToString(), // Convierte el enum a string si es necesario
+                Status = match.Status.ToString(),
                 Location = match.Location,
                 CreatedAt = match.CreatedAt
             });

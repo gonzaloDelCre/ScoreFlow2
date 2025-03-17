@@ -7,7 +7,6 @@ namespace Infrastructure.Persistence.Users.Mapper
 {
     public class UserMapper
     {
-        // Transform User domain to UserEntity persistence
         public UserEntity MapToEntity(User user)
         {
             return new UserEntity
@@ -21,7 +20,6 @@ namespace Infrastructure.Persistence.Users.Mapper
             };
         }
 
-        // Transform UserEntity persistence to User domain
         public User MapToDomain(UserEntity entity)
         {
             return new User(

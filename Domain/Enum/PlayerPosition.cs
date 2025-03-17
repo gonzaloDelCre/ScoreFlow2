@@ -2,9 +2,11 @@
 {
     public enum PlayerPosition
     {
-        Forward,
-        Midfielder,
-        Defender,
-        Goalkeeper
+        Portero,
+        LD,
+        LI,
+        EI,
+        ED,
+        Pivote
     }
 }

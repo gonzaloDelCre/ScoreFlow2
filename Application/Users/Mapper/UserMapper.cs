@@ -2,36 +2,42 @@
 using Domain.Entities.Users;
 using Domain.Enum;
 using Domain.Shared;
+using System;
 
 namespace Application.Users.Mapper
 {
     public static class UserMapper
     {
-        //Transform UserDTO to User domain
-        public static User ToDomain(UserDTO userDTO)
+        public static User ToDomain(UserRequestDTO userDTO)
         {
+            if (userDTO == null)
+                throw new ArgumentNullException(nameof(userDTO), "El DTO UserRequestDTO no puede ser nulo.");
+
+            var role = Enum.TryParse(userDTO.Role, out UserRole parsedRole) ? parsedRole : UserRole.Espectador;
+
             return new User(
-                new UserID(userDTO.UserID),
+                new UserID(0),
                 new UserFullName(userDTO.FullName),
                 new UserEmail(userDTO.Email),
                 new UserPasswordHash(userDTO.PasswordHash),
-                Enum.Parse<UserRole>(userDTO.Role), 
-                DateTime.Now
+                role,
+                DateTime.UtcNow
             );
         }
 
-        //Transform User domain to UserDTO
-        public static UserDTO ToDTO(User user)
+        public static UserResponseDTO ToResponseDTO(User user)
         {
-            return new UserDTO
+            if (user == null)
+                throw new ArgumentNullException(nameof(user), "La entidad User no puede ser nula.");
+
+            return new UserResponseDTO
             {
                 UserID = user.UserID.Value,
                 FullName = user.FullName.Value,
                 Email = user.Email.Value,
-                PasswordHash = user.PasswordHash.Value,
-                Role = user.Role.ToString() 
+                Role = user.Role.ToString(),
+                CreatedAt = user.CreatedAt
             };
         }
     }
-
 }

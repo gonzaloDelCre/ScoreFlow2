@@ -22,9 +22,6 @@ namespace Infrastructure.Persistence.Users.Repositories
             _mapper = mapper;
         }
 
-        /// <summary>
-        /// Get All Users
-        /// </summary>
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             try
@@ -42,12 +39,6 @@ namespace Infrastructure.Persistence.Users.Repositories
                 return new List<User>();
             }
         }
-
-        /// <summary>
-        /// Get User By Id
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
         public async Task<User?> GetByIdAsync(UserID userId)
         {
             try
@@ -69,12 +60,6 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-        /// <summary>
-        /// Create User
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
         public async Task<User> AddAsync(User user)
         {
             if (user == null)
@@ -122,11 +107,6 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-        /// <summary>
-        /// Delete User By ID
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
         public async Task<bool> DeleteAsync(UserID userId)
         {
             try
@@ -144,12 +124,6 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-        /// <summary>
-        /// Update User
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
         public async Task UpdateAsync(User user)
         {
             if (user == null)

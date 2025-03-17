@@ -16,24 +16,19 @@ namespace Application.Teams.UseCases.Get
             _teamService = teamService;
         }
 
-        // Ejecuta la obtención de un equipo por su ID
-        public async Task<TeamResponseDTO?> Execute(TeamID teamId)
+        public async Task<TeamResponseDTO?> ExecuteAsync(TeamID teamId)
         {
-            // Verificamos si el ID es válido (por ejemplo, si el TeamID tiene un valor)
             if (teamId == null)
-                throw new ArgumentException("El ID del equipo no puede ser nulo");
+                throw new ArgumentException("El ID del equipo no puede ser nulo.");
 
             var team = await _teamService.GetTeamByIdAsync(teamId);
-            if (team == null)
-                return null;
-
-            return new TeamResponseDTO
+            return team != null ? new TeamResponseDTO
             {
                 TeamID = team.TeamID.Value,
-                TeamName = team.Name.Value,  // Accedemos al valor de TeamName
-                LogoUrl = team.Logo,         // Accedemos al logo
+                TeamName = team.Name.Value,
+                LogoUrl = team.Logo,
                 CreatedAt = team.CreatedAt
-            };
+            } : null;
         }
     }
 }

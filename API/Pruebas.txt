@@ -1,9 +1,223 @@
+
 {
-  "userID": 2,
-  "fullName": "Ana García",
-  "email": "ana.garcia@example.com",
-  "passwordHash": "hashed_password_5678",
-  "role": "User",
-  "createdAt": "2025-03-13T10:30:12.345Z"
+  "action": "getall"
 }
+
+
 usuario
+crear
+{
+  "action": "add",
+  "user": {
+    "userID": 0,
+    "fullName": "John Doe",
+    "email": "johndoe@example.com",
+    "passwordHash": "hashed-password",
+    "role": "Admin"
+  }
+}
+update
+{
+  "action": "update",
+  "userID": 1,
+  "user": {
+    "userID": 1,
+    "fullName": "John Doe Updated",
+    "email": "john.doe.updated@example.com",
+    "passwordHash": "new-hashed-password",
+    "role": "User"
+  }
+}
+delete
+{
+  "action": "delete",
+  "userID": 1
+}
+obtener por id
+{
+  "action": "getbyid",
+  "userID": 1
+}
+
+
+league
+crear 
+{
+  "action": "add", 
+  "league": {
+    "name": "Premier League2", 
+    "description": "La liga más competitiva", 
+    "createdAt": "2025-03-17T09:26:22.945Z"
+  }
+}
+update
+{
+  "action": "update",
+  "leagueID": 1,
+  "league": {
+    "name": "Updated Premier League",
+    "description": "La liga más competitiva, ahora mejorada",
+    "createdAt": "2025-03-17T09:26:22.945Z"
+  }
+}
+delete
+{
+  "action": "delete",
+  "leagueID": 1
+}
+
+obtener liga por id 
+{
+  "action": "getbyid",
+  "leagueID": 1
+}
+
+
+match
+crear
+{
+  "action": "add",
+  "match": {
+    "matchID": 0,
+    "team1ID": 1,
+    "team2ID": 2,
+    "matchDate": "2025-03-17T09:26:46.658Z",
+    "status": "Scheduled",
+    "location": "Stadium A"
+  }
+}
+update 
+{
+  "action": "update",
+  "matchID": 1,
+  "match": {
+    "matchID": 1,
+    "team1ID": 1,
+    "team2ID": 2,
+    "matchDate": "2025-03-18T09:26:46.658Z",
+    "status": "Updated",
+    "location": "Stadium B"
+  }
+}
+delete
+{
+  "action": "delete",
+  "matchID": 1
+}
+obtener por id 
+{
+  "action": "getbyid",
+  "matchID": {
+    "value": 1
+  }
+}
+
+
+Equipo
+crear 
+{
+  "action": "add",
+  "team": {
+    "teamID": 0,
+    "name": "Team A",
+    "coachID": 1,
+    "logo": "url-to-logo"
+  }
+}
+update
+{
+  "action": "update",
+  "teamID": 1,
+  "team": {
+    "teamID": 1,
+    "name": "Updated Team A",
+    "coachID": 1,
+    "logo": "updated-url-to-logo"
+  }
+}
+delete
+{
+  "action": "delete",
+  "teamID": 1
+}
+obtener por id 
+{
+  "action": "getbyid",
+  "teamID": 1
+}
+
+player
+create 
+{
+  "action": "add",
+  "player": {
+    "name": "John Doe",
+    "position": "LI",
+    "teamID": 1,   
+    "createdAt": "2025-03-17T00:00:00"
+  }
+}
+update
+{
+  "action": "update",
+  "playerID": 1,
+  "player": {
+    "name": "John Smith",
+    "position": "Pivote",
+    "teamID": 2,  
+    "createdAt": "2025-03-17T00:00:00"
+  }
+}
+delete
+{
+  "action": "delete",
+  "playerID": 1
+}
+obtener por id
+{
+  "action": "getbyid",
+  "playerID": 1
+}
+
+
+PlayerStatistic
+crear
+{
+  "action": "add",
+  "playerStatistics": {
+    "PlayerID": 1,
+    "MatchID": 1,
+    "Goals": 2,
+    "Assists": 1,
+    "YellowCards": 0,
+    "RedCards": 0,
+    "MinutesPlayed": 90,
+    "CreatedAt": "2025-03-17T12:00:00Z"
+  }
+}
+update
+{
+  "action": "update",
+  "playerStatisticsID": 1,
+  "playerStatistics": {
+    "PlayerID": 1,
+    "MatchID": 1,
+    "Goals": 3,
+    "Assists": 1,
+    "YellowCards": 0,
+    "RedCards": 0,
+    "MinutesPlayed": 90,
+    "CreatedAt": "2025-03-17T12:00:00Z"
+  }
+}
+delete
+{
+  "action": "delete",
+  "playerStatisticsID": 1
+}
+obtener por id
+{
+  "action": "getbyid",
+  "playerStatisticsID": 1
+}
+

@@ -30,10 +30,10 @@ namespace Domain.Entities.Teams
         public void Update(TeamName name, string logo)
         {
             if (name != null)
-                Name = name; // Actualizamos el nombre
+                Name = name; 
 
             if (!string.IsNullOrWhiteSpace(logo))
-                Logo = logo; // Actualizamos el logo
+                Logo = logo;
         }
     }
 

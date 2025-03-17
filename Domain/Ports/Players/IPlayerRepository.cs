@@ -12,6 +12,7 @@ namespace Domain.Ports.Players
         Task<Player?> GetByIdAsync(int playerId);
         Task<IEnumerable<Player>> GetAllAsync();
         Task<IEnumerable<Player>> GetByTeamIdAsync(int teamId);
+        Task<Player?> GetByNameAsync(string playerName);
         Task<Player> AddAsync(Player player);
         Task UpdateAsync(Player player);
         Task<bool> DeleteAsync(int playerId);
