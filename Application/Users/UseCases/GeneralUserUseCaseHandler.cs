@@ -17,6 +17,7 @@ namespace Application.Users.UseCases
         private readonly DeleteUserUseCase _deleteUser;
         private readonly GetAllUsersUseCase _getAllUsers;
         private readonly GetUserByEmailUseCase _getUserByEmail;
+        private readonly LoginUserUseCase _loginUser; 
 
         public GeneralUserUseCaseHandler(
             GetUserByIdUseCase getUserById,
@@ -24,7 +25,8 @@ namespace Application.Users.UseCases
             UpdateUserUseCase updateUser,
             DeleteUserUseCase deleteUser,
             GetAllUsersUseCase getAllUsers,
-            GetUserByEmailUseCase getUserByEmail)
+            GetUserByEmailUseCase getUserByEmail,
+            LoginUserUseCase loginUser) 
         {
             _getUserById = getUserById;
             _createUser = createUser;
@@ -32,47 +34,28 @@ namespace Application.Users.UseCases
             _deleteUser = deleteUser;
             _getAllUsers = getAllUsers;
             _getUserByEmail = getUserByEmail;
+            _loginUser = loginUser; 
         }
 
-        public async Task<object> ExecuteAsync(UserActionDTO actionDTO)
+        public async Task<object> GetAllUsersAsync() => await _getAllUsers.ExecuteAsync();
+
+        public async Task<UserResponseDTO> GetUserByIdAsync(int id) => await _getUserById.ExecuteAsync(id);
+
+        public async Task<UserResponseDTO> GetUserByEmailAsync(string email) => await _getUserByEmail.ExecuteAsync(email);
+
+        public async Task<UserResponseDTO> CreateUserAsync(UserRequestDTO userDTO) => await _createUser.ExecuteAsync(userDTO);
+
+        public async Task<object> UpdateUserAsync(int id, UserRequestDTO userDTO)
         {
-            if (string.IsNullOrWhiteSpace(actionDTO.Action))
-                throw new ArgumentException("La acción no puede estar vacía.");
-
-            switch (actionDTO.Action.ToLower())
-            {
-                case "getall":
-                    return await _getAllUsers.ExecuteAsync();
-
-                case "getbyid":
-                    if (actionDTO.UserID == null)
-                        throw new ArgumentException("El ID del usuario es necesario para obtenerlo.");
-                    return await _getUserById.ExecuteAsync(actionDTO.UserID.Value);
-
-                case "getbyemail":
-                    if (actionDTO.User?.Email == null)
-                        throw new ArgumentException("El correo electrónico es necesario para obtener al usuario.");
-                    return await _getUserByEmail.ExecuteAsync(actionDTO.User.Email);
-
-                case "add":
-                    if (actionDTO.User == null)
-                        throw new ArgumentException("Los detalles del usuario son necesarios para agregarlo.");
-                    return await _createUser.ExecuteAsync(actionDTO.User);
-
-                case "update":
-                    if (actionDTO.User == null)
-                        throw new ArgumentException("Los detalles del usuario son necesarios para actualizarlo.");
-                    return await _updateUser.ExecuteAsync(actionDTO.User);
-
-                case "delete":
-                    if (actionDTO.UserID == null)
-                        throw new ArgumentException("El ID del usuario es necesario para eliminarlo.");
-                    return await _deleteUser.ExecuteAsync(new UserID(actionDTO.UserID.Value));
-
-                default:
-                    throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");
-            }
+            userDTO.UserID = id;
+            return await _updateUser.ExecuteAsync(userDTO);
         }
 
+        public async Task DeleteUserAsync(int id) => await _deleteUser.ExecuteAsync(new UserID(id));
+
+        public async Task<UserResponseDTO> LoginUserAsync(string email, string password)
+        {
+            return await _loginUser.ExecuteAsync(email, password);
+        }
     }
 }

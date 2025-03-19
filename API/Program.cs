@@ -57,9 +57,17 @@ using Domain.Entities.PlayerStatistics;
 using Domain.Services.PlayerStatistics;
 using Domain.Ports.PlayerStatistics;
 using Infrastructure.Persistence.PlayerStatistics.Repositories;
+using Amazon.Lambda.AspNetCoreServer;
+using Microsoft.OpenApi.Models;
+using API;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+var apiGatewayUrl = builder.Configuration.GetValue<string>("ApiGateway:BaseUrl");
+var apiEndpoints = builder.Configuration.GetSection("ApiGateway:Endpoints").Get<Dictionary<string, string>>();
+builder.Services.AddHttpClient<ApiGatewayService>();
+builder.Services.AddScoped<ApiGatewayService>();
 
 // Obtener la cadena de conexión desde el archivo de configuración
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -104,6 +112,7 @@ builder.Services.AddScoped<GetAllUsersUseCase>();
 builder.Services.AddScoped<GetUserByIdUseCase>();
 builder.Services.AddScoped<GetUserByEmailUseCase>();
 builder.Services.AddScoped<DeleteUserUseCase>();
+builder.Services.AddScoped<LoginUserUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
 // Registrar casos de uso de Leagues
@@ -149,12 +158,17 @@ builder.Services.AddScoped<GeneralPlayerStatisticsUseCaseHandler>();
 
 // Configuración de Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ScoreFlow API", Version = "v1" });
+});
 
 // Registrar otros servicios necesarios
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
 
 var app = builder.Build();
 
@@ -169,7 +183,11 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ScoreFlow API V1");
+        c.RoutePrefix = string.Empty; 
+    });
 }
 
 app.UseHttpsRedirection();
