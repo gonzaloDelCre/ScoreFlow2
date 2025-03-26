@@ -61,6 +61,7 @@ using Amazon.Lambda.AspNetCoreServer;
 using Microsoft.OpenApi.Models;
 using API;
 using Application.Users.UseCases.Access;
+using System.Net;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,6 +71,14 @@ var apiEndpoints = builder.Configuration.GetSection("ApiGateway:Endpoints").Get<
 
 // Obtener la cadena de conexión desde el archivo de configuración
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 80);  // Escuchar en todas las interfaces en el puerto 80
+});
+
+builder.Services.AddTransient<RegisterUserUseCase>();
+builder.Services.AddTransient<GeneralUserUseCaseHandler>();
 
 // Configurar el contexto de la base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
