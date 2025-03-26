@@ -8,7 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copiar el archivo de proyecto y restaurar dependencias
-COPY API.csproj ./API/
+COPY API/API.csproj ./API/
 RUN dotnet restore "./API/API.csproj"
 
 # Copiar el resto de la aplicación y construirla
