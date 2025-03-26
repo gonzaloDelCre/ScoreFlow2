@@ -77,8 +77,8 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Listen(IPAddress.Any, 8080);  // Cambiar a 8080 si es necesario
 });
 
-builder.Services.AddTransient<RegisterUserUseCase>();
-builder.Services.AddTransient<GeneralUserUseCaseHandler>();
+builder.Services.AddScoped<RegisterUserUseCase>();
+builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
 // Configurar el contexto de la base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
