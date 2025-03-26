@@ -9,7 +9,7 @@ WORKDIR /src
 
 # Copiar el archivo de proyecto y restaurar dependencias
 COPY API.csproj ./API/
-RUN dotnet restore "API/API.csproj"
+RUN dotnet restore "./API/API.csproj"
 
 # Copiar el resto de la aplicación y construirla
 COPY . .
