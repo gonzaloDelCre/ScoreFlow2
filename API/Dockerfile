@@ -1,27 +1,45 @@
-# Usar una imagen base de .NET 8 SDK para la construcción de la aplicación
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 80
-
-# Usar una imagen base de .NET SDK para compilar la aplicación
+# Fase de construcción: Usamos el SDK de .NET para restaurar y compilar la solución completa
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+# Instalar los workloads necesarios para MAUI
+RUN dotnet workload install maui-android
+
+# Establecer el directorio de trabajo
 WORKDIR /src
 
-# Copiar el archivo de proyecto y restaurar dependencias
+# Copiar el archivo de solución
+COPY ScoreFlow2.sln ./
+
+# Copiar los archivos .csproj de cada proyecto que forma parte de la solución
 COPY API/API.csproj ./API/
-RUN dotnet restore "./API/API.csproj"
+COPY App/App.csproj ./App/
+COPY AppMovil/AppMovil.csproj ./AppMovil/
+COPY Application/Application.csproj ./Application/
+COPY Domain/Domain.csproj ./Domain/
+COPY Infrastructure/Infrastructure.csproj ./Infrastructure/
 
-# Copiar el resto de la aplicación y construirla
-COPY . .
-WORKDIR "/src/API"
-RUN dotnet build "API.csproj" -c Release -o /app/build
+# Restaurar las dependencias para toda la solución
+RUN dotnet restore ScoreFlow2.sln
 
-# Publicar la aplicación
+# Copiar todo el contenido de la solución
+COPY . ./
+
+# Compilar el proyecto API (que será el entry point de la aplicación)
+WORKDIR /src/API
+RUN dotnet build -c Release -o /app/build
+
+# Publicar la aplicación (para obtener la versión optimizada)
 FROM build AS publish
-RUN dotnet publish "API.csproj" -c Release -o /app/publish
+WORKDIR /src/API
+RUN dotnet publish -c Release -o /app/publish
 
-# Generar la imagen final desde la imagen base
-FROM base AS final
+# Imagen final: Usamos una imagen base más ligera para ejecutar la aplicación
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Exponer el puerto 80 para la API
+EXPOSE 80
+
+# Definir el comando de entrada (asumiendo que la aplicación API genera API.dll)
 ENTRYPOINT ["dotnet", "API.dll"]
