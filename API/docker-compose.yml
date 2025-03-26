@@ -7,7 +7,7 @@ services:
     container_name: scoreflow-api
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile  
     ports:
       - "5000:5000" 
       - "5001:5001" 
