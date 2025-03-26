@@ -74,7 +74,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Listen(IPAddress.Any, 80);  // Escuchar en todas las interfaces en el puerto 80
+    options.Listen(IPAddress.Any, 8080);  // Cambiar a 8080 si es necesario
 });
 
 builder.Services.AddTransient<RegisterUserUseCase>();
