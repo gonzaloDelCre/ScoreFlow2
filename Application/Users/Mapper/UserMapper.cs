@@ -27,9 +27,6 @@ namespace Application.Users.Mapper
 
         public static UserResponseDTO ToResponseDTO(User user)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user), "La entidad User no puede ser nula.");
-
             return new UserResponseDTO
             {
                 UserID = user.UserID.Value,

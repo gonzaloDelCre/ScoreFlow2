@@ -1,4 +1,5 @@
 ﻿using Application.Users.DTOs;
+using Application.Users.UseCases.Access;
 using Application.Users.UseCases.Create;
 using Application.Users.UseCases.Delete;
 using Application.Users.UseCases.Get;
@@ -17,7 +18,8 @@ namespace Application.Users.UseCases
         private readonly DeleteUserUseCase _deleteUser;
         private readonly GetAllUsersUseCase _getAllUsers;
         private readonly GetUserByEmailUseCase _getUserByEmail;
-        private readonly LoginUserUseCase _loginUser; 
+        private readonly LoginUserUseCase _loginUser;
+        private readonly RegisterUserUseCase _registerUser;
 
         public GeneralUserUseCaseHandler(
             GetUserByIdUseCase getUserById,
@@ -26,7 +28,8 @@ namespace Application.Users.UseCases
             DeleteUserUseCase deleteUser,
             GetAllUsersUseCase getAllUsers,
             GetUserByEmailUseCase getUserByEmail,
-            LoginUserUseCase loginUser) 
+            LoginUserUseCase loginUser,
+            RegisterUserUseCase registerUser)
         {
             _getUserById = getUserById;
             _createUser = createUser;
@@ -34,7 +37,8 @@ namespace Application.Users.UseCases
             _deleteUser = deleteUser;
             _getAllUsers = getAllUsers;
             _getUserByEmail = getUserByEmail;
-            _loginUser = loginUser; 
+            _loginUser = loginUser;
+            _registerUser = registerUser;
         }
 
         public async Task<object> GetAllUsersAsync() => await _getAllUsers.ExecuteAsync();
@@ -56,6 +60,11 @@ namespace Application.Users.UseCases
         public async Task<UserResponseDTO> LoginUserAsync(string email, string password)
         {
             return await _loginUser.ExecuteAsync(email, password);
+        }
+
+        public async Task<UserResponseDTO> RegisterUserAsync(RegisterRequestDTO registerRequest)
+        {
+            return await _registerUser.ExecuteAsync(registerRequest);
         }
     }
 }

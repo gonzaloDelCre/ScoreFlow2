@@ -6,6 +6,10 @@ namespace Domain.Entities.Users
 {
     public class User
     {
+        private int userID;
+        private string fullName;
+        private string email;
+
         public UserID UserID { get; private set; }
         public UserFullName FullName { get; private set; }
         public UserEmail Email { get; private set; }
@@ -26,6 +30,13 @@ namespace Domain.Entities.Users
             Notifications = new List<Notification>();
         }
 
+        public User(UserID userID, UserFullName fullName, UserEmail email)
+        {
+            UserID = userID;
+            FullName = fullName;
+            Email = email;
+        }
+
         public void Update(UserFullName fullName, UserEmail email, UserPasswordHash passwordHash)
         {
             FullName = fullName ?? FullName;
@@ -35,6 +46,13 @@ namespace Domain.Entities.Users
 
         public User() => Notifications = new List<Notification>();
 
+        public User(int userID, string fullName, string email)
+        {
+            this.userID = userID;
+            this.fullName = fullName;
+            this.email = email;
+        }
+
         public void UpdateFullName(string fullName)
         {
             FullName = new UserFullName(fullName);
@@ -43,6 +61,13 @@ namespace Domain.Entities.Users
         public void UpdatePasswordHash(string passwordHash)
         {
             PasswordHash = new UserPasswordHash(passwordHash);
+        }
+        public User(string fullName, string email, string passwordHash, UserRole role)
+        {
+            this.userID = userID;
+            this.fullName = fullName;
+            this.email = email;
+            Role = role;
         }
     }
 }

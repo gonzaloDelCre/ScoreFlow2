@@ -60,21 +60,20 @@ using Infrastructure.Persistence.PlayerStatistics.Repositories;
 using Amazon.Lambda.AspNetCoreServer;
 using Microsoft.OpenApi.Models;
 using API;
+using Application.Users.UseCases.Access;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 var apiGatewayUrl = builder.Configuration.GetValue<string>("ApiGateway:BaseUrl");
 var apiEndpoints = builder.Configuration.GetSection("ApiGateway:Endpoints").Get<Dictionary<string, string>>();
-builder.Services.AddHttpClient<ApiGatewayService>();
-builder.Services.AddScoped<ApiGatewayService>();
 
 // Obtener la cadena de conexión desde el archivo de configuración
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Configurar el contexto de la base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Registrar los mappers
 builder.Services.AddScoped<UserMapper>();

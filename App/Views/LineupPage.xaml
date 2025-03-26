@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="App.Views.LineupPage"
+             xmlns:vm="clr-namespace:App.ViewModels"
+             Title="LineupPage">
+    <ContentPage.BindingContext>
+        <vm:LineupViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid RowDefinitions="Auto, *" ColumnDefinitions="*" Padding="10">
+
+        <!-- Imagen de fondo (cancha de balonmano) -->
+        <Image Source="cancha_balonmano.png" Aspect="AspectFill" Grid.Row="1" />
+
+        <!-- Posiciones de los jugadores -->
+        <Grid Grid.Row="1" Padding="10">
+            <!-- FILA DELANTERA (3 jugadores) -->
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="0" 
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="0" Grid.Column="1"/>
+
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="1"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="0" Grid.Column="2"/>
+
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="2"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="0" Grid.Column="3"/>
+
+            <!-- FILA MEDIA (1 jugador) -->
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="3"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="1" Grid.Column="2"/>
+
+            <!-- FILA DEFENSIVA (2 jugadores) -->
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="4"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="2" Grid.Column="1"/>
+
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="5"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="2" Grid.Column="3"/>
+
+            <!-- PORTERO -->
+            <Button Text="+" Command="{Binding SelectPositionCommand}" CommandParameter="6"
+                    BackgroundColor="Transparent" WidthRequest="50" HeightRequest="50"
+                    Grid.Row="3" Grid.Column="2"/>
+        </Grid>
+
+    </Grid>
+</ContentPage>

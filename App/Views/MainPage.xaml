@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="App.Views.MainPage">
+
+    <StackLayout Padding="30" Spacing="25" VerticalOptions="Center">
+        <!-- Título -->
+        <Label Text="Bienvenido"
+               FontSize="32"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"
+               VerticalOptions="CenterAndExpand" />
+
+        <!-- Botón de Login -->
+        <Button Text="Iniciar sesión"
+                BackgroundColor="#3B9E9D"
+                TextColor="White"
+                CornerRadius="25"
+                Padding="15"
+                FontSize="18"
+                Command="{Binding LoginCommand}" />
+
+        <!-- Botón de Register -->
+        <Button Text="Crear cuenta"
+                BackgroundColor="#3B9E9D"
+                TextColor="White"
+                CornerRadius="25"
+                Padding="15"
+                FontSize="18"
+                Command="{Binding RegisterCommand}" />
+        <Label HorizontalTextAlignment="Center" Margin="0,25">
+            <Label.FormattedText>
+                <FormattedString>
+                    <Span Text="Have an account? "/>
+                    <Span Text="Sign In" TextDecorations="Underline"/>
+                </FormattedString>
+            </Label.FormattedText>
+        </Label>
+        <Label HorizontalTextAlignment="Center" TextColor="#939599">
+            <Label.FormattedText>
+                <FormattedString>
+                    <Span Text="By using this app you agree to our &#10; &#10;"/>
+                    <Span Text="Terms " TextDecorations="Underline"/>
+                    <Span Text="&amp; "/>
+                    <Span Text="Conditions " TextDecorations="Underline"/>
+                </FormattedString>
+            </Label.FormattedText>
+        </Label>
+    </StackLayout>
+
+</ContentPage>
