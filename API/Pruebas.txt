@@ -2,7 +2,7 @@
 {
   "action": "getall"
 }
-
+1
 
 usuario
 crear
