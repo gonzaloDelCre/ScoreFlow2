@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System.IO;
 
 namespace Infrastructure.Persistence.Conection
@@ -19,6 +20,8 @@ namespace Infrastructure.Persistence.Conection
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
+            optionsBuilder.UseSqlServer(connectionString, sqlServerOptions =>
+                        sqlServerOptions.EnableRetryOnFailure());
 
             optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("Infrastructure"));
 
