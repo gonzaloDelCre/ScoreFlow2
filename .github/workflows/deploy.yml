@@ -39,9 +39,10 @@ jobs:
       # 5. Conectar a EC2 y desplegar la aplicación con Docker
       - name: Deploy app on EC2
         run: |
-          ssh -i private_key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ec2-user@<EC2_PUBLIC_IP> << 'EOF'
             cd /home/ec2-user/ScoreFlow2/API
             docker-compose up -d --build
-          EOF
+          EOF  
         env:
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+
