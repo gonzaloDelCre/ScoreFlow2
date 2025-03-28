@@ -34,13 +34,13 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i mi_clave_ec2 -r . ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/ScoreFlow2
 
-      # 5. Conectar a EC2 y desplegar la aplicación con Docker
+      # 5. Conectar a EC2 y desplegar la aplicación con Docker Compose
       - name: Deploy app on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mi_clave_ec2 ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             cd /home/ec2-user/ScoreFlow2/API
-            docker compose down  # Apagar contenedores previos
-            docker compose up -d --build  # Levantar con nueva versión
+            docker-compose down  # Apagar contenedores previos
+            docker-compose up -d --build  # Levantar con nueva versión
             exit
           EOF  
         env:
