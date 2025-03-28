@@ -23,14 +23,20 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
 
-      # 3. Copiar el código a la instancia EC2
+      # 3. Agregar la clave SSH de EC2 al archivo known_hosts
+      - name: Add EC2 to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_PUBLIC_IP }} >> ~/.ssh/known_hosts
+
+      # 4. Copiar el código a la instancia EC2
       - name: Copy code to EC2
         run: |
           scp -i private_key.pem -r . ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/ScoreFlow2
         env:
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
 
-      # 4. Conectar a EC2 y desplegar la aplicación con Docker
+      # 5. Conectar a EC2 y desplegar la aplicación con Docker
       - name: Deploy app on EC2
         run: |
           ssh -i private_key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
