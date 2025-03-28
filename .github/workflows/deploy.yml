@@ -32,14 +32,16 @@ jobs:
       # 4. Copiar el código a la instancia EC2
       - name: Copy code to EC2
         run: |
-          scp -v -i mi_clave_ec2 -r . ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/ScoreFlow2
+          scp -o StrictHostKeyChecking=no -i mi_clave_ec2 -r . ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/ScoreFlow2
 
       # 5. Conectar a EC2 y desplegar la aplicación con Docker
       - name: Deploy app on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i mi_clave_ec2 ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             cd /home/ec2-user/ScoreFlow2/API
-            docker-compose up -d --build
+            docker compose down  # Apagar contenedores previos
+            docker compose up -d --build  # Levantar con nueva versión
+            exit
           EOF  
         env:
-          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}  
