@@ -39,7 +39,7 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 
 # Exponer el puerto 80 para la API
-EXPOSE 80
+EXPOSE 8080
 
 # Definir el comando de entrada (asumiendo que la aplicación API genera API.dll)
 ENTRYPOINT ["dotnet", "API.dll"]
