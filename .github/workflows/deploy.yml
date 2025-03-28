@@ -3,25 +3,39 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - master  # o main si usas esa rama
+      - master  # Ejecutar solo cuando se haga push a la rama master
+  workflow_dispatch:  # Permitir ejecución manual
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Conectar a EC2 y actualizar API
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ec2-user
-        key: ${{ secrets.EC2_KEY }}
-        script: |
-          cd /home/ec2-user/ScoreFlow2
-          git pull origin master
-          docker-compose down
-          docker-compose up -d --build
+      # 1. Hacer checkout del código
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Verificar contenedor Docker
-      run: |
-        docker ps
+      # 2. Configurar acceso SSH
+      - name: Set up SSH keys
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+
+      # 3. Copiar el código a la instancia EC2
+      - name: Copy code to EC2
+        run: |
+          scp -i private_key.pem -r . ec2-user@<EC2_PUBLIC_IP>:/home/ec2-user/ScoreFlow2
+        env:
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
+
+      # 4. Conectar a EC2 y desplegar la aplicación con Docker
+      - name: Deploy app on EC2
+        run: |
+          ssh -i private_key.pem ec2-user@<EC2_PUBLIC_IP> << 'EOF'
+            cd /home/ec2-user/ScoreFlow2/API
+            docker-compose up -d --build
+          EOF
+        env:
+          EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
