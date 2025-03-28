@@ -64,10 +64,13 @@ namespace Domain.Entities.Users
         }
         public User(string fullName, string email, string passwordHash, UserRole role)
         {
-            this.userID = userID;
-            this.fullName = fullName;
-            this.email = email;
+            FullName = new UserFullName(fullName);
+            Email = new UserEmail(email);
+            PasswordHash = new UserPasswordHash(passwordHash);
             Role = role;
+            CreatedAt = DateTime.UtcNow;
+            Notifications = new List<Notification>();
         }
+
     }
 }
