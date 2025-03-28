@@ -26,14 +26,14 @@ jobs:
       # 3. Copiar el código a la instancia EC2
       - name: Copy code to EC2
         run: |
-          scp -i private_key.pem -r . ec2-user@<EC2_PUBLIC_IP>:/home/ec2-user/ScoreFlow2
+          scp -i private_key.pem -r . ec2-user@${{ secrets.EC2_PUBLIC_IP }}:/home/ec2-user/ScoreFlow2
         env:
           EC2_PUBLIC_IP: ${{ secrets.EC2_PUBLIC_IP }}
 
       # 4. Conectar a EC2 y desplegar la aplicación con Docker
       - name: Deploy app on EC2
         run: |
-          ssh -i private_key.pem ec2-user@<EC2_PUBLIC_IP> << 'EOF'
+          ssh -i private_key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             cd /home/ec2-user/ScoreFlow2/API
             docker-compose up -d --build
           EOF
