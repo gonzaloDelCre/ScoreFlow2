@@ -18,7 +18,7 @@ jobs:
       # 2. Configurar acceso SSH
       - name: Set up SSH keys
         run: |
-          echo "$SSH_PRIVATE_KEY" > mi_clave_ec2
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" | tr -d '\r' > mi_clave_ec2
           chmod 600 mi_clave_ec2
         env:
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
