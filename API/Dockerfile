@@ -12,8 +12,6 @@ COPY ScoreFlow2.sln ./
 
 # Copiar los archivos .csproj de cada proyecto que forma parte de la solución
 COPY API/API.csproj ./API/
-COPY App/App.csproj ./App/
-COPY AppMovil/AppMovil.csproj ./AppMovil/
 COPY Application/Application.csproj ./Application/
 COPY Domain/Domain.csproj ./Domain/
 COPY Infrastructure/Infrastructure.csproj ./Infrastructure/
