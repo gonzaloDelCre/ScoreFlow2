@@ -53,6 +53,7 @@ namespace Domain.Entities.Users
             this.email = email;
         }
 
+
         public void UpdateFullName(string fullName)
         {
             FullName = new UserFullName(fullName);
