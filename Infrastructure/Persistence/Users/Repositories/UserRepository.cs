@@ -77,22 +77,23 @@ namespace Infrastructure.Persistence.Users.Repositories
 
                 var parameters = new[]
                 {
-            new SqlParameter("@FullName", userEntity.FullName),
-            new SqlParameter("@Email", userEntity.Email),
-            new SqlParameter("@PasswordHash", userEntity.PasswordHash),
-            new SqlParameter("@CreatedAt", userEntity.CreatedAt),
-            new SqlParameter("@Role", role)
-        };
+                    new SqlParameter("@FullName", userEntity.FullName),
+                    new SqlParameter("@Email", userEntity.Email),
+                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
+                    new SqlParameter("@CreatedAt", userEntity.CreatedAt),
+                    new SqlParameter("@Role", role)
+                };
 
                 await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
 
-                // Obtener el ID del nuevo usuario
+                // Obtener el ID del nuevo usuario, generado por la base de datos
                 string selectSql = "SELECT TOP 1 UserID FROM Users ORDER BY UserID DESC";
                 var newUserId = await _context.Users
                     .FromSqlRaw(selectSql)
                     .Select(u => u.UserID)
                     .FirstOrDefaultAsync();
 
+                // Retorna un nuevo objeto User con el UserID generado
                 return new User(
                     new UserID(newUserId),
                     user.FullName,

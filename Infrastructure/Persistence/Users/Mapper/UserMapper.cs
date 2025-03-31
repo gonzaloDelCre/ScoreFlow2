@@ -19,9 +19,9 @@ namespace Infrastructure.Persistence.Users.Mapper
                 throw new ArgumentException("One or more required properties are null.");
             }
 
+            // No asignar UserID antes de la inserción, ya que lo gestionará la base de datos
             return new UserEntity
             {
-                UserID = user.UserID.Value,
                 FullName = user.FullName.Value,
                 Email = user.Email.Value,
                 PasswordHash = user.PasswordHash.Value,
@@ -29,6 +29,7 @@ namespace Infrastructure.Persistence.Users.Mapper
                 CreatedAt = user.CreatedAt
             };
         }
+
 
         public User MapToDomain(UserEntity entity)
         {
