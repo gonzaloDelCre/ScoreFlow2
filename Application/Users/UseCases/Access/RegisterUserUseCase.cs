@@ -3,6 +3,7 @@ using Application.Users.Mapper;
 using Domain.Entities.Users;
 using Domain.Enum;
 using Domain.Ports.Users;
+using Domain.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using System;
@@ -33,9 +34,21 @@ namespace Application.Users.UseCases.Access
                 throw new InvalidOperationException("El correo electrónico ya está registrado.");
             }
 
-            var role = Enum.Parse<UserRole>(registerDTO.Role);  // Convierte el string a UserRole
+            // Convertir la contraseña a un objeto UserPasswordHash
+            var passwordHash = new UserPasswordHash(registerDTO.Password);
 
-            var user = new User(registerDTO.FullName, registerDTO.Email, registerDTO.Password, role);
+            // Obtener el rol (si el rol no es válido, asignar el rol "Espectador")
+            var role = Enum.TryParse(registerDTO.Role, out UserRole parsedRole) ? parsedRole : UserRole.Espectador;
+
+            // Crear el nuevo usuario
+            var user = new User(
+                new UserID(0), // Asignar ID por defecto
+                new UserFullName(registerDTO.FullName),
+                new UserEmail(registerDTO.Email),
+                passwordHash, // Asignar el password hasheado
+                role,
+                DateTime.UtcNow
+            );
 
             // Guardar el nuevo usuario en la base de datos
             await _userRepository.AddAsync(user);
@@ -48,6 +61,7 @@ namespace Application.Users.UseCases.Access
 
             return userResponse;
         }
+
 
     }
 }
