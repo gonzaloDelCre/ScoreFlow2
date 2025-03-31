@@ -76,6 +76,7 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Listen(IPAddress.Any, 8080);  // Cambiar a 8080 si es necesario
 });
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
 builder.Services.AddScoped<RegisterUserUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
