@@ -9,7 +9,7 @@ namespace Infrastructure.Persistence.Users.Mapper
     {
         public UserEntity MapToEntity(User user)
         {
-            if (user.UserID == null || user.FullName == null || user.Email == null || user.PasswordHash == null)
+            if (user.FullName == null || user.Email == null || user.PasswordHash == null)
             {
                 throw new ArgumentException("One or more required properties are null.");
             }
