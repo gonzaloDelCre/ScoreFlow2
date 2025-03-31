@@ -9,14 +9,19 @@ namespace Infrastructure.Persistence.Users.Mapper
     {
         public UserEntity MapToEntity(User user)
         {
+            if (user.UserID == null || user.FullName == null || user.Email == null || user.PasswordHash == null)
+            {
+                throw new ArgumentException("One or more required properties are null.");
+            }
+
             return new UserEntity
             {
-                UserID = user.UserID.Value,                    
-                FullName = user.FullName.Value,                
-                Email = user.Email.Value,                   
-                PasswordHash = user.PasswordHash.Value,       
-                Role = user.Role.ToString(),               
-                CreatedAt = user.CreatedAt                    
+                UserID = user.UserID.Value,
+                FullName = user.FullName.Value,
+                Email = user.Email.Value,
+                PasswordHash = user.PasswordHash.Value,
+                Role = user.Role.ToString(),
+                CreatedAt = user.CreatedAt
             };
         }
 
