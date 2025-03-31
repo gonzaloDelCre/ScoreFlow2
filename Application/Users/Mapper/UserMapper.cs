@@ -23,7 +23,7 @@ namespace Application.Users.Mapper
                 role,
                 DateTime.UtcNow
             );
-        }
+        } 
 
         public static UserResponseDTO ToResponseDTO(User user)
         {
