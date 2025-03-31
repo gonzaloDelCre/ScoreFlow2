@@ -56,7 +56,7 @@ namespace Domain.Entities.Users
 
 
         public void UpdateFullName(string fullName)
-        {
+        { 
             FullName = new UserFullName(fullName);
         }
 
