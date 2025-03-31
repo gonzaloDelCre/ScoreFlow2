@@ -3,9 +3,9 @@ using Domain.Ports.Users;
 using Domain.Shared;
 using Infrastructure.Persistence.Conection;
 using Infrastructure.Persistence.Users.Mapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data.SqlClient;
 
 namespace Infrastructure.Persistence.Users.Repositories
 {
