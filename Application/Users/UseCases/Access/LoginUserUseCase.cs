@@ -23,7 +23,7 @@ namespace Application.Users.UseCases.Access
 
             if (user == null || !VerifyPassword(password, user.PasswordHash.Value))
             {
-                return null; 
+                return null;
             }
 
             return new UserResponseDTO
@@ -38,7 +38,8 @@ namespace Application.Users.UseCases.Access
 
         private bool VerifyPassword(string password, string storedPasswordHash)
         {
-            return password == storedPasswordHash;
+            return password == storedPasswordHash; 
         }
+
     }
 }

@@ -33,13 +33,14 @@ namespace Infrastructure.Persistence.Users.Mapper
         public User MapToDomain(UserEntity entity)
         {
             return new User(
-                new UserID(entity.UserID),                      
-                new UserFullName(entity.FullName),             
-                new UserEmail(entity.Email),                   
-                new UserPasswordHash(entity.PasswordHash),     
-                Enum.Parse<UserRole>(entity.Role),              
-                entity.CreatedAt                              
+                new UserID(entity.UserID),
+                new UserFullName(entity.FullName),
+                new UserEmail(entity.Email),
+                new UserPasswordHash(entity.PasswordHash),
+                Enum.Parse<UserRole>(entity.Role),
+                entity.CreatedAt
             );
         }
     }
+
 }

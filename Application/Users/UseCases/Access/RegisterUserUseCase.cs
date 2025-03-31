@@ -37,7 +37,6 @@ namespace Application.Users.UseCases.Access
 
             var user = new User(registerDTO.FullName, registerDTO.Email, registerDTO.Password, role);
 
-
             // Guardar el nuevo usuario en la base de datos
             await _userRepository.AddAsync(user);
 
@@ -49,5 +48,6 @@ namespace Application.Users.UseCases.Access
 
             return userResponse;
         }
+
     }
 }

@@ -72,7 +72,6 @@ namespace API.Controllers.Users
                 return BadRequest("Invalid login request.");
             }
 
-            // Llamada al UseCaseHandler con el email y el password
             var userResponse = await _useCaseHandler.LoginUserAsync(loginRequest.Email, loginRequest.Password);
 
             if (userResponse == null)
@@ -88,7 +87,6 @@ namespace API.Controllers.Users
         {
             try
             {
-                // Usar _useCaseHandler.RegisterUserAsync en lugar de _useCaseHandler.RegisterUser
                 var userResponse = await _useCaseHandler.RegisterUserAsync(registerRequest);
                 return Ok(userResponse);
             }
@@ -97,5 +95,6 @@ namespace API.Controllers.Users
                 return BadRequest(ex.Message);
             }
         }
+
     }
 }

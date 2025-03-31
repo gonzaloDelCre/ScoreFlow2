@@ -1,4 +1,5 @@
 ﻿using Domain.Entities.Users;
+using Domain.Enum;
 using Domain.Ports.Users;
 using Domain.Shared;
 using Infrastructure.Persistence.Conection;
@@ -76,15 +77,16 @@ namespace Infrastructure.Persistence.Users.Repositories
 
                 var parameters = new[]
                 {
-                    new SqlParameter("@FullName", userEntity.FullName),
-                    new SqlParameter("@Email", userEntity.Email),
-                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
-                    new SqlParameter("@CreatedAt", userEntity.CreatedAt),
-                    new SqlParameter("@Role", role)
-                };
+            new SqlParameter("@FullName", userEntity.FullName),
+            new SqlParameter("@Email", userEntity.Email),
+            new SqlParameter("@PasswordHash", userEntity.PasswordHash),
+            new SqlParameter("@CreatedAt", userEntity.CreatedAt),
+            new SqlParameter("@Role", role)
+        };
 
                 await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
 
+                // Obtener el ID del nuevo usuario
                 string selectSql = "SELECT TOP 1 UserID FROM Users ORDER BY UserID DESC";
                 var newUserId = await _context.Users
                     .FromSqlRaw(selectSql)
@@ -106,6 +108,7 @@ namespace Infrastructure.Persistence.Users.Repositories
                 throw;
             }
         }
+
 
         public async Task<bool> DeleteAsync(UserID userId)
         {
@@ -175,5 +178,19 @@ namespace Infrastructure.Persistence.Users.Repositories
                 return null;
             }
         }
+
+        public async Task<User> RegisterAsync(string fullName, string email, string password)
+        {
+            var existingUser = await GetByEmailAsync(email);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("El correo electrónico ya está registrado.");
+            }
+
+            var user = new User(fullName, email, password, UserRole.Jugador);
+
+            return await AddAsync(user);
+        }
+
     }
 }

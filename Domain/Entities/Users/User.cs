@@ -61,10 +61,6 @@ namespace Domain.Entities.Users
         }
 
 
-        public void UpdatePasswordHash(string passwordHash)
-        {
-            PasswordHash = new UserPasswordHash(passwordHash);
-        }
         public User(string fullName, string email, string passwordHash, UserRole role)
         {
             FullName = new UserFullName(fullName);
