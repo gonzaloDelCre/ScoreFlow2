@@ -3,6 +3,7 @@ using Application.Users.Mapper;
 using Domain.Entities.Users;
 using Domain.Enum;
 using Domain.Ports.Users;
+using Domain.Services.Users;
 using Domain.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -16,52 +17,27 @@ namespace Application.Users.UseCases.Access
 {
     public class RegisterUserUseCase
     {
-        private readonly IUserRepository _userRepository;
-        private readonly ILogger<RegisterUserUseCase> _logger;
+        private readonly UserService _userService;
 
-        public RegisterUserUseCase(IUserRepository userRepository, ILogger<RegisterUserUseCase> logger)
+        public RegisterUserUseCase(UserService userService)
         {
-            _userRepository = userRepository;
-            _logger = logger;
+            _userService = userService;
         }
 
-        public async Task<UserResponseDTO> ExecuteAsync(RegisterRequestDTO registerDTO)
+        public async Task<UserResponseDTO> ExecuteAsync(RegisterRequestDTO registerRequest)
         {
-            // Validar que el correo no exista en la base de datos
-            var existingUser = await _userRepository.GetByEmailAsync(registerDTO.Email);
-            if (existingUser != null)
+            // Delegar la creación de usuario al servicio
+            var role = Enum.Parse<UserRole>(registerRequest.Role);
+
+            var user = await _userService.RegisterAsync(registerRequest.FullName, registerRequest.Email, registerRequest.Password, role);
+
+            // Mapear el usuario a un DTO de respuesta
+            return new UserResponseDTO
             {
-                throw new InvalidOperationException("El correo electrónico ya está registrado.");
-            }
-
-            // Convertir la contraseña a un objeto UserPasswordHash
-            var passwordHash = new UserPasswordHash(registerDTO.Password);
-
-            // Obtener el rol (si el rol no es válido, asignar el rol "Espectador")
-            var role = Enum.TryParse(registerDTO.Role, out UserRole parsedRole) ? parsedRole : UserRole.Espectador;
-
-            // Crear el nuevo usuario
-            var user = new User(
-                new UserID(0), // Asignar ID por defecto
-                new UserFullName(registerDTO.FullName),
-                new UserEmail(registerDTO.Email),
-                passwordHash, // Asignar el password hasheado
-                role,
-                DateTime.UtcNow
-            );
-
-            // Guardar el nuevo usuario en la base de datos
-            await _userRepository.AddAsync(user);
-
-            // Mapear el usuario creado a un UserResponseDTO
-            var userResponse = UserMapper.ToResponseDTO(user);
-
-            // Log de éxito
-            _logger.LogInformation($"Nuevo usuario registrado: {registerDTO.Email}");
-
-            return userResponse;
+                FullName = user.FullName.Value,
+                Email = user.Email.Value,
+                Role = user.Role.ToString()
+            };
         }
-
-
     }
 }

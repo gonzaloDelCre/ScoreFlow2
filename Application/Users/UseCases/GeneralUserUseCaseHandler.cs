@@ -57,14 +57,14 @@ namespace Application.Users.UseCases
 
         public async Task DeleteUserAsync(int id) => await _deleteUser.ExecuteAsync(new UserID(id));
 
-        public async Task<UserResponseDTO> LoginUserAsync(string email, string password)
-        {
-            return await _loginUser.ExecuteAsync(email, password);
-        }
-
         public async Task<UserResponseDTO> RegisterUserAsync(RegisterRequestDTO registerRequest)
         {
             return await _registerUser.ExecuteAsync(registerRequest);
+        }
+
+        public async Task<UserResponseDTO> LoginUserAsync(string email, string password)
+        {
+            return await _loginUser.ExecuteAsync(email, password);
         }
     }
 }

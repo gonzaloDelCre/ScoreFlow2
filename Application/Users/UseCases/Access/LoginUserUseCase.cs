@@ -1,5 +1,7 @@
 ﻿using Application.Users.DTOs;
+using Application.Users.Mapper;
 using Domain.Ports.Users;
+using Domain.Services.Users;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,36 +12,17 @@ namespace Application.Users.UseCases.Access
 {
     public class LoginUserUseCase
     {
-        private readonly IUserRepository _userRepository;
+        private readonly UserService _userService;
 
-        public LoginUserUseCase(IUserRepository userRepository)
+        public LoginUserUseCase(UserService userService)
         {
-            _userRepository = userRepository;
+            _userService = userService;
         }
 
         public async Task<UserResponseDTO> ExecuteAsync(string email, string password)
         {
-            var user = await _userRepository.GetByEmailAsync(email);
-
-            if (user == null || !VerifyPassword(password, user.PasswordHash.Value))
-            {
-                return null;
-            }
-
-            return new UserResponseDTO
-            {
-                UserID = user.UserID.Value,
-                FullName = user.FullName.Value,
-                Email = user.Email.Value,
-                Role = user.Role.ToString(),
-                CreatedAt = user.CreatedAt
-            };
+            var user = await _userService.LoginAsync(email, password);
+            return UserMapper.ToResponseDTO(user);
         }
-
-        private bool VerifyPassword(string password, string storedPasswordHash)
-        {
-            return password == storedPasswordHash; 
-        }
-
     }
 }

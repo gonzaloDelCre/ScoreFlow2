@@ -4,7 +4,6 @@ using Domain.Ports.Users;
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Domain.Services.Users
@@ -28,7 +27,6 @@ namespace Domain.Services.Users
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("El correo electrónico es obligatorio.");
 
-            // Usar los constructores de las entidades correspondientes
             var user = new User(
                 new UserID(0), // Será autoincremental en la BD
                 new UserFullName(fullName),
@@ -102,10 +100,10 @@ namespace Domain.Services.Users
             }
         }
 
-        public async Task<User> RegisterAsync(string fullName, string email, string password)
+        public async Task<User> RegisterAsync(string fullName, string email, string password, UserRole role)
         {
-            // Verificar si el email ya está registrado
-            var existingUser = await GetUserByEmailAsync(email);
+            // Verificar si el correo ya está registrado
+            var existingUser = await _userRepository.GetByEmailAsync(email);
             if (existingUser != null)
             {
                 throw new InvalidOperationException("El correo electrónico ya está registrado.");
@@ -116,23 +114,22 @@ namespace Domain.Services.Users
                 new UserID(0), // Será autoincremental en la BD
                 new UserFullName(fullName),
                 new UserEmail(email),
-                new UserPasswordHash(password), // Usar el tipo correspondiente para la contraseña
-                UserRole.Jugador,  // O el rol que corresponda
+                new UserPasswordHash(password), // Suponiendo que ya has hecho el hash de la contraseña
+                role,
                 DateTime.UtcNow
             );
 
-            return await CreateUserAsync(fullName, email, password, UserRole.Jugador);
+            await _userRepository.AddAsync(user); // Guardar en la base de datos
+            return user;
         }
 
         public async Task<User> LoginAsync(string email, string password)
         {
-            // Buscar el usuario por email
             var user = await _userRepository.GetByEmailAsync(email);
-            if (user == null || user.PasswordHash.Value != password)  // Comparar con el valor del hash
+            if (user == null || user.PasswordHash.Value != password)
             {
                 throw new UnauthorizedAccessException("Correo electrónico o contraseña incorrectos.");
             }
-
             return user;
         }
     }

@@ -67,19 +67,11 @@ namespace API.Controllers.Users
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
         {
-            if (loginRequest == null)
-            {
-                return BadRequest("Invalid login request.");
-            }
+            if (loginRequest == null) return BadRequest("Invalid login request.");
 
             var userResponse = await _useCaseHandler.LoginUserAsync(loginRequest.Email, loginRequest.Password);
 
-            if (userResponse == null)
-            {
-                return Unauthorized("Invalid email or password.");
-            }
-
-            return Ok(userResponse);
+            return userResponse != null ? Ok(userResponse) : Unauthorized("Invalid email or password.");
         }
 
         [HttpPost("register")]
@@ -88,11 +80,11 @@ namespace API.Controllers.Users
             try
             {
                 var userResponse = await _useCaseHandler.RegisterUserAsync(registerRequest);
-                return Ok(userResponse);
+                return Ok(userResponse); // Usuario registrado con éxito
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(ex.Message); // Enviar mensaje de error
             }
         }
 
