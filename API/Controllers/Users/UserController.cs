@@ -40,7 +40,7 @@ namespace API.Controllers.Users
             if (result == null) return NotFound();
             return Ok(result);
         }
-
+        
         /// <summary>
         /// Get User By Email
         /// </summary>

@@ -188,7 +188,7 @@ namespace Domain.Services.Users
                 new UserFullName("Usuario Invitado"),
                 new UserEmail("guest@scoreflow.com"), 
                 new UserPasswordHash(""),
-                UserRole.Spectator,
+                UserRole.Espectador,
                 DateTime.UtcNow
             );
 
