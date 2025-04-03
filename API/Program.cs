@@ -122,6 +122,7 @@ builder.Services.AddScoped<GetUserByIdUseCase>();
 builder.Services.AddScoped<GetUserByEmailUseCase>();
 builder.Services.AddScoped<DeleteUserUseCase>();
 builder.Services.AddScoped<LoginUserUseCase>();
+builder.Services.AddScoped<GuestLoginUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
 // Registrar casos de uso de Leagues
