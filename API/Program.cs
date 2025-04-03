@@ -62,6 +62,7 @@ using Microsoft.OpenApi.Models;
 using API;
 using Application.Users.UseCases.Access;
 using System.Net;
+using Application.Users.UseCases.Profile;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -123,6 +124,8 @@ builder.Services.AddScoped<GetUserByEmailUseCase>();
 builder.Services.AddScoped<DeleteUserUseCase>();
 builder.Services.AddScoped<LoginUserUseCase>();
 builder.Services.AddScoped<GuestLoginUseCase>();
+builder.Services.AddScoped<GetUserProfileUseCase>();
+builder.Services.AddScoped<UpdateUserProfileUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
 // Registrar casos de uso de Leagues

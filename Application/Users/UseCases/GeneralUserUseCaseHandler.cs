@@ -3,6 +3,7 @@ using Application.Users.UseCases.Access;
 using Application.Users.UseCases.Create;
 using Application.Users.UseCases.Delete;
 using Application.Users.UseCases.Get;
+using Application.Users.UseCases.Profile;
 using Application.Users.UseCases.Update;
 using Domain.Shared;
 using System;
@@ -21,6 +22,8 @@ namespace Application.Users.UseCases
         private readonly LoginUserUseCase _loginUser;
         private readonly RegisterUserUseCase _registerUser;
         private readonly GuestLoginUseCase _guestLoginUseCase;
+        private readonly UpdateUserProfileUseCase _updateUserProfile;
+        private readonly GetUserProfileUseCase _getUserProfile;
 
         public GeneralUserUseCaseHandler(
             GetUserByIdUseCase getUserById,
@@ -31,7 +34,9 @@ namespace Application.Users.UseCases
             GetUserByEmailUseCase getUserByEmail,
             LoginUserUseCase loginUser,
             RegisterUserUseCase registerUser,
-            GuestLoginUseCase guestLoginUseCase)
+            GuestLoginUseCase guestLoginUseCase,
+            UpdateUserProfileUseCase updateUserProfile,
+            GetUserProfileUseCase getUserProfile)
         {
             _getUserById = getUserById;
             _createUser = createUser;
@@ -42,6 +47,8 @@ namespace Application.Users.UseCases
             _loginUser = loginUser;
             _registerUser = registerUser;
             _guestLoginUseCase = guestLoginUseCase;
+            _updateUserProfile = updateUserProfile;
+            _getUserProfile = getUserProfile;
         }
 
         public async Task<object> GetAllUsersAsync()
@@ -89,5 +96,16 @@ namespace Application.Users.UseCases
         {
             return await _guestLoginUseCase.ExecuteAsync();
         }
+
+        public async Task<UserProfileResponseDTO> GetUserProfileAsync(UserID userId)
+        {
+            return await _getUserProfile.ExecuteAsync(userId);
+        }
+
+        public async Task<UserProfileResponseDTO> UpdateUserProfileAsync(UserID userId, UserProfileUpdateDTO updateDTO)
+        {
+            return await _updateUserProfile.ExecuteAsync(userId, updateDTO);
+        }
+
     }
 }

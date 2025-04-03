@@ -39,6 +39,21 @@ namespace Domain.Entities.Users
             PasswordHash = passwordHash ?? PasswordHash;
         }
 
+        public void UpdateFullName(UserFullName fullName)
+        {
+            FullName = fullName ?? throw new ArgumentNullException(nameof(fullName), "El nombre completo no puede ser nulo.");
+        }
+
+        public void UpdateEmail(UserEmail email)
+        {
+            Email = email ?? throw new ArgumentNullException(nameof(email), "El correo electrónico no puede ser nulo.");
+        }
+
+        public void UpdatePassword(UserPasswordHash passwordHash)
+        {
+            PasswordHash = passwordHash ?? throw new ArgumentNullException(nameof(passwordHash), "El hash de la contraseña no puede ser nulo.");
+        }
+
         public User() => Notifications = new List<Notification>();
 
         //Create User Register

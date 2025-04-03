@@ -40,7 +40,7 @@ namespace API.Controllers.Users
             if (result == null) return NotFound();
             return Ok(result);
         }
-        
+
         /// <summary>
         /// Get User By Email
         /// </summary>
@@ -109,11 +109,11 @@ namespace API.Controllers.Users
             try
             {
                 var userResponse = await _useCaseHandler.LoginUserAsync(loginRequest.Email, loginRequest.Password);
-                return Ok(userResponse);  
+                return Ok(userResponse);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ex.Message);  
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
@@ -132,11 +132,11 @@ namespace API.Controllers.Users
             try
             {
                 var userResponse = await _useCaseHandler.RegisterUserAsync(registerRequest);
-                return Ok(userResponse); 
+                return Ok(userResponse);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message }); 
+                return BadRequest(new { message = ex.Message });
             }
         }
 
@@ -149,6 +149,34 @@ namespace API.Controllers.Users
         {
             var guestUser = await _useCaseHandler.GuestLoginAsync();
             return Ok(guestUser);
+        }
+
+        /// <summary>
+        /// Get User Profile
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id}/profile")]
+        public async Task<IActionResult> GetUserProfile(int id)
+        {
+            var profile = await _useCaseHandler.GetUserProfileAsync(new Domain.Shared.UserID(id));
+            if (profile == null) return NotFound();
+            return Ok(profile);
+        }
+
+        /// <summary>
+        /// Update User Profile
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="profileUpdateDTO"></param>
+        /// <returns></returns>
+        [HttpPut("{id}/profile")]
+        public async Task<IActionResult> UpdateUserProfile(int id, [FromBody] UserProfileUpdateDTO profileUpdateDTO)
+        {
+            if (profileUpdateDTO == null) return BadRequest("Profile data is required.");
+
+            var updatedProfile = await _useCaseHandler.UpdateUserProfileAsync(new Domain.Shared.UserID(id), profileUpdateDTO);
+            return Ok(updatedProfile);
         }
 
     }

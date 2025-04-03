@@ -181,6 +181,10 @@ namespace Domain.Services.Users
             return user;
         }
 
+        /// <summary>
+        /// Create Guest User
+        /// </summary>
+        /// <returns></returns>
         public Task<User> CreateGuestUserAsync()
         {
             var guestUser = new User(
@@ -195,6 +199,77 @@ namespace Domain.Services.Users
             return Task.FromResult(guestUser); 
         }
 
+        /// <summary>
+        /// Get User Profile
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<User> GetProfileAsync(UserID userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new InvalidOperationException("Usuario no encontrado.");
+
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el perfil del usuario con ID {UserID}.", userId.Value);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update User Profile
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="fullName"></param>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<User> UpdateProfileAsync(UserID userId, string fullName, string email)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("El nombre completo es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("El correo electrónico es obligatorio.");
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException("Usuario no encontrado.");
+
+            user.UpdateFullName(new UserFullName(fullName));
+            user.UpdateEmail(new UserEmail(email));
+
+            await _userRepository.UpdateAsync(user);
+            return user;
+        }
+
+        /// <summary>
+        /// Update User Password
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="newPassword"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task UpdatePasswordAsync(UserID userId, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(newPassword))
+                throw new ArgumentException("La nueva contraseña no puede estar vacía.");
+
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException("Usuario no encontrado.");
+
+            user.UpdatePassword(new UserPasswordHash(newPassword));
+
+            await _userRepository.UpdateAsync(user);
+        }
 
     }
 }
