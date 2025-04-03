@@ -18,13 +18,13 @@ namespace Application.Users.UseCases.Profile
 
         public async Task<UserProfileResponseDTO> ExecuteAsync(UserID userId, UserProfileUpdateDTO updateDTO)
         {
-            var user = await _userService.UpdateProfileAsync(userId, updateDTO.FullName, updateDTO.Email);
-
+            var user = await _userService.UpdateProfileAsync(userId, updateDTO.FullName, updateDTO.Email, updateDTO.Password, updateDTO.Role);
             return new UserProfileResponseDTO
             {
                 UserID = user.UserID.Value,
                 FullName = user.FullName.Value,
                 Email = user.Email.Value,
+                Role = user.Role.ToString(),
                 CreatedAt = user.CreatedAt
             };
         }

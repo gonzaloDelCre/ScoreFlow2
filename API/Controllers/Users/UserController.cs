@@ -1,6 +1,8 @@
 ﻿using Application.Users.DTOs;
 using Application.Users.UseCases;
 using Application.Users.UseCases.Access;
+using Application.Users.UseCases.Profile;
+using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -159,7 +161,7 @@ namespace API.Controllers.Users
         [HttpGet("{id}/profile")]
         public async Task<IActionResult> GetUserProfile(int id)
         {
-            var profile = await _useCaseHandler.GetUserProfileAsync(new Domain.Shared.UserID(id));
+            var profile = await _useCaseHandler.GetUserProfileAsync(new UserID(id));
             if (profile == null) return NotFound();
             return Ok(profile);
         }
@@ -175,7 +177,7 @@ namespace API.Controllers.Users
         {
             if (profileUpdateDTO == null) return BadRequest("Profile data is required.");
 
-            var updatedProfile = await _useCaseHandler.UpdateUserProfileAsync(new Domain.Shared.UserID(id), profileUpdateDTO);
+            var updatedProfile = await _useCaseHandler.UpdateUserProfileAsync(new UserID(id), profileUpdateDTO);
             return Ok(updatedProfile);
         }
 

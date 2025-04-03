@@ -1,6 +1,8 @@
-﻿using Domain.Entities.Notifications;
+﻿using System; // Asegúrate de tener esta línea
+using Domain.Entities.Notifications;
 using Domain.Enum;
 using Domain.Shared;
+using Microsoft.AspNetCore.Identity;
 
 namespace Domain.Entities.Users
 {
@@ -54,9 +56,24 @@ namespace Domain.Entities.Users
             PasswordHash = passwordHash ?? throw new ArgumentNullException(nameof(passwordHash), "El hash de la contraseña no puede ser nulo.");
         }
 
+        public void UpdateRole(string role)
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                throw new ArgumentNullException(nameof(role), "El rol no puede ser nulo o vacío.");
+
+            // Usa Enum.Parse correctamente
+            if (global::System.Enum.TryParse<UserRole>(role, true, out var parsedRole))
+            {
+                Role = parsedRole;
+            }
+            else
+            {
+                throw new ArgumentException("El valor proporcionado no es un rol válido.", nameof(role));
+            }
+        }
+
         public User() => Notifications = new List<Notification>();
 
-        //Create User Register
         public User(string fullName, string email, string passwordHash, UserRole role)
         {
             FullName = new UserFullName(fullName);
