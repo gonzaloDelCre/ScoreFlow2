@@ -162,8 +162,8 @@ namespace Infrastructure.Persistence.Users.Repositories
                 var userEntity = _mapper.MapToEntity(user);
 
                 string updateSql = @"UPDATE Users 
-                                     SET FullName = @FullName, Email = @Email, PasswordHash = @PasswordHash, CreatedAt = @CreatedAt
-                                     WHERE UserID = @UserID";
+                             SET FullName = @FullName, Email = @Email, PasswordHash = @PasswordHash, CreatedAt = @CreatedAt, Role = @Role
+                             WHERE UserID = @UserID";
 
                 var parameters = new[]
                 {
@@ -171,7 +171,8 @@ namespace Infrastructure.Persistence.Users.Repositories
                     new SqlParameter("@FullName", userEntity.FullName),
                     new SqlParameter("@Email", userEntity.Email),
                     new SqlParameter("@PasswordHash", userEntity.PasswordHash),
-                    new SqlParameter("@CreatedAt", userEntity.CreatedAt)
+                    new SqlParameter("@CreatedAt", userEntity.CreatedAt),
+                    new SqlParameter("@Role", userEntity.Role.ToString()) 
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
@@ -182,6 +183,7 @@ namespace Infrastructure.Persistence.Users.Repositories
                 throw;
             }
         }
+
 
         /// <summary>
         /// Get By Email
