@@ -8,6 +8,12 @@ namespace Application.Users.Mapper
 {
     public static class UserMapper
     {
+        /// <summary>
+        /// UserResponseDTO to User Entity Domain
+        /// </summary>
+        /// <param name="userDTO"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public static User ToDomain(UserRequestDTO userDTO)
         {
             if (userDTO == null)
@@ -25,6 +31,11 @@ namespace Application.Users.Mapper
             );
         } 
 
+        /// <summary>
+        /// User Entity Domain to UserResponseDTO
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public static UserResponseDTO ToResponseDTO(User user)
         {
             return new UserResponseDTO

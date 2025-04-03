@@ -19,6 +19,7 @@ namespace Domain.Entities.Users
 
         public ICollection<Notification> Notifications { get; private set; }
 
+        //User Constructor Basic
         public User(UserID userID, UserFullName fullName, UserEmail email, UserPasswordHash passwordHash, UserRole role, DateTime createdAt)
         {
             UserID = userID;
@@ -30,13 +31,7 @@ namespace Domain.Entities.Users
             Notifications = new List<Notification>();
         }
 
-        public User(UserID userID, UserFullName fullName, UserEmail email)
-        {
-            UserID = userID;
-            FullName = fullName;
-            Email = email;
-        }
-
+        //Update Method
         public void Update(UserFullName fullName, UserEmail email, UserPasswordHash passwordHash)
         {
             FullName = fullName ?? FullName;
@@ -46,21 +41,7 @@ namespace Domain.Entities.Users
 
         public User() => Notifications = new List<Notification>();
 
-        public User(int userID, string fullName, string email)
-        {
-            this.userID = userID;
-            this.fullName = fullName;
-            this.email = email;
-        }
-
-
-
-        public void UpdateFullName(string fullName)
-        { 
-            FullName = new UserFullName(fullName);
-        }
-
-
+        //Create User Register
         public User(string fullName, string email, string passwordHash, UserRole role)
         {
             FullName = new UserFullName(fullName);

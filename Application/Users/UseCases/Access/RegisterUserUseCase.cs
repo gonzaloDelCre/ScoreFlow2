@@ -24,20 +24,32 @@ namespace Application.Users.UseCases.Access
             _userService = userService;
         }
 
+        /// <summary>
+        /// Register User Case
+        /// </summary>
+        /// <param name="registerRequest"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<UserResponseDTO> ExecuteAsync(RegisterRequestDTO registerRequest)
         {
-            // Delegar la creación de usuario al servicio
-            var role = Enum.Parse<UserRole>(registerRequest.Role);
-
-            var user = await _userService.RegisterAsync(registerRequest.FullName, registerRequest.Email, registerRequest.Password, role);
-
-            // Mapear el usuario a un DTO de respuesta
-            return new UserResponseDTO
+            try
             {
-                FullName = user.FullName.Value,
-                Email = user.Email.Value,
-                Role = user.Role.ToString()
-            };
+                var role = Enum.Parse<UserRole>(registerRequest.Role);
+
+                var user = await _userService.RegisterAsync(registerRequest.FullName, registerRequest.Email, registerRequest.Password, role);
+
+                return new UserResponseDTO
+                {
+                    FullName = user.FullName.Value,
+                    Email = user.Email.Value,
+                    Role = user.Role.ToString()
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error al registrar el usuario: {ex.Message}", ex);
+            }
         }
+
     }
 }

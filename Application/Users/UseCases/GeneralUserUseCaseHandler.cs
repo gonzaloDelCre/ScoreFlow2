@@ -41,13 +41,25 @@ namespace Application.Users.UseCases
             _registerUser = registerUser;
         }
 
-        public async Task<object> GetAllUsersAsync() => await _getAllUsers.ExecuteAsync();
+        public async Task<object> GetAllUsersAsync()
+        {
+            return await _getAllUsers.ExecuteAsync();
+        }
 
-        public async Task<UserResponseDTO> GetUserByIdAsync(int id) => await _getUserById.ExecuteAsync(id);
+        public async Task<UserResponseDTO> GetUserByIdAsync(int id)
+        {
+            return await _getUserById.ExecuteAsync(id);
+        }
 
-        public async Task<UserResponseDTO> GetUserByEmailAsync(string email) => await _getUserByEmail.ExecuteAsync(email);
+        public async Task<UserResponseDTO> GetUserByEmailAsync(string email)
+        {
+            return await _getUserByEmail.ExecuteAsync(email);
+        }
 
-        public async Task<UserResponseDTO> CreateUserAsync(UserRequestDTO userDTO) => await _createUser.ExecuteAsync(userDTO);
+        public async Task<UserResponseDTO> CreateUserAsync(UserRequestDTO userDTO)
+        {
+            return await _createUser.ExecuteAsync(userDTO);
+        }
 
         public async Task<object> UpdateUserAsync(int id, UserRequestDTO userDTO)
         {
@@ -55,7 +67,10 @@ namespace Application.Users.UseCases
             return await _updateUser.ExecuteAsync(userDTO);
         }
 
-        public async Task DeleteUserAsync(int id) => await _deleteUser.ExecuteAsync(new UserID(id));
+        public async Task DeleteUserAsync(int id)
+        {
+            await _deleteUser.ExecuteAsync(new UserID(id));
+        }
 
         public async Task<UserResponseDTO> RegisterUserAsync(RegisterRequestDTO registerRequest)
         {

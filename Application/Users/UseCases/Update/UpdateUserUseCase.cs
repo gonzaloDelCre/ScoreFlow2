@@ -20,6 +20,13 @@ namespace Application.Users.UseCases.Update
             _userService = userService;
         }
 
+        /// <summary>
+        /// Update User Case
+        /// </summary>
+        /// <param name="userDTO"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<UserResponseDTO> ExecuteAsync(UserRequestDTO userDTO)
         {
             if (userDTO == null || !userDTO.UserID.HasValue)

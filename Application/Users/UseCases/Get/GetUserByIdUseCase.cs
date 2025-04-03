@@ -15,6 +15,11 @@ namespace Application.Users.UseCases.Get
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Get User By Id Case
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<UserResponseDTO?> ExecuteAsync(int userId)
         {
             var user = await _userRepository.GetByIdAsync(new UserID(userId));

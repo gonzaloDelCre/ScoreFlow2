@@ -19,6 +19,12 @@ namespace Application.Users.UseCases.Delete
             _userService = userService;
         }
 
+        /// <summary>
+        /// Delete User Case
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task<bool> ExecuteAsync(UserID userId)
         {
             if (userId == null)

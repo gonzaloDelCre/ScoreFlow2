@@ -19,6 +19,15 @@ namespace Domain.Services.Users
             _logger = logger;
         }
 
+        /// <summary>
+        /// Create User
+        /// </summary>
+        /// <param name="fullName"></param>
+        /// <param name="email"></param>
+        /// <param name="passwordHash"></param>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<User> CreateUserAsync(string fullName, string email, string passwordHash, UserRole role)
         {
             if (string.IsNullOrWhiteSpace(fullName))
@@ -28,10 +37,10 @@ namespace Domain.Services.Users
                 throw new ArgumentException("El correo electrónico es obligatorio.");
 
             var user = new User(
-                new UserID(0), // Será autoincremental en la BD
+                new UserID(0), 
                 new UserFullName(fullName),
                 new UserEmail(email),
-                new UserPasswordHash(passwordHash), // Usar el tipo correspondiente para la contraseña
+                new UserPasswordHash(passwordHash), 
                 role,
                 DateTime.UtcNow
             );
@@ -40,6 +49,11 @@ namespace Domain.Services.Users
             return user;
         }
 
+        /// <summary>
+        /// Get User By Id
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<User?> GetUserByIdAsync(UserID userId)
         {
             try
@@ -53,6 +67,12 @@ namespace Domain.Services.Users
             }
         }
 
+        /// <summary>
+        /// Update User 
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task UpdateUserAsync(User user)
         {
             if (user == null)
@@ -61,6 +81,11 @@ namespace Domain.Services.Users
             await _userRepository.UpdateAsync(user);
         }
 
+        /// <summary>
+        /// Delete User
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<bool> DeleteUserAsync(UserID userId)
         {
             try
@@ -74,6 +99,10 @@ namespace Domain.Services.Users
             }
         }
 
+        /// <summary>
+        /// Get All Users
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             try
@@ -87,6 +116,11 @@ namespace Domain.Services.Users
             }
         }
 
+        /// <summary>
+        /// Get User By Email
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
         public async Task<User?> GetUserByEmailAsync(string email)
         {
             try
@@ -100,29 +134,43 @@ namespace Domain.Services.Users
             }
         }
 
+        /// <summary>
+        /// Register User
+        /// </summary>
+        /// <param name="fullName"></param>
+        /// <param name="email"></param>
+        /// <param name="password"></param>
+        /// <param name="role"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<User> RegisterAsync(string fullName, string email, string password, UserRole role)
         {
-            // Verificar si el correo ya está registrado
             var existingUser = await _userRepository.GetByEmailAsync(email);
             if (existingUser != null)
             {
                 throw new InvalidOperationException("El correo electrónico ya está registrado.");
             }
 
-            // Crear el nuevo usuario
             var user = new User(
-                new UserID(0), // Será autoincremental en la BD
+                new UserID(0),  
                 new UserFullName(fullName),
                 new UserEmail(email),
-                new UserPasswordHash(password), // Suponiendo que ya has hecho el hash de la contraseña
+                new UserPasswordHash(password), 
                 role,
                 DateTime.UtcNow
             );
 
-            await _userRepository.AddAsync(user); // Guardar en la base de datos
+            await _userRepository.AddAsync(user);
             return user;
         }
 
+        /// <summary>
+        /// Login User
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<User> LoginAsync(string email, string password)
         {
             var user = await _userRepository.GetByEmailAsync(email);
@@ -132,5 +180,6 @@ namespace Domain.Services.Users
             }
             return user;
         }
+
     }
 }

@@ -19,10 +19,25 @@ namespace Application.Users.UseCases.Access
             _userService = userService;
         }
 
+        /// <summary>
+        /// Login User Case
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<UserResponseDTO> ExecuteAsync(string email, string password)
         {
-            var user = await _userService.LoginAsync(email, password);
-            return UserMapper.ToResponseDTO(user);
+            try
+            {
+                var user = await _userService.LoginAsync(email, password);
+                return UserMapper.ToResponseDTO(user);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw new UnauthorizedAccessException("Correo electrónico o contraseña incorrectos.");
+            }
         }
+
     }
 }

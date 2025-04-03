@@ -23,6 +23,10 @@ namespace Infrastructure.Persistence.Users.Repositories
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Get All Users
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             try
@@ -40,6 +44,12 @@ namespace Infrastructure.Persistence.Users.Repositories
                 return new List<User>();
             }
         }
+
+        /// <summary>
+        /// Get User By Id
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<User?> GetByIdAsync(UserID userId)
         {
             try
@@ -61,6 +71,12 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
+        /// <summary>
+        /// Create User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task<User> AddAsync(User user)
         {
             if (user == null)
@@ -86,14 +102,12 @@ namespace Infrastructure.Persistence.Users.Repositories
 
                 await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
 
-                // Obtener el ID del nuevo usuario, generado por la base de datos
                 string selectSql = "SELECT TOP 1 UserID FROM Users ORDER BY UserID DESC";
                 var newUserId = await _context.Users
                     .FromSqlRaw(selectSql)
                     .Select(u => u.UserID)
                     .FirstOrDefaultAsync();
 
-                // Retorna un nuevo objeto User con el UserID generado
                 return new User(
                     new UserID(newUserId),
                     user.FullName,
@@ -110,7 +124,11 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
-
+        /// <summary>
+        /// Delete User
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public async Task<bool> DeleteAsync(UserID userId)
         {
             try
@@ -128,6 +146,12 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
+        /// <summary>
+        /// Update User
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public async Task UpdateAsync(User user)
         {
             if (user == null)
@@ -159,6 +183,11 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
+        /// <summary>
+        /// Get By Email
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
         public async Task<User?> GetByEmailAsync(string email)
         {
             try
@@ -180,6 +209,14 @@ namespace Infrastructure.Persistence.Users.Repositories
             }
         }
 
+        /// <summary>
+        /// Register User
+        /// </summary>
+        /// <param name="fullName"></param>
+        /// <param name="email"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task<User> RegisterAsync(string fullName, string email, string password)
         {
             var existingUser = await GetByEmailAsync(email);

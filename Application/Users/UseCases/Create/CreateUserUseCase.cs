@@ -18,6 +18,13 @@ namespace Application.Users.UseCases.Create
             _userService = userService;
         }
 
+        /// <summary>
+        /// Create User Case
+        /// </summary>
+        /// <param name="userDTO"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<UserResponseDTO> ExecuteAsync(UserRequestDTO userDTO)
         {
             if (userDTO == null)

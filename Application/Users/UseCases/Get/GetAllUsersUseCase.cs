@@ -16,6 +16,10 @@ namespace Application.Users.UseCases.Get
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Get All User Case
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<UserResponseDTO>> ExecuteAsync()
         {
             var users = await _userRepository.GetAllAsync();

@@ -15,6 +15,12 @@ namespace Application.Users.UseCases.Get
             _userRepository = userRepository;
         }
 
+        /// <summary>
+        /// Get User By Email Case
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<UserResponseDTO?> ExecuteAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
