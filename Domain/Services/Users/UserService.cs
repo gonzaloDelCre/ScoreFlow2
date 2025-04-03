@@ -181,5 +181,20 @@ namespace Domain.Services.Users
             return user;
         }
 
+        public Task<User> CreateGuestUserAsync()
+        {
+            var guestUser = new User(
+                new UserID(0),
+                new UserFullName("Usuario Invitado"),
+                new UserEmail("guest@scoreflow.com"), 
+                new UserPasswordHash(""),
+                UserRole.Spectator,
+                DateTime.UtcNow
+            );
+
+            return Task.FromResult(guestUser); 
+        }
+
+
     }
 }

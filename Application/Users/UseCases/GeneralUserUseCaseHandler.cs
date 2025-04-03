@@ -20,6 +20,7 @@ namespace Application.Users.UseCases
         private readonly GetUserByEmailUseCase _getUserByEmail;
         private readonly LoginUserUseCase _loginUser;
         private readonly RegisterUserUseCase _registerUser;
+        private readonly GuestLoginUseCase _guestLoginUseCase;
 
         public GeneralUserUseCaseHandler(
             GetUserByIdUseCase getUserById,
@@ -29,7 +30,8 @@ namespace Application.Users.UseCases
             GetAllUsersUseCase getAllUsers,
             GetUserByEmailUseCase getUserByEmail,
             LoginUserUseCase loginUser,
-            RegisterUserUseCase registerUser)
+            RegisterUserUseCase registerUser,
+            GuestLoginUseCase guestLoginUseCase)
         {
             _getUserById = getUserById;
             _createUser = createUser;
@@ -39,6 +41,7 @@ namespace Application.Users.UseCases
             _getUserByEmail = getUserByEmail;
             _loginUser = loginUser;
             _registerUser = registerUser;
+            _guestLoginUseCase = guestLoginUseCase;
         }
 
         public async Task<object> GetAllUsersAsync()
@@ -80,6 +83,11 @@ namespace Application.Users.UseCases
         public async Task<UserResponseDTO> LoginUserAsync(string email, string password)
         {
             return await _loginUser.ExecuteAsync(email, password);
+        }
+
+        public async Task<UserResponseDTO> GuestLoginAsync()
+        {
+            return await _guestLoginUseCase.ExecuteAsync();
         }
     }
 }

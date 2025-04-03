@@ -1,5 +1,6 @@
 ﻿using Application.Users.DTOs;
 using Application.Users.UseCases;
+using Application.Users.UseCases.Access;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -137,6 +138,17 @@ namespace API.Controllers.Users
             {
                 return BadRequest(new { message = ex.Message }); 
             }
+        }
+
+        /// <summary>
+        /// Guest Login Access
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("guest-login")]
+        public async Task<IActionResult> GuestLogin()
+        {
+            var guestUser = await _useCaseHandler.GuestLoginAsync();
+            return Ok(guestUser);
         }
 
     }
