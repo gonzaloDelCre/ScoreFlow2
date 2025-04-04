@@ -224,7 +224,10 @@ namespace Domain.Services.Users
         /// <exception cref="InvalidOperationException"></exception>
         public async Task<User> UpdateProfileAsync(UserID userId, string fullName, string email, string? password, string role)
         {
+            _logger.LogInformation("Buscando usuario con ID {UserID} para actualizar perfil", userId.Value);
             var user = await _userRepository.GetByIdAsync(userId);
+            _logger.LogInformation("Actualizando perfil para el usuario con ID {UserID}", userId);
+
             if (user == null)
                 throw new InvalidOperationException("Usuario no encontrado.");
 
