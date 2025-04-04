@@ -176,6 +176,7 @@ namespace Infrastructure.Persistence.Users.Repositories
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
