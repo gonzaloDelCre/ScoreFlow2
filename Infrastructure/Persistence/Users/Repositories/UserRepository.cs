@@ -159,6 +159,7 @@ namespace Infrastructure.Persistence.Users.Repositories
 
             try
             {
+                
                 var userEntity = _mapper.MapToEntity(user);
 
                 string updateSql = @"UPDATE Users 
@@ -176,6 +177,7 @@ namespace Infrastructure.Persistence.Users.Repositories
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
