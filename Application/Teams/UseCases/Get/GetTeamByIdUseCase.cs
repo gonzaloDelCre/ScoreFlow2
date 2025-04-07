@@ -25,10 +25,10 @@ namespace Application.Teams.UseCases.Get
             return new TeamResponseDTO
             {
                 TeamID = team.TeamID.Value,
-                Name = team.Name.Value,
+                TeamName = team.Name.Value,
                 CoachID = team.Coach.UserID.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
-                Logo = team.Logo,
+                LogoUrl = team.Logo,
                 CreatedAt = team.CreatedAt
             };
         }
