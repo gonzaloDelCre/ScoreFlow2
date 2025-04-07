@@ -16,8 +16,8 @@ namespace Application.Teams.Mapper
             return new TeamResponseDTO
             {
                 TeamID = team.TeamID.Value,
-                Name = team.Name.Value,
-                Logo = team.Logo,
+                TeamName = team.Name.Value,
+                LogoUrl = team.Logo,
                 CoachID = team.Coach?.UserID.Value ?? 0, 
                 PlayerIds = team.Players?.Select(p => p.PlayerID.Value).ToList() ?? new List<int>(),
             };

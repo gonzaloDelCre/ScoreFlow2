@@ -5,10 +5,11 @@ namespace Application.Teams.DTOs
     public class TeamResponseDTO
     {
         public int TeamID { get; set; }
-        public string Name { get; set; }  
-        public int CoachID { get; set; }  
+        public string TeamName { get; set; }  // <- antes era 'Name'
+        public int CoachID { get; set; }
         public List<int> PlayerIds { get; set; }
-        public string Logo { get; set; }
-        public DateTime CreatedAt { get; set; }  
+        public string LogoUrl { get; set; }   // <- antes era 'Logo'
+        public DateTime CreatedAt { get; set; }
     }
+
 }

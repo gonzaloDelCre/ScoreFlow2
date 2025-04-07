@@ -38,10 +38,10 @@ namespace Application.Teams.UseCases.Create
             return new TeamResponseDTO
             {
                 TeamID = team.TeamID.Value,
-                Name = team.Name.Value,
+                TeamName = team.Name.Value,
                 CoachID = coach.UserID.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
-                Logo = team.Logo,
+                LogoUrl = team.Logo,
                 CreatedAt = team.CreatedAt
             };
         }
