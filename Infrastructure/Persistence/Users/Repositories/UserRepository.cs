@@ -232,6 +232,6 @@ namespace Infrastructure.Persistence.Users.Repositories
 
             return await AddAsync(user);
         }
-
+        
     }
 }

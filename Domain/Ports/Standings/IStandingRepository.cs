@@ -12,6 +12,8 @@ namespace Domain.Ports.Standings
         Task<Standing?> GetByIdAsync(int standingId);
         Task<IEnumerable<Standing>> GetAllAsync();
         Task<IEnumerable<Standing>> GetByLeagueIdAsync(int leagueId);
+        Task<IEnumerable<Standing>> GetClassificationByLeagueIdAsync(int leagueId);
+        Task<Standing?> GetByTeamIdAndLeagueIdAsync(int teamId, int leagueId);
         Task<Standing> AddAsync(Standing standing);
         Task UpdateAsync(Standing standing);
         Task<bool> DeleteAsync(int standingId);

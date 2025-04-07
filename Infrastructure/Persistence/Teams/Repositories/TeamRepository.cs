@@ -1,11 +1,13 @@
 ﻿using Domain.Entities.Teams;
-using Infrastructure.Persistence.Conection;
-using Infrastructure.Persistence.Teams.Mapper;
-using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
+using Domain.Entities.Users;
 using Domain.Ports.Teams;
 using Domain.Shared;
+using Infrastructure.Persistence.Conection;
+using Infrastructure.Persistence.Users.Mapper;
+using Infrastructure.Persistence.Teams.Mappers;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Persistence.Teams.Repositories
 {
@@ -20,6 +22,9 @@ namespace Infrastructure.Persistence.Teams.Repositories
             _logger = logger;
         }
 
+        /// <summary>
+        /// Get All Teams
+        /// </summary>
         public async Task<IEnumerable<Team>> GetAllAsync()
         {
             try
@@ -27,17 +32,13 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 string sql = "SELECT * FROM Teams";
                 var dbTeams = await _context.Teams
                     .FromSqlRaw(sql)
-                    .ToListAsync();
-
-                var coachIds = dbTeams.Select(t => t.CoachID).Distinct().ToList();
-                var dbCoaches = await _context.Users
-                    .Where(u => coachIds.Contains(u.UserID))
+                    .Include(t => t.Coach) // Incluimos el Coach
                     .ToListAsync();
 
                 return dbTeams.Select(dbTeam =>
                 {
-                    var coachEntity = dbCoaches.FirstOrDefault(c => c.UserID == dbTeam.CoachID);
-                    return TeamMapper.ToDomain(dbTeam, coachEntity); 
+                    User? coachDomain = dbTeam.Coach != null ? dbTeam.Coach.MapToDomain() : null;
+                    return TeamMapper.MapToDomain(dbTeam, coachDomain);
                 }).ToList();
             }
             catch (Exception ex)
@@ -47,6 +48,9 @@ namespace Infrastructure.Persistence.Teams.Repositories
             }
         }
 
+        /// <summary>
+        /// Get Team By Id
+        /// </summary>
         public async Task<Team?> GetByIdAsync(TeamID teamId)
         {
             try
@@ -56,26 +60,26 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
                 var dbTeams = await _context.Teams
                     .FromSqlRaw(sql, parameter)
+                    .Include(t => t.Coach) // Incluimos el Coach
                     .ToListAsync();
 
                 var dbTeam = dbTeams.FirstOrDefault();
                 if (dbTeam == null)
-                {
                     return null;
-                }
 
-                var coachEntity = await _context.Users
-                    .FirstOrDefaultAsync(u => u.UserID == dbTeam.CoachID);
-
-                return TeamMapper.ToDomain(dbTeam, coachEntity); 
+                User? coachDomain = dbTeam.Coach != null ? dbTeam.Coach.MapToDomain() : null;
+                return TeamMapper.MapToDomain(dbTeam, coachDomain);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener el equipo con ID {TeamID}", teamId.Value);
                 return null;
             }
-        }
+        } 
 
+        /// <summary>
+        /// Create Team
+        /// </summary>
         public async Task<Team> AddAsync(Team team)
         {
             if (team == null)
@@ -83,17 +87,17 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                var teamEntity = TeamMapper.ToEntity(team); 
+                var teamEntity = team.MapToEntity();
 
-                string insertSql = @"INSERT INTO Teams (Name, CoachID, CreatedAt, Logo) 
-                                     VALUES (@Name, @CoachID, @CreatedAt, @Logo);";
+                string insertSql = @"INSERT INTO Teams (Name, Logo, CoachID, CreatedAt) 
+                                     VALUES (@Name, @Logo, @CoachID, @CreatedAt);";
 
                 var parameters = new[]
                 {
                     new SqlParameter("@Name", teamEntity.Name),
+                    new SqlParameter("@Logo", teamEntity.Logo),
                     new SqlParameter("@CoachID", teamEntity.CoachID),
-                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
-                    new SqlParameter("@Logo", teamEntity.Logo ?? (object)DBNull.Value)
+                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt)
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
@@ -104,6 +108,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
                     .Select(t => t.TeamID)
                     .FirstOrDefaultAsync();
 
+                // Se asume que tras la inserción, el coach sigue siendo el mismo que se pasó en el objeto 'team'
                 return new Team(
                     new TeamID(newTeamId),
                     team.Name,
@@ -119,6 +124,9 @@ namespace Infrastructure.Persistence.Teams.Repositories
             }
         }
 
+        /// <summary>
+        /// Update Team
+        /// </summary>
         public async Task UpdateAsync(Team team)
         {
             if (team == null)
@@ -126,22 +134,22 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                var teamEntity = TeamMapper.ToEntity(team);
+                var teamEntity = team.MapToEntity();
 
                 string updateSql = @"UPDATE Teams 
-                                     SET Name = @Name, CoachID = @CoachID, CreatedAt = @CreatedAt, Logo = @Logo
+                                     SET Name = @Name, Logo = @Logo, CoachID = @CoachID
                                      WHERE TeamID = @TeamID";
 
                 var parameters = new[]
                 {
                     new SqlParameter("@TeamID", teamEntity.TeamID),
                     new SqlParameter("@Name", teamEntity.Name),
-                    new SqlParameter("@CoachID", teamEntity.CoachID),
-                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
-                    new SqlParameter("@Logo", teamEntity.Logo ?? (object)DBNull.Value)
+                    new SqlParameter("@Logo", teamEntity.Logo),
+                    new SqlParameter("@CoachID", teamEntity.CoachID)
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -150,6 +158,9 @@ namespace Infrastructure.Persistence.Teams.Repositories
             }
         }
 
+        /// <summary>
+        /// Delete Team
+        /// </summary>
         public async Task<bool> DeleteAsync(TeamID teamId)
         {
             try

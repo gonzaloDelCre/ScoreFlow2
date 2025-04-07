@@ -1,11 +1,9 @@
 ﻿using Domain.Entities.Teams;
+using Domain.Enum;
 using Domain.Ports.Teams;
-using Domain.Ports.Users; 
+using Domain.Ports.Users;
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Domain.Services.Teams
 {
@@ -31,20 +29,20 @@ namespace Domain.Services.Teams
                 throw new ArgumentException("La URL del logo es obligatoria.");
 
             var userId = new UserID(coachID);
-
             var coach = await _userRepository.GetByIdAsync(userId);
+            if (coach == null || coach.Role != UserRole.Entrenador)  // Verificación de rol de entrenador
+                throw new ArgumentException("El entrenador con el ID proporcionado no existe o no tiene el rol adecuado.");
 
-            if (coach == null)
-                throw new ArgumentException("El entrenador con el ID proporcionado no existe.");
-
+            // Crear el equipo con ID 0 (se asignará posteriormente)
             var team = new Team(
-                new TeamID(0), 
+                new TeamID(0),
                 new TeamName(teamName),
                 coach,
                 DateTime.UtcNow,
                 logoUrl
             );
 
+            // Añadir el equipo al repositorio
             await _teamRepository.AddAsync(team);
             return team;
         }

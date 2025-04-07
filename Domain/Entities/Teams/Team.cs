@@ -10,15 +10,16 @@ namespace Domain.Entities.Teams
     {
         public TeamID TeamID { get; private set; }
         public TeamName Name { get; private set; }
-        public User? Coach { get; set; }
+        public User? Coach { get; private set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
-        public ICollection<Player> Players { get; set; } = new List<Player>();
-        public ICollection<TeamLeague> TeamLeagues { get; set; } = new List<TeamLeague>();
-        public ICollection<Standing> Standings { get; set; } = new List<Standing>();
+        public ICollection<Player> Players { get; private set; } = new List<Player>();
+        public ICollection<TeamLeague> TeamLeagues { get; private set; } = new List<TeamLeague>();
+        public ICollection<Standing> Standings { get; private set; } = new List<Standing>();
 
-        public string Logo { get; set; } = string.Empty;
+        public string Logo { get; private set; } = string.Empty;
 
+        // Constructor
         public Team(TeamID teamID, TeamName name, User? coach, DateTime createdAt, string logo)
         {
             TeamID = teamID;
@@ -27,14 +28,24 @@ namespace Domain.Entities.Teams
             CreatedAt = createdAt;
             Logo = logo;
         }
-        public void Update(TeamName name, string logo)
+
+        // Default constructor for ORM/EF Core
+        public Team()
+        {
+        }
+
+        public Team(TeamID teamID, TeamName name, User? coach, DateTime createdAt, string logo, List<Player> players) : this(teamID, name, coach, createdAt, logo)
+        {
+        }
+
+        // Update method to modify team details
+        public void Update(TeamName name, User coach, string logo)
         {
             if (name != null)
-                Name = name; 
+                Name = name;
 
             if (!string.IsNullOrWhiteSpace(logo))
                 Logo = logo;
         }
-    }
-
+    }   
 }

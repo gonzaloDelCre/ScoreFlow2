@@ -23,6 +23,10 @@ namespace Domain.Entities.Leagues
             CreatedAt = createdAt;
         }
 
+        public League()
+        {
+        }
+
         public void Update(LeagueName name, string description, DateTime createdAt)
         {
             Name = name;

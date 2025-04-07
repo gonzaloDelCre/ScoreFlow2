@@ -1,60 +1,35 @@
 ﻿using Domain.Entities.Teams;
 using Domain.Entities.Users;
-using Domain.Enum;
-using Infrastructure.Persistence.Teams.Entities;
-using Infrastructure.Persistence.Users.Entities;
 using Domain.Shared;
+using Infrastructure.Persistence.Teams.Entities;
 
-namespace Infrastructure.Persistence.Teams.Mapper
+namespace Infrastructure.Persistence.Teams.Mappers
 {
     public static class TeamMapper
     {
-        public static Team ToDomain(TeamEntity entity, UserEntity? coachEntity = null)
+        // Mapea desde la entidad de base de datos a la entidad de dominio.
+        // Se recibe el coach ya convertido a dominio (si corresponde) o null.
+        public static Team MapToDomain(this TeamEntity entity, User? coach)
         {
-            if (entity == null)
-            {
-                return null;
-            }
-
-            var teamName = new TeamName(entity.Name);
-            User coach = null;
-
-            if (coachEntity != null)
-            {
-                coach = new User(
-                    new UserID(coachEntity.UserID),
-                    new UserFullName(coachEntity.FullName),
-                    new UserEmail(coachEntity.Email),
-                    new UserPasswordHash(coachEntity.PasswordHash),
-                    Enum.Parse<UserRole>(coachEntity.Role),
-                    coachEntity.CreatedAt
-                );
-            }
-
             return new Team(
                 new TeamID(entity.TeamID),
-                teamName,
+                new TeamName(entity.Name),
                 coach,
                 entity.CreatedAt,
                 entity.Logo
             );
         }
 
-
-        public static TeamEntity ToEntity(Team domain)
+        // Mapea desde la entidad de dominio a la entidad de base de datos.
+        public static TeamEntity MapToEntity(this Team team)
         {
-            if (domain == null)
-            {
-                return null;
-            }
-
             return new TeamEntity
             {
-                TeamID = domain.TeamID.Value,       
-                Name = domain.Name.Value,           
-                CoachID = domain.Coach?.UserID.Value ?? 0,  
-                CreatedAt = domain.CreatedAt,       
-                Logo = domain.Logo                
+                TeamID = team.TeamID.Value,
+                Name = team.Name.Value,
+                Logo = team.Logo,
+                CoachID = team.Coach?.UserID.Value ?? 0, 
+                CreatedAt = team.CreatedAt
             };
         }
     }

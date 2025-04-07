@@ -145,11 +145,11 @@ builder.Services.AddScoped<DeleteMatch>();
 builder.Services.AddScoped<GeneralMatchUseCaseHandler>();
 
 // Registrar casos de uso de Teams
-builder.Services.AddScoped<CreateTeam>();
-builder.Services.AddScoped<GetTeamById>();
-builder.Services.AddScoped<UpdateTeam>();
-builder.Services.AddScoped<DeleteTeam>();
-builder.Services.AddScoped<GetAllTeams>();
+builder.Services.AddScoped<CreateTeamUseCase>();
+builder.Services.AddScoped<GetTeamByIdUseCase>();
+builder.Services.AddScoped<UpdateTeamUseCase>();
+builder.Services.AddScoped<DeleteTeamUseCase>();
+builder.Services.AddScoped<GetAllTeamsUseCase>();
 builder.Services.AddScoped<GeneralTeamUseCaseHandler>();
 
 //Registrar casos de uso de Players

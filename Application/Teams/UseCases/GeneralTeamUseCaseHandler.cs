@@ -3,29 +3,23 @@ using Application.Teams.UseCases.Create;
 using Application.Teams.UseCases.Delete;
 using Application.Teams.UseCases.Get;
 using Application.Teams.UseCases.Update;
-using Domain.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Teams.UseCases
 {
     public class GeneralTeamUseCaseHandler
     {
-        private readonly GetTeamById _getTeamById;
-        private readonly CreateTeam _createTeam;
-        private readonly UpdateTeam _updateTeam;
-        private readonly DeleteTeam _deleteTeam;
-        private readonly GetAllTeams _getAllTeams;
+        private readonly GetTeamByIdUseCase _getTeamById;
+        private readonly CreateTeamUseCase _createTeam;
+        private readonly UpdateTeamUseCase _updateTeam;
+        private readonly DeleteTeamUseCase _deleteTeam;
+        private readonly GetAllTeamsUseCase _getAllTeams;
 
         public GeneralTeamUseCaseHandler(
-            GetTeamById getTeamById,
-            CreateTeam createTeam,
-            UpdateTeam updateTeam,
-            DeleteTeam deleteTeam,
-            GetAllTeams getAllTeams)
+            GetTeamByIdUseCase getTeamById,
+            CreateTeamUseCase createTeam,
+            UpdateTeamUseCase updateTeam,
+            DeleteTeamUseCase deleteTeam,
+            GetAllTeamsUseCase getAllTeams)
         {
             _getTeamById = getTeamById;
             _createTeam = createTeam;
@@ -34,39 +28,30 @@ namespace Application.Teams.UseCases
             _getAllTeams = getAllTeams;
         }
 
-        public async Task<object> Execute(TeamActionDTO actionDTO)
+        public async Task<object> GetAllTeamsAsync()
         {
-            if (string.IsNullOrWhiteSpace(actionDTO.Action))
-                throw new ArgumentException("La acción no puede estar vacía.");
+            return await _getAllTeams.ExecuteAsync();
+        }
 
-            switch (actionDTO.Action.ToLower())
-            {
-                case "getall":
-                    return await _getAllTeams.ExecuteAsync();
+        public async Task<TeamResponseDTO> GetTeamByIdAsync(int id)
+        {
+            return await _getTeamById.ExecuteAsync(id);
+        }
 
-                case "getbyid":
-                    if (actionDTO.TeamID == null)
-                        throw new ArgumentException("El ID del equipo es necesario para obtenerlo.");
-                    return await _getTeamById.ExecuteAsync(new TeamID(actionDTO.TeamID.Value));
+        public async Task<TeamResponseDTO> CreateTeamAsync(TeamRequestDTO teamDTO)
+        {
+            return await _createTeam.ExecuteAsync(teamDTO);
+        }
 
-                case "add":
-                    if (actionDTO.Team == null)
-                        throw new ArgumentException("Los detalles del equipo son necesarios para agregarlo.");
-                    return await _createTeam.Execute(actionDTO.Team);
+        public async Task<TeamResponseDTO> UpdateTeamAsync(int id, TeamRequestDTO teamDTO)
+        {
+            teamDTO.TeamID = id;
+            return await _updateTeam.ExecuteAsync(teamDTO);
+        }
 
-                case "update":
-                    if (actionDTO.Team == null)
-                        throw new ArgumentException("Los detalles del equipo son necesarios para actualizarlo.");
-                    return await _updateTeam.Execute(actionDTO.Team,actionDTO.TeamID.Value);
-
-                case "delete":
-                    if (actionDTO.TeamID == null)
-                        throw new ArgumentException("El ID del equipo es necesario para eliminarlo.");
-                    return await _deleteTeam.Execute(new TeamID(actionDTO.TeamID.Value));
-
-                default:
-                    throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");
-            }
+        public async Task DeleteTeamAsync(int id)
+        {
+            await _deleteTeam.ExecuteAsync(id);
         }
     }
 }

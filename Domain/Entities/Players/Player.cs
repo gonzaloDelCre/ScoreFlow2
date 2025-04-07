@@ -36,6 +36,11 @@ namespace Domain.Entities.Players
             PlayerStatistics = new List<PlayerStatistic>();
         }
 
+        public Player(PlayerID playerID)
+        {
+            PlayerID = playerID;
+        }
+
         public void Update(PlayerName name, TeamID teamID, PlayerPosition position, DateTime createdAt)
         {
             if (name == null)
