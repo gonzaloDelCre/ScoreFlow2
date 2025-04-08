@@ -7,7 +7,7 @@ RUN dotnet workload install maui-android
 # Establecer el directorio de trabajo
 WORKDIR /src
 
-# Copiar el archivo de solución (ajustando la ruta)
+# Copiar el archivo de solución (ajustado para que apunte al directorio correcto)
 COPY ../ScoreFlow2.sln ./
 
 # Copiar los archivos .csproj de cada proyecto que forma parte de la solución
