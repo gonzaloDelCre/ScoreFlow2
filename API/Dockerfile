@@ -11,10 +11,10 @@ WORKDIR /src
 COPY ../ScoreFlow2.sln ./
 
 # Copiar los archivos .csproj de cada proyecto que forma parte de la solución
-COPY ../API/API.csproj ./API/
-COPY ../Application/Application.csproj ./Application/
-COPY ../Domain/Domain.csproj ./Domain/
-COPY ../Infrastructure/Infrastructure.csproj ./Infrastructure/
+COPY ../API/API.csproj
+COPY ../Application/Application.csproj
+COPY ../Domain/Domain.csproj
+COPY ../Infrastructure/Infrastructure.csproj
 
 # Restaurar las dependencias para toda la solución
 RUN dotnet restore ../ScoreFlow2.sln
