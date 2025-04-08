@@ -5,7 +5,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 RUN dotnet workload install maui-android
 
 # Establecer el directorio de trabajo
-WORKDIR /src
+WORKDIR /src 
 
 # Copiar el archivo de solución (ajustado para que apunte al directorio correcto)
 COPY ./ScoreFlow2.sln ./  # La solución está en el directorio raíz
