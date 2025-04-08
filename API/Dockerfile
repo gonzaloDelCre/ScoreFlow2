@@ -8,19 +8,19 @@ RUN dotnet workload install maui-android
 WORKDIR /src
 
 # Copiar el archivo de solución (ajustado para que apunte al directorio correcto)
-COPY ../ScoreFlow2.sln ./  # La solución está un nivel arriba
+COPY ./ScoreFlow2.sln ./  # La solución está en el directorio raíz
 
 # Copiar los archivos .csproj de cada proyecto que forma parte de la solución
-COPY ../API/API.csproj ./API/
-COPY ../Application/Application.csproj ./Application/
-COPY ../Domain/Domain.csproj ./Domain/
-COPY ../Infrastructure/Infrastructure.csproj ./Infrastructure/
+COPY ./API/API.csproj ./API/
+COPY ./Application/Application.csproj ./Application/
+COPY ./Domain/Domain.csproj ./Domain/
+COPY ./Infrastructure/Infrastructure.csproj ./Infrastructure/
 
 # Restaurar las dependencias para toda la solución
 RUN dotnet restore ./ScoreFlow2.sln
 
 # Copiar todo el contenido de la solución
-COPY ../ ./  # Copiar el resto de la aplicación
+COPY ./ ./  # Copiar el resto de la aplicación
 
 # Compilar el proyecto API (que será el entry point de la aplicación)
 WORKDIR /src/API
