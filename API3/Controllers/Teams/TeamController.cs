@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace API.Controllers.Teams
 {
-    [Route("api/teams")]
     [ApiController]
+    [Route("api/teams")]
     public class TeamController : ControllerBase
     {
         private readonly GeneralTeamUseCaseHandler _useCaseHandler;
@@ -80,6 +80,17 @@ namespace API.Controllers.Teams
         {
             await _useCaseHandler.DeleteTeamAsync(id);
             return NoContent();
+        }
+
+        /// <summary>
+        /// Scrapping teams
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("scrape")]
+        public async Task<IActionResult> ScrapeAndCreateTeams()
+        {
+            var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
+            return Ok(result);
         }
     }
 }

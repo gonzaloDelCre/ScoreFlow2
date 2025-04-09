@@ -13,19 +13,23 @@ namespace Application.Teams.UseCases
         private readonly UpdateTeamUseCase _updateTeam;
         private readonly DeleteTeamUseCase _deleteTeam;
         private readonly GetAllTeamsUseCase _getAllTeams;
+        private readonly CreateTeamsFromScraperUseCase _createTeamsFromScraper;
+
 
         public GeneralTeamUseCaseHandler(
             GetTeamByIdUseCase getTeamById,
             CreateTeamUseCase createTeam,
             UpdateTeamUseCase updateTeam,
             DeleteTeamUseCase deleteTeam,
-            GetAllTeamsUseCase getAllTeams)
+            GetAllTeamsUseCase getAllTeams,
+            CreateTeamsFromScraperUseCase createTeamsFromScraper)
         {
             _getTeamById = getTeamById;
             _createTeam = createTeam;
             _updateTeam = updateTeam;
             _deleteTeam = deleteTeam;
             _getAllTeams = getAllTeams;
+            _createTeamsFromScraper = createTeamsFromScraper;
         }
 
         public async Task<object> GetAllTeamsAsync()
@@ -52,6 +56,11 @@ namespace Application.Teams.UseCases
         public async Task DeleteTeamAsync(int id)
         {
             await _deleteTeam.ExecuteAsync(id);
+        }
+
+        public async Task<List<TeamResponseDTO>> CreateTeamsFromScraperAsync()
+        {
+            return await _createTeamsFromScraper.ExecuteAsync();
         }
     }
 }

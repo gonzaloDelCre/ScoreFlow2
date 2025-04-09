@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: scoreflow2-db
+    environment:
+      SA_PASSWORD: "Triski2015"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+  api3:
+    build:
+      context: .
+      dockerfile: ./API3/Dockerfile 
+    container_name: scoreflow2-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ScoreFlowDB;User Id=sa;Password=Triski2015;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+
+volumes:
+  mssql_data:
