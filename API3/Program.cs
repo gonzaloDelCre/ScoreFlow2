@@ -53,15 +53,15 @@ using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using System.Net;
 using Infrastructure.Services.Scraping.Teams;
+using Application.Playes.Mappers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configurar Kestrel y puertos (para conexiones LAN/remotas)
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Listen(IPAddress.Any, 8080);  // Puerto para conexiones externas
+    options.Listen(IPAddress.Any, 5000);
 });
-builder.WebHost.UseUrls("http://0.0.0.0:5000");  // Puerto principal
 
 // Configurar conexión a base de datos
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -74,7 +74,7 @@ builder.Services.AddScoped<Infrastructure.Persistence.Leagues.Mapper.LeagueMappe
 builder.Services.AddScoped<Application.Matches.Mapper.MatchMapper>();
 //builder.Services.AddScoped<Infrastructure.Persistence.Matches.Mapper.MatchMapper>();
 builder.Services.AddScoped<Application.Teams.Mapper.TeamMapper>();
-builder.Services.AddScoped<Application.Playes.Mappers.PlayerMapper>();
+//builder.Services.AddScoped<Application.Playes.Mappers.PlayerMapper>();
 builder.Services.AddScoped<Infrastructure.Persistence.Players.Mapper.PlayerMapper>();
 builder.Services.AddScoped<Application.PlayerStatistics.Mappers.PlayerStatisticMapper>();
 builder.Services.AddScoped<Infrastructure.Persistence.PlayerStatistics.Mapper.PlayerStatisticMapper>();
@@ -134,7 +134,7 @@ builder.Services.AddScoped<UpdateTeamUseCase>();
 builder.Services.AddScoped<DeleteTeamUseCase>();
 builder.Services.AddScoped<GetAllTeamsUseCase>();
 builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
-builder.Services.AddScoped<GeneralTeamUseCaseHandler>();
+builder.Services.AddScoped<TeamUseCaseHandler>();
 
 //Registrar casos de uso de Players
 builder.Services.AddScoped<CreatePlayer>();

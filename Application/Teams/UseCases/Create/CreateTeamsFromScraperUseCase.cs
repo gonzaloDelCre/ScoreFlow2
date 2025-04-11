@@ -33,15 +33,11 @@ namespace Application.Teams.UseCases.Create
                 var team = new Team(
                     new TeamID(0),  // El ID se asigna en la base de datos
                     new TeamName(teamDTO.Name),
-                    null,  // Aquí podrías asignar el entrenador si lo tienes disponible
                     DateTime.UtcNow,
                     teamDTO.Logo
                 );
 
                 var createdTeam = await _teamRepository.AddAsync(team);
-
-                // Si necesitas asociar jugadores al equipo, habría que hacerlo aquí
-                // dependiendo de cómo está configurada tu entidad Team y relaciones
 
                 createdTeams.Add(new TeamMapper().MapToDTO(createdTeam));
             }

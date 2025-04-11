@@ -1,38 +1,84 @@
-﻿using Application.PlayerStatistics.DTOs;
-using Application.PlayerStatistics.UseCases;
-using Application.Playes.DTOs;
+﻿using Application.Playes.DTOs;
 using Application.Playes.UseCases;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
-namespace API.Controllers.Players
+namespace API3.Controllers.Players
 {
-    [Route("api/[controller]")]
+    [Route("api/players")]
     [ApiController]
     public class PlayerController : ControllerBase
     {
-        private readonly GeneralPlayerStatisticsUseCaseHandler _generalPlayerUseCaseHandler;
+        private readonly GeneralPlayerUseCaseHandler _useCaseHandler;
 
-        public PlayerController(GeneralPlayerStatisticsUseCaseHandler generalPlayerUseCaseHandler)
+        public PlayerController(GeneralPlayerUseCaseHandler useCaseHandler)
         {
-            _generalPlayerUseCaseHandler = generalPlayerUseCaseHandler;
+            _useCaseHandler = useCaseHandler;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> HandlePlayerAction([FromBody] PlayerStatisticActionDTO actionDTO)
+        /// <summary>
+        /// Get All Players
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> GetAllPlayers()
         {
-            try
-            {
-                var result = await _generalPlayerUseCaseHandler.Execute(actionDTO);
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Ocurrió un error en el servidor", details = ex.Message });
-            }
+            var result = await _useCaseHandler.GetAllPlayersAsync();
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Get Player By Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPlayerById(int id)
+        {
+            var result = await _useCaseHandler.GetPlayerByIdAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Create Player
+        /// </summary>
+        /// <param name="playerDTO"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> CreatePlayer([FromBody] PlayerRequestDTO playerDTO)
+        {
+            if (playerDTO == null) return BadRequest("Player data is required.");
+
+            var result = await _useCaseHandler.CreatePlayerAsync(playerDTO);
+            return CreatedAtAction(nameof(GetPlayerById), new { id = result.PlayerID }, result);
+        }
+
+        /// <summary>
+        /// Update Player
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="playerDTO"></param>
+        /// <returns></returns>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePlayer(int id, [FromBody] PlayerRequestDTO playerDTO)
+        {
+            if (playerDTO == null) return BadRequest("Player data is required.");
+
+            var result = await _useCaseHandler.UpdatePlayerAsync(id, playerDTO);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Delete Player
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePlayer(int id)
+        {
+            await _useCaseHandler.DeletePlayerAsync(id);
+            return NoContent();
         }
     }
 }

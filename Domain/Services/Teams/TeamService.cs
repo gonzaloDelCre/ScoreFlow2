@@ -1,7 +1,5 @@
 ﻿using Domain.Entities.Teams;
-using Domain.Enum;
 using Domain.Ports.Teams;
-using Domain.Ports.Users;
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
 
@@ -10,17 +8,15 @@ namespace Domain.Services.Teams
     public class TeamService
     {
         private readonly ITeamRepository _teamRepository;
-        private readonly IUserRepository _userRepository;
         private readonly ILogger<TeamService> _logger;
 
-        public TeamService(ITeamRepository teamRepository, IUserRepository userRepository, ILogger<TeamService> logger)
+        public TeamService(ITeamRepository teamRepository, ILogger<TeamService> logger)
         {
             _teamRepository = teamRepository;
-            _userRepository = userRepository;
             _logger = logger;
         }
 
-        public async Task<Team> CreateTeamAsync(string teamName, int coachID, string logoUrl)
+        public async Task<Team> CreateTeamAsync(string teamName, string logoUrl)
         {
             if (string.IsNullOrWhiteSpace(teamName))
                 throw new ArgumentException("El nombre del equipo es obligatorio.");
@@ -28,16 +24,10 @@ namespace Domain.Services.Teams
             if (string.IsNullOrWhiteSpace(logoUrl))
                 throw new ArgumentException("La URL del logo es obligatoria.");
 
-            var userId = new UserID(coachID);
-            var coach = await _userRepository.GetByIdAsync(userId);
-            if (coach == null || coach.Role != UserRole.Entrenador)  // Verificación de rol de entrenador
-                throw new ArgumentException("El entrenador con el ID proporcionado no existe o no tiene el rol adecuado.");
-
             // Crear el equipo con ID 0 (se asignará posteriormente)
             var team = new Team(
                 new TeamID(0),
                 new TeamName(teamName),
-                coach,
                 DateTime.UtcNow,
                 logoUrl
             );

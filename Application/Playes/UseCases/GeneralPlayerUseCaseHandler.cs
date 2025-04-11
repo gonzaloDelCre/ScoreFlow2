@@ -9,59 +9,49 @@ namespace Application.Playes.UseCases
 {
     public class GeneralPlayerUseCaseHandler
     {
-        private readonly GetAllPlayer _getAllPlayers;
         private readonly GetPlayerById _getPlayerById;
-        private readonly CreatePlayer _addPlayer;
+        private readonly CreatePlayer _createPlayer;
         private readonly UpdatePlayer _updatePlayer;
         private readonly DeletePlayer _deletePlayer;
+        private readonly GetAllPlayer _getAllPlayer;
 
         public GeneralPlayerUseCaseHandler(
-            GetAllPlayer getAllPlayers,
             GetPlayerById getPlayerById,
-            CreatePlayer addPlayer,
+            CreatePlayer createPlayer,
             UpdatePlayer updatePlayer,
-            DeletePlayer deletePlayer)
+            DeletePlayer deletePlayer,
+            GetAllPlayer getAllPlayer)
         {
-            _getAllPlayers = getAllPlayers;
             _getPlayerById = getPlayerById;
-            _addPlayer = addPlayer;
+            _createPlayer = createPlayer;
             _updatePlayer = updatePlayer;
             _deletePlayer = deletePlayer;
+            _getAllPlayer = getAllPlayer;
         }
 
-        public async Task<object> Execute(PlayerActionDTO actionDTO)
+        public async Task<IEnumerable<PlayerResponseDTO>> GetAllPlayersAsync()
         {
-            if (string.IsNullOrWhiteSpace(actionDTO.Action))
-                throw new ArgumentException("La acción no puede estar vacía.");
+            return await _getAllPlayer.ExecuteAsync();
+        }
 
-            switch (actionDTO.Action.ToLower())
-            {
-                case "getall":
-                    return await _getAllPlayers.ExecuteAsync();
+        public async Task<PlayerResponseDTO> GetPlayerByIdAsync(int playerId)
+        {
+            return await _getPlayerById.ExecuteAsync(new PlayerID(playerId));
+        }
 
-                case "getbyid":
-                    if (actionDTO.PlayerID == null)
-                        throw new ArgumentException("El ID del jugador es necesario para obtenerlo.");
-                    return await _getPlayerById.ExecuteAsync(new PlayerID(actionDTO.PlayerID.Value));
+        public async Task<PlayerResponseDTO> CreatePlayerAsync(PlayerRequestDTO playerDTO)
+        {
+            return await _createPlayer.Execute(playerDTO);
+        }
 
-                case "add":
-                    if (actionDTO.Player == null)
-                        throw new ArgumentException("Los detalles del jugador son necesarios para agregarlo.");
-                    return await _addPlayer.Execute(actionDTO.Player);
+        public async Task<PlayerResponseDTO> UpdatePlayerAsync(int playerId, PlayerRequestDTO playerDTO)
+        {
+            return await _updatePlayer.Execute(playerDTO, playerId);
+        }
 
-                case "update":
-                    if (actionDTO.Player == null)
-                        throw new ArgumentException("Los detalles del jugador son necesarios para actualizarlo.");
-                    return await _updatePlayer.Execute(actionDTO.Player, actionDTO.PlayerID.Value);
-
-                case "delete":
-                    if (actionDTO.PlayerID == null)
-                        throw new ArgumentException("El ID del jugador es necesario para eliminarlo.");
-                    return await _deletePlayer.Execute(new PlayerID(actionDTO.PlayerID.Value));
-
-                default:
-                    throw new ArgumentException($"Acción '{actionDTO.Action}' no soportada.");
-            }
+        public async Task DeletePlayerAsync(int playerId)
+        {
+            await _deletePlayer.Execute(new PlayerID(playerId));
         }
     }
 }

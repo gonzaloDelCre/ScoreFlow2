@@ -4,15 +4,15 @@ using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace API.Controllers.Teams
+namespace API3.Controllers.Teams
 {
     [ApiController]
     [Route("api/teams")]
     public class TeamController : ControllerBase
     {
-        private readonly GeneralTeamUseCaseHandler _useCaseHandler;
+        private readonly TeamUseCaseHandler _useCaseHandler;
 
-        public TeamController(GeneralTeamUseCaseHandler useCaseHandler)
+        public TeamController(TeamUseCaseHandler useCaseHandler)
         {
             _useCaseHandler = useCaseHandler;
         }
@@ -66,7 +66,7 @@ namespace API.Controllers.Teams
         {
             if (teamDTO == null) return BadRequest("Team data is required.");
 
-            var result = await _useCaseHandler.UpdateTeamAsync(id, teamDTO);
+            var result = await _useCaseHandler.UpdateTeamAsync(teamDTO);
             return Ok(result);
         }
 
@@ -83,14 +83,14 @@ namespace API.Controllers.Teams
         }
 
         /// <summary>
-        /// Scrapping teams
+        /// Scraping teams
         /// </summary>
         /// <returns></returns>
-        [HttpPost("scrape")]
-        public async Task<IActionResult> ScrapeAndCreateTeams()
-        {
-            var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
-            return Ok(result);
-        }
+        //[HttpPost("scrape-teams")]
+        //public async Task<IActionResult> ScrapeAndCreateTeams()
+        //{
+        //    //var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
+        //    return Ok(result);
+        //}
     }
 }

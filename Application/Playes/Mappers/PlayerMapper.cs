@@ -1,46 +1,42 @@
-﻿using Application.Playes.DTOs;
+﻿
+using Application.Playes.DTOs;
+using Application.TeamPlayers.Mappers;
 using Domain.Entities.Players;
-using Domain.Enum;
+using Domain.Entities.TeamPlayers;
 using Domain.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Playes.Mappers
 {
-    public class PlayerMapper
+    public static class PlayerMapper
     {
-        public PlayerResponseDTO MapToDTO(Player player)
+        public static PlayerResponseDTO MapToResponseDTO(Player player)
         {
-            if (player == null)
-                throw new ArgumentNullException(nameof(player), "La entidad de dominio Player no puede ser nula.");
-
             return new PlayerResponseDTO
             {
                 PlayerID = player.PlayerID,
                 Name = player.Name.Value,
-                TeamID = player.TeamID,
+                Age = player.Age.Value,
                 Position = player.Position,
-                CreatedAt = player.CreatedAt
+                Goals = player.Goals,
+                Photo = player.Photo,
+                CreatedAt = player.CreatedAt,
+                TeamPlayers = player.TeamPlayers.Select(tp => TeamPlayerMapper.ToResponseDTO(tp)).ToList(),
+                //MatchEvents = player.MatchEvents.Select(me => MatchEventMapper.MapToResponseDTO(me)).ToList(),
+                //PlayerStatistics = player.PlayerStatistics.Select(ps => PlayerStatisticMapper.MapToResponseDTO(ps)).ToList()
             };
         }
 
-        public Player MapToDomain(PlayerRequestDTO playerDTO)
+        public static Player MapToDomain(PlayerRequestDTO dto, List<TeamPlayer> teamPlayers)
         {
-            if (playerDTO == null)
-                throw new ArgumentNullException(nameof(playerDTO), "El DTO PlayerRequestDTO no puede ser nulo.");
-
-            var playerID = new PlayerID(0); 
-
             return new Player(
-                playerID,
-                new PlayerName(playerDTO.Name),
-                playerDTO.TeamID,
-                (PlayerPosition)Enum.Parse(typeof(PlayerPosition),playerDTO.Position.ToString()),
-                null, 
-                playerDTO.CreatedAt
+                new PlayerID(0), 
+                new PlayerName(dto.Name),
+                dto.Position,
+                new PlayerAge(dto.Age),
+                dto.Goals,
+                dto.Photo,
+                dto.CreatedAt,
+                teamPlayers
             );
         }
     }

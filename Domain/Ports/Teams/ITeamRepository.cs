@@ -1,4 +1,6 @@
-﻿using Domain.Entities.Teams;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Domain.Entities.Teams;
 using Domain.Shared;
 
 namespace Domain.Ports.Teams

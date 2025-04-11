@@ -1,7 +1,8 @@
 ﻿using Application.Teams.DTOs;
 using Domain.Ports.Teams;
-using Domain.Services.Teams;
 using Domain.Shared;
+using System;
+using System.Threading.Tasks;
 
 namespace Application.Teams.UseCases.Get
 {
@@ -16,9 +17,9 @@ namespace Application.Teams.UseCases.Get
 
         public async Task<TeamResponseDTO> ExecuteAsync(int teamID)
         {
-            var teamId = new TeamID(teamID); 
+            var teamId = new TeamID(teamID);
 
-            var team = await _teamRepository.GetByIdAsync(teamId); 
+            var team = await _teamRepository.GetByIdAsync(teamId);
             if (team == null)
                 throw new Exception("El equipo no existe.");
 
@@ -26,7 +27,6 @@ namespace Application.Teams.UseCases.Get
             {
                 TeamID = team.TeamID.Value,
                 TeamName = team.Name.Value,
-                CoachID = team.Coach.UserID.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
                 LogoUrl = team.Logo,
                 CreatedAt = team.CreatedAt

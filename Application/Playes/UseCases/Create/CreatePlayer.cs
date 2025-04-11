@@ -1,12 +1,9 @@
 ﻿using Application.Playes.DTOs;
+using Application.Playes.Mappers;
 using Domain.Entities.Players;
 using Domain.Ports.Players;
 using Domain.Services.Players;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Domain.Shared;
 
 namespace Application.Playes.UseCases.Create
 {
@@ -35,19 +32,25 @@ namespace Application.Playes.UseCases.Create
 
             var player = await _playerService.CreatePlayerAsync(
                 new PlayerName(playerDTO.Name),
-                playerDTO.TeamID,
                 playerDTO.Position,
-                playerDTO.CreatedAt
+                new PlayerAge(playerDTO.Age),
+                playerDTO.Goals,
+                playerDTO.Photo,
+                playerDTO.CreatedAt,
+                playerDTO.TeamIDs.Select(id => new TeamID(id)).ToList()  
             );
 
             return new PlayerResponseDTO
             {
                 PlayerID = player.PlayerID,
                 Name = player.Name.Value,
-                TeamID = player.TeamID,
                 Position = player.Position,
+                Age = player.Age.Value,
+                Goals = player.Goals,
+                Photo = player.Photo,
                 CreatedAt = player.CreatedAt
             };
         }
+
     }
 }

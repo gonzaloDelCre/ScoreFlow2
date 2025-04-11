@@ -36,21 +36,23 @@ namespace Infrastructure.Services.Scraping.Teams
                 var logoNode = row.SelectSingleNode(".//td[@class='celda_peque'][1]/a/img");
                 var logoUrl = logoNode?.GetAttributeValue("src", "");
 
+
                 // Creamos el objeto DTO con los valores necesarios
                 var team = new TeamRequestDTO
                 {
                     TeamID = teamId ?? 0,
                     Name = teamName ?? string.Empty,
                     Logo = logoUrl ?? string.Empty,
-                    CoachID = 0, // Este valor no está en la tabla, se tendría que asignar después
-                    PlayerIds = new List<int>() // Los IDs de jugadores tampoco están en esta tabla
+                    PlayerIds = new List<int>() // Los IDs de jugadores no están en la tabla
                 };
+
 
                 teams.Add(team);
             }
 
             return teams;
         }
+
 
         private int? ExtractTeamId(string href)
         {

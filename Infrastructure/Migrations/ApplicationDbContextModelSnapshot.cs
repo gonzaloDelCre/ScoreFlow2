@@ -351,9 +351,6 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamID"));
 
-                    b.Property<int>("CoachID")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -367,8 +364,6 @@ namespace Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("TeamID");
-
-                    b.HasIndex("CoachID");
 
                     b.ToTable("Teams");
                 });
@@ -566,17 +561,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("League");
 
                     b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.TeamEntity", b =>
-                {
-                    b.HasOne("Infrastructure.Persistence.Users.Entities.UserEntity", "Coach")
-                        .WithMany()
-                        .HasForeignKey("CoachID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Coach");
                 });
 
             modelBuilder.Entity("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", b =>

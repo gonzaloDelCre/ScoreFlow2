@@ -6,7 +6,7 @@ using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace API.Controllers.Users
+namespace API3.Controllers.Users
 {
     [Route("api/users")]
     [ApiController]

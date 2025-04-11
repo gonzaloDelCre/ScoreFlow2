@@ -1,7 +1,7 @@
 ﻿using Application.Teams.DTOs;
-using Domain.Entities.Teams;
 using Domain.Ports.Teams;
-using Domain.Services.Teams;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Application.Teams.UseCases.Get
 {
@@ -22,12 +22,10 @@ namespace Application.Teams.UseCases.Get
             {
                 TeamID = team.TeamID.Value,
                 TeamName = team.Name.Value,
-                CoachID = team.Coach.UserID.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
                 LogoUrl = team.Logo,
                 CreatedAt = team.CreatedAt
             }).ToList();
         }
     }
-
 }

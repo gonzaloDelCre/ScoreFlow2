@@ -1,12 +1,8 @@
 ﻿using Application.Playes.DTOs;
+using Application.Playes.Mappers;
 using Domain.Entities.Players;
 using Domain.Services.Players;
 using Domain.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.Playes.UseCases.Update
 {
@@ -30,18 +26,31 @@ namespace Application.Playes.UseCases.Update
 
             existingPlayer.Update(
                 new PlayerName(playerDTO.Name),
-                playerDTO.TeamID,
                 playerDTO.Position,
+                new PlayerAge(playerDTO.Age),
+                playerDTO.Goals,
+                playerDTO.Photo,
                 playerDTO.CreatedAt
             );
 
-            await _playerService.UpdatePlayerAsync(existingPlayer);
+            await _playerService.UpdatePlayerAsync(
+                existingPlayer.PlayerID,
+                existingPlayer.Name,
+                existingPlayer.Position,
+                existingPlayer.Age,
+                existingPlayer.Goals,
+                existingPlayer.Photo,
+                existingPlayer.CreatedAt
+            );
+
             return new PlayerResponseDTO
             {
                 PlayerID = existingPlayer.PlayerID,
                 Name = existingPlayer.Name.Value,
-                TeamID = existingPlayer.TeamID,
                 Position = existingPlayer.Position,
+                Age = existingPlayer.Age.Value,
+                Goals = existingPlayer.Goals,
+                Photo = existingPlayer.Photo,
                 CreatedAt = existingPlayer.CreatedAt
             };
         }

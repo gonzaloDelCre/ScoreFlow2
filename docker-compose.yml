@@ -15,11 +15,12 @@ services:
   api3:
     build:
       context: .
-      dockerfile: ./API3/Dockerfile 
+      dockerfile: ./API3/Dockerfile
     container_name: scoreflow2-api
     ports:
-      - "5000:8080"
+      - "5000:5000"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ScoreFlowDB;User Id=sa;Password=Triski2015;TrustServerCertificate=True
     depends_on:
       - sqlserver

@@ -20,11 +20,9 @@ namespace Application.Teams.UseCases.Delete
 
                 if (!success)
                     throw new ArgumentException("No se pudo eliminar el equipo.");
-
             }
             catch (Exception ex)
             {
-                // Manejo de excepciones
                 throw new ApplicationException("Error al eliminar el equipo.", ex);
             }
         }

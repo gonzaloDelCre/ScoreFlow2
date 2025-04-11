@@ -1,20 +1,18 @@
-﻿using Domain.Entities.Players;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Domain.Entities.Players;
+using Domain.Shared;
 
 namespace Domain.Ports.Players
 {
     public interface IPlayerRepository
     {
-        Task<Player?> GetByIdAsync(int playerId);
+        Task<Player?> GetByIdAsync(PlayerID playerId);
         Task<IEnumerable<Player>> GetAllAsync();
-        Task<IEnumerable<Player>> GetByTeamIdAsync(int teamId);
+        Task<IEnumerable<Player>> GetByTeamIdAsync(TeamID teamId);
         Task<Player?> GetByNameAsync(string playerName);
         Task<Player> AddAsync(Player player);
         Task UpdateAsync(Player player);
-        Task<bool> DeleteAsync(int playerId);
+        Task<bool> DeleteAsync(PlayerID playerId);
     }
 }
