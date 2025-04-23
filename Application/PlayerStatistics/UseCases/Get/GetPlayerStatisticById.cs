@@ -1,7 +1,6 @@
 ﻿using Application.PlayerStatistics.DTOs;
 using Application.PlayerStatistics.Mappers;
 using Application.Playes.DTOs;
-using Application.Playes.Mappers;
 using Domain.Entities.PlayerStatistics;
 using Domain.Services.Players;
 using Domain.Services.PlayerStatistics;

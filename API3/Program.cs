@@ -75,7 +75,7 @@ builder.Services.AddScoped<Application.Matches.Mapper.MatchMapper>();
 //builder.Services.AddScoped<Infrastructure.Persistence.Matches.Mapper.MatchMapper>();
 builder.Services.AddScoped<Application.Teams.Mapper.TeamMapper>();
 //builder.Services.AddScoped<Application.Playes.Mappers.PlayerMapper>();
-builder.Services.AddScoped<Infrastructure.Persistence.Players.Mapper.PlayerMapper>();
+builder.Services.AddScoped<PlayerMapper>();
 builder.Services.AddScoped<Application.PlayerStatistics.Mappers.PlayerStatisticMapper>();
 builder.Services.AddScoped<Infrastructure.Persistence.PlayerStatistics.Mapper.PlayerStatisticMapper>();
 
