@@ -3,25 +3,19 @@ using Domain.Entities.Players;
 using Domain.Entities.TeamPlayers;
 using Domain.Entities.Teams;
 using Domain.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Application.TeamPlayers.Mappers
 {
     public static class TeamPlayerMapper
     {
-        // Convierte un objeto de dominio TeamPlayer a DTO de respuesta
         public static TeamPlayerResponseDTO ToResponseDTO(this TeamPlayer teamPlayer)
         {
             return new TeamPlayerResponseDTO
             {
                 TeamID = teamPlayer.TeamID.Value,
                 PlayerID = teamPlayer.PlayerID.Value,
-                TeamName = teamPlayer.Team.Name.Value,
-                PlayerName = teamPlayer.Player.Name.Value,
+                TeamName = teamPlayer.Team?.Name.Value ?? "Sin nombre",
+                PlayerName = teamPlayer.Player?.Name.Value ?? "Sin nombre",
                 JoinedAt = teamPlayer.JoinedAt,
                 RoleInTeam = teamPlayer.RoleInTeam
             };

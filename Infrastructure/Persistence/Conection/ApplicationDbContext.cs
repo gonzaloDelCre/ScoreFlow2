@@ -39,13 +39,6 @@ namespace Infrastructure.Persistence.Conection
             modelBuilder.Entity<TeamLeagueEntity>().HasKey(tl => new { tl.TeamID, tl.LeagueID });
             modelBuilder.Entity<MatchRefereeEntity>().HasKey(mr => new { mr.MatchID, mr.RefereeID });
 
-            // Configurar relaciones y restricciones
-            modelBuilder.Entity<PlayerEntity>()
-               .HasOne(p => p.TeamPlayers)       
-               .WithMany()                
-               .HasForeignKey(p => p.TeamPlayers)
-               .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<MatchEntity>()
                 .HasOne(m => m.Team1)
                 .WithMany()
@@ -113,9 +106,6 @@ namespace Infrastructure.Persistence.Conection
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MatchRefereeEntity>()
-                .HasKey(mr => new { mr.MatchID, mr.RefereeID });
-
-            modelBuilder.Entity<MatchRefereeEntity>()
                 .HasOne(mr => mr.Match)
                 .WithMany(m => m.MatchReferees)
                 .HasForeignKey(mr => mr.MatchID)
@@ -127,11 +117,22 @@ namespace Infrastructure.Persistence.Conection
                 .HasForeignKey(mr => mr.RefereeID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<TeamPlayerEntity>()
+                .HasOne(tp => tp.Team)
+                .WithMany(t => t.TeamPlayers)
+                .HasForeignKey(tp => tp.TeamID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TeamPlayerEntity>()
+                .HasOne(tp => tp.Player)
+                .WithMany(p => p.TeamPlayers)
+                .HasForeignKey(tp => tp.PlayerID)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<UserEntity>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // Configurar restricciones de longitud en `VARCHAR`
             modelBuilder.Entity<UserEntity>().Property(u => u.FullName).HasMaxLength(100);
             modelBuilder.Entity<UserEntity>().Property(u => u.Email).HasMaxLength(255);
             modelBuilder.Entity<TeamEntity>().Property(t => t.Name).HasMaxLength(100);

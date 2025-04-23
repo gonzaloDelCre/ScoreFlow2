@@ -1,42 +1,48 @@
-﻿
-using Application.Playes.DTOs;
-using Application.TeamPlayers.Mappers;
-using Domain.Entities.Players;
+﻿using Domain.Entities.Players;
 using Domain.Entities.TeamPlayers;
+using Infrastructure.Persistence.Players.Entities;
+using Infrastructure.Persistence.TeamPlayers.Entities;
+using Domain.Enum;
 using Domain.Shared;
 
-namespace Application.Playes.Mappers
+namespace Infrastructure.Persistence.Players.Mapper
 {
-    public static class PlayerMapper
+    public class PlayerMapper
     {
-        public static PlayerResponseDTO MapToResponseDTO(Player player)
+        public PlayerEntity MapToEntity(Player player)
         {
-            return new PlayerResponseDTO
+            return new PlayerEntity
             {
-                PlayerID = player.PlayerID,
+                PlayerID = player.PlayerID.Value,
                 Name = player.Name.Value,
+                Position = player.Position.ToString(),
                 Age = player.Age.Value,
-                Position = player.Position,
                 Goals = player.Goals,
                 Photo = player.Photo,
-                CreatedAt = player.CreatedAt,
-                TeamPlayers = player.TeamPlayers.Select(tp => TeamPlayerMapper.ToResponseDTO(tp)).ToList(),
-                //MatchEvents = player.MatchEvents.Select(me => MatchEventMapper.MapToResponseDTO(me)).ToList(),
-                //PlayerStatistics = player.PlayerStatistics.Select(ps => PlayerStatisticMapper.MapToResponseDTO(ps)).ToList()
+                CreatedAt = player.CreatedAt
             };
         }
 
-        public static Player MapToDomain(PlayerRequestDTO dto, List<TeamPlayer> teamPlayers)
+        public Player MapToDomain(PlayerEntity entity, ICollection<TeamPlayerEntity> teamPlayers)
         {
+            var teamPlayerList = teamPlayers
+                .Where(tp => tp.PlayerID == entity.PlayerID)
+                .Select(tp => new TeamPlayer(
+                    new TeamID(tp.TeamID),
+                    new PlayerID(entity.PlayerID),
+                    tp.JoinedAt,
+                    tp.RoleInTeam
+                )).ToList();
+
             return new Player(
-                new PlayerID(0), 
-                new PlayerName(dto.Name),
-                dto.Position,
-                new PlayerAge(dto.Age),
-                dto.Goals,
-                dto.Photo,
-                dto.CreatedAt,
-                teamPlayers
+                new PlayerID(entity.PlayerID),
+                new PlayerName(entity.Name),
+                Enum.Parse<PlayerPosition>(entity.Position),
+                new PlayerAge(entity.Age),
+                entity.Goals,
+                entity.Photo,
+                entity.CreatedAt,
+                teamPlayerList
             );
         }
     }

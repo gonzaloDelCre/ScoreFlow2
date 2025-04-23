@@ -1,49 +1,40 @@
 ﻿using Application.TeamPlayers.DTOs;
-using Domain.Services;
-using System.Threading.Tasks;
-using Application.TeamPlayers.Mappers;
 using Domain.Services.TeamPlayers;
+using Domain.Ports.Players;
+using Application.TeamPlayers.Mappers;
+using Domain.Ports.Teams;
+using Domain.Shared;
 
 namespace Application.TeamPlayers.UseCases.Create
 {
     public class CreateTeamPlayer
     {
         private readonly TeamPlayerService _teamPlayerService;
+        private readonly ITeamRepository _teamRepository;
+        private readonly IPlayerRepository _playerRepository;
 
-        public CreateTeamPlayer(TeamPlayerService teamPlayerService)
+        public CreateTeamPlayer(
+            TeamPlayerService teamPlayerService,
+            ITeamRepository teamRepository,
+            IPlayerRepository playerRepository)
         {
             _teamPlayerService = teamPlayerService;
+            _teamRepository = teamRepository;
+            _playerRepository = playerRepository;
         }
 
         public async Task<TeamPlayerResponseDTO?> ExecuteAsync(TeamPlayerRequestDTO request)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            var team = await _teamRepository.GetByIdAsync(new TeamID(request.TeamID));
+            var player = await _playerRepository.GetByIdAsync(new PlayerID(request.PlayerID));
 
-            var dummyTeam = new Domain.Entities.Teams.Team(
-                new Domain.Shared.TeamID(request.TeamID),
-                new Domain.Entities.Teams.TeamName("Equipo Dummy"),
-                DateTime.UtcNow, 
-                "" 
-            );
+            if (team == null || player == null)
+                throw new InvalidOperationException("Equipo o jugador no encontrado.");
 
-            var dummyPlayer = new Domain.Entities.Players.Player(
-                new Domain.Shared.PlayerID(request.PlayerID),
-                new Domain.Entities.Players.PlayerName("Jugador Dummy"),
-                Domain.Enum.PlayerPosition.LD,
-                new Domain.Entities.Players.PlayerAge(0),
-                0, 
-                null, 
-                DateTime.UtcNow,
-                new List<Domain.Entities.TeamPlayers.TeamPlayer>()
-            );
-
-            var teamPlayer = request.ToDomain(dummyTeam, dummyPlayer);
-
-            var result = await _teamPlayerService.AddAsync(teamPlayer);
+            var domain = request.ToDomain(team, player);
+            var result = await _teamPlayerService.AddAsync(domain);
 
             return result?.ToResponseDTO();
         }
-
     }
 }

@@ -82,15 +82,15 @@ namespace API3.Controllers.Teams
             return NoContent();
         }
 
-        /// <summary>
-        /// Scraping teams
-        /// </summary>
-        /// <returns></returns>
-        //[HttpPost("scrape-teams")]
-        //public async Task<IActionResult> ScrapeAndCreateTeams()
-        //{
-        //    //var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
-        //    return Ok(result);
-        //}
+        // <summary>
+        // Scraping teams
+        // </summary>
+        // <returns></returns>
+        [HttpPost("scrape-teams")]
+        public async Task<IActionResult> ScrapeAndCreateTeams()
+        {
+            var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
+            return Ok(result);
+        }
     }
 }
