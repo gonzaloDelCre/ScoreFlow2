@@ -2,6 +2,7 @@
 using Application.Teams.UseCases;
 using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace API3.Controllers.Teams
@@ -86,11 +87,11 @@ namespace API3.Controllers.Teams
         // Scraping teams
         // </summary>
         // <returns></returns>
-        [HttpPost("scrape-teams")]
-        public async Task<IActionResult> ScrapeAndCreateTeams()
+        [HttpPost("scrape")]
+        public async Task<IActionResult> ScrapeTeams()
         {
-            var result = await _useCaseHandler.CreateTeamsFromScraperAsync();
-            return Ok(result);
+            await _useCaseHandler.ScrapeAsync();
+            return Ok("Equipos importados correctamente.");
         }
     }
 }

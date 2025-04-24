@@ -15,6 +15,8 @@ namespace Domain.Entities.Players
         public DateTime CreatedAt { get; private set; }
 
         private List<TeamPlayer> teamPlayers;
+        private PlayerID playerID;
+
         public IReadOnlyCollection<TeamPlayer> TeamPlayers => teamPlayers.AsReadOnly();
 
         public Player(
@@ -35,6 +37,11 @@ namespace Domain.Entities.Players
             Photo = photo;
             CreatedAt = createdAt == default ? DateTime.UtcNow : createdAt;
             this.teamPlayers = teamPlayers ?? new List<TeamPlayer>();
+        }
+
+        public Player(PlayerID playerID)
+        {
+            this.playerID = playerID;
         }
 
         public void Update(PlayerName name, PlayerPosition position, PlayerAge age, int goals, string? photo, DateTime createdAt)

@@ -25,7 +25,10 @@ namespace Application.Teams.UseCases.Update
 
             team.Update(
                 new TeamName(teamRequestDTO.Name),
-                teamRequestDTO.Logo
+                teamRequestDTO.Logo,
+                teamRequestDTO.Category,
+                teamRequestDTO.Club,
+                teamRequestDTO.Stadium
             );
 
             await _teamRepository.UpdateAsync(team);
@@ -36,7 +39,10 @@ namespace Application.Teams.UseCases.Update
                 TeamName = team.Name.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
                 LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt
+                CreatedAt = team.CreatedAt,
+                Category = team.Category,
+                Club = team.Club,
+                Stadium = team.Stadium
             };
         }
     }

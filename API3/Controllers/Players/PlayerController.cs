@@ -1,6 +1,7 @@
 ﻿using Application.Playes.DTOs;
 using Application.Playes.UseCases;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace API3.Controllers.Players
@@ -74,11 +75,11 @@ namespace API3.Controllers.Players
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePlayer(int id)
+        [HttpPost("scrape/{teamId}")]
+        public async Task<IActionResult> ScrapePlayers(int teamId)
         {
-            await _useCaseHandler.DeletePlayerAsync(id);
-            return NoContent();
+            await _useCaseHandler.ScrapeAsync(teamId);
+            return Ok("Jugadores importados correctamente.");
         }
     }
 }

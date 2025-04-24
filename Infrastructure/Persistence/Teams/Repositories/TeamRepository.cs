@@ -31,30 +31,57 @@ namespace Infrastructure.Persistence.Teams.Repositories
         {
             try
             {
-                string sql = @"
-                    SELECT t.*, tp.*, p.* 
-                    FROM Teams t
-                    LEFT JOIN TeamPlayers tp ON t.TeamID = tp.TeamID
-                    LEFT JOIN Players p ON tp.PlayerID = p.PlayerID";
-
-                var dbTeams = await _context.Teams
-                    .FromSqlRaw(sql)
+                // Paso 1: Obtener todos los equipos sin duplicados
+                string teamsSql = "SELECT * FROM Teams";
+                var teams = await _context.Teams
+                    .FromSqlRaw(teamsSql)
+                    .AsNoTracking()
                     .ToListAsync();
 
-                var teamPlayers = await _context.TeamPlayers.ToListAsync();
-                var players = await _context.Players.ToListAsync();
+                // Paso 2: Obtener todas las relaciones equipo-jugador
+                string teamPlayersSql = "SELECT * FROM TeamPlayers";
+                var teamPlayers = await _context.TeamPlayers
+                    .FromSqlRaw(teamPlayersSql)
+                    .AsNoTracking()
+                    .ToListAsync();
 
-                // Mapeo de equipos con jugadores
-                return dbTeams.Select(teamEntity => TeamMapper.MapToDomain(
-                    teamEntity,
-                    teamPlayers.Where(tp => tp.TeamID == teamEntity.TeamID).ToList(),
-                    players.Where(p => teamPlayers.Any(tp => tp.PlayerID == p.PlayerID && tp.TeamID == teamEntity.TeamID)).ToList()
-                )).ToList();
+                // Paso 3: Obtener todos los jugadores
+                string playersSql = "SELECT * FROM Players";
+                var players = await _context.Players
+                    .FromSqlRaw(playersSql)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Paso 4: Mapear cada equipo a su modelo de dominio
+                var result = new List<Team>();
+                foreach (var teamEntity in teams)
+                {
+                    // Filtrar relaciones para este equipo
+                    var teamPlayerRelations = teamPlayers
+                        .Where(tp => tp.TeamID == teamEntity.TeamID)
+                        .ToList();
+
+                    // Obtener jugadores para este equipo
+                    var teamPlayerEntities = players
+                        .Where(p => teamPlayerRelations.Any(tp => tp.PlayerID == p.PlayerID))
+                        .ToList();
+
+                    // Mapear al dominio
+                    var team = TeamMapper.MapToDomain(
+                        teamEntity,
+                        teamPlayerRelations,
+                        teamPlayerEntities
+                    );
+
+                    result.Add(team);
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener la lista de equipos");
-                return new List<Team>();
+                _logger.LogError(ex, "Error al obtener la lista de equipos: {Message}", ex.Message);
+                return new List<Team>(); // Retornar lista vacía en caso de error
             }
         }
 
@@ -62,33 +89,44 @@ namespace Infrastructure.Persistence.Teams.Repositories
         {
             try
             {
-                string sql = @"
-                    SELECT t.*, tp.*, p.* 
-                    FROM Teams t
-                    LEFT JOIN TeamPlayers tp ON t.TeamID = tp.TeamID
-                    LEFT JOIN Players p ON tp.PlayerID = p.PlayerID
-                    WHERE t.TeamID = @TeamID";
-
+                // Paso 1: Obtener el equipo por ID
+                string teamSql = "SELECT * FROM Teams WHERE TeamID = @TeamID";
                 var parameter = new SqlParameter("@TeamID", teamId.Value);
 
-                var dbTeams = await _context.Teams
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
+                var teamEntity = await _context.Teams
+                    .FromSqlRaw(teamSql, parameter)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
 
-                if (!dbTeams.Any())
+                if (teamEntity == null)
                 {
                     return null;
                 }
 
-                var teamEntity = dbTeams.First();
-                var teamPlayers = await _context.TeamPlayers.Where(tp => tp.TeamID == teamEntity.TeamID).ToListAsync();
-                var players = await _context.Players.ToListAsync();
+                // Paso 2: Obtener relaciones de jugadores para este equipo
+                string teamPlayersSql = "SELECT * FROM TeamPlayers WHERE TeamID = @TeamID";
+                var teamPlayers = await _context.TeamPlayers
+                    .FromSqlRaw(teamPlayersSql, parameter)
+                    .AsNoTracking()
+                    .ToListAsync();
 
-                return TeamMapper.MapToDomain(
-                    teamEntity,
-                    teamPlayers,
-                    players.Where(p => teamPlayers.Any(tp => tp.PlayerID == p.PlayerID && tp.TeamID == teamEntity.TeamID)).ToList()
-                );
+                // Paso 3: Obtener los jugadores asociados
+                if (!teamPlayers.Any())
+                {
+                    // Si no hay jugadores, devolver el equipo sin jugadores
+                    return TeamMapper.MapToDomain(teamEntity, new List<TeamPlayerEntity>(), new List<PlayerEntity>());
+                }
+
+                // Crear lista de parámetros para la consulta IN
+                string playerIds = string.Join(",", teamPlayers.Select(tp => tp.PlayerID));
+                string playersSql = $"SELECT * FROM Players WHERE PlayerID IN ({playerIds})";
+
+                var players = await _context.Players
+                    .FromSqlRaw(playersSql)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                return TeamMapper.MapToDomain(teamEntity, teamPlayers, players);
             }
             catch (Exception ex)
             {
@@ -104,12 +142,13 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                // Use the static TeamMapper method instead of an instance method
                 var teamEntity = TeamMapper.MapToEntity(team);
 
                 // Insertar equipo
                 string insertSql = @"INSERT INTO Teams (Name, Logo, CreatedAt, Category, Club, Stadium) 
-                                     VALUES (@Name, @Logo, @CreatedAt, @Category, @Club, @Stadium);";
+                                     VALUES (@Name, @Logo, @CreatedAt, @Category, @Club, @Stadium);
+                                     SELECT SCOPE_IDENTITY();"; // Obtener el ID insertado directamente
+
                 var parameters = new[]
                 {
                     new SqlParameter("@Name", teamEntity.Name),
@@ -120,40 +159,46 @@ namespace Infrastructure.Persistence.Teams.Repositories
                     new SqlParameter("@Stadium", teamEntity.Stadium ?? (object)DBNull.Value)
                 };
 
-                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
-
-                // Obtener el nuevo TeamID
-                string selectSql = "SELECT TOP 1 TeamID FROM Teams ORDER BY TeamID DESC";
-                var newTeamId = await _context.Teams
-                    .FromSqlRaw(selectSql)
-                    .Select(t => t.TeamID)
-                    .FirstOrDefaultAsync();
+                // Ejecutar la consulta y obtener el ID insertado
+                var newTeamId = Convert.ToInt32(await _context.Database.ExecuteSqlRawAsync(insertSql, parameters));
 
                 // Insertar jugadores si existen
                 if (team.Players.Any())
                 {
-                    foreach (var player in team.Players)
+                    // Crear consulta batch para insertar múltiples relaciones
+                    string teamPlayerSql = "INSERT INTO TeamPlayers (TeamID, PlayerID) VALUES ";
+                    var teamPlayerParams = new List<SqlParameter>();
+
+                    int paramIndex = 0;
+                    for (int i = 0; i < team.Players.Count; i++)
                     {
-                        var playerTeamRelation = new TeamPlayerEntity
-                        {
-                            TeamID = newTeamId,
-                            PlayerID = player.PlayerID.Value
-                        };
-                        await _context.TeamPlayers.AddAsync(playerTeamRelation);
+                        var player = team.Players.ElementAt(i);
+                        if (i > 0)
+                            teamPlayerSql += ", ";
+
+                        teamPlayerSql += $"(@TeamID{paramIndex}, @PlayerID{paramIndex})";
+                        teamPlayerParams.Add(new SqlParameter($"@TeamID{paramIndex}", newTeamId));
+                        teamPlayerParams.Add(new SqlParameter($"@PlayerID{paramIndex}", player.PlayerID.Value));
+                        paramIndex++;
                     }
-                    await _context.SaveChangesAsync();
+
+                    await _context.Database.ExecuteSqlRawAsync(teamPlayerSql, teamPlayerParams.ToArray());
                 }
 
+                // Devolver el equipo creado con su ID
                 return new Team(
                     new TeamID(newTeamId),
-                    team.Name,
+                    team.Name.Value,
                     team.CreatedAt,
-                    team.Logo
+                    team.Logo,
+                    team.Category,
+                    team.Club,
+                    team.Stadium
                 );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al agregar un nuevo equipo");
+                _logger.LogError(ex, "Error al agregar un nuevo equipo: {Message}", ex.Message);
                 throw;
             }
         }
@@ -165,7 +210,6 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
             try
             {
-                // Use the static TeamMapper method instead of an instance method
                 var teamEntity = TeamMapper.MapToEntity(team);
 
                 // Actualizar equipo
@@ -188,29 +232,35 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 // Actualizar jugadores
                 if (team.Players.Any())
                 {
-                    // Eliminar relaciones anteriores de jugadores
-                    var existingRelations = await _context.TeamPlayers
-                        .Where(tp => tp.TeamID == team.TeamID.Value)
-                        .ToListAsync();
-                    _context.TeamPlayers.RemoveRange(existingRelations);
+                    // Eliminar relaciones anteriores
+                    string deleteRelationsSql = "DELETE FROM TeamPlayers WHERE TeamID = @TeamID";
+                    var deleteParam = new SqlParameter("@TeamID", team.TeamID.Value);
+                    await _context.Database.ExecuteSqlRawAsync(deleteRelationsSql, deleteParam);
 
-                    // Insertar nuevas relaciones
-                    foreach (var player in team.Players)
+                    // Crear consulta batch para insertar nuevas relaciones
+                    string teamPlayerSql = "INSERT INTO TeamPlayers (TeamID, PlayerID) VALUES ";
+                    var teamPlayerParams = new List<SqlParameter>();
+
+                    int paramIndex = 0;
+                    for (int i = 0; i < team.Players.Count; i++)
                     {
-                        var playerTeamRelation = new TeamPlayerEntity
-                        {
-                            TeamID = team.TeamID.Value,
-                            PlayerID = player.PlayerID.Value
-                        };
-                        await _context.TeamPlayers.AddAsync(playerTeamRelation);
+                        var player = team.Players.ElementAt(i);
+                        if (i > 0)
+                            teamPlayerSql += ", ";
+
+                        teamPlayerSql += $"(@TeamID{paramIndex}, @PlayerID{paramIndex})";
+                        teamPlayerParams.Add(new SqlParameter($"@TeamID{paramIndex}", team.TeamID.Value));
+                        teamPlayerParams.Add(new SqlParameter($"@PlayerID{paramIndex}", player.PlayerID.Value));
+                        paramIndex++;
                     }
 
-                    await _context.SaveChangesAsync();
+                    await _context.Database.ExecuteSqlRawAsync(teamPlayerSql, teamPlayerParams.ToArray());
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar el equipo con ID {TeamID}", team.TeamID.Value);
+                _logger.LogError(ex, "Error al actualizar el equipo con ID {TeamID}: {Message}",
+                    team.TeamID.Value, ex.Message);
                 throw;
             }
         }
@@ -219,22 +269,21 @@ namespace Infrastructure.Persistence.Teams.Repositories
         {
             try
             {
-                // Eliminar las relaciones de jugadores
-                var teamPlayers = await _context.TeamPlayers
-                    .Where(tp => tp.TeamID == teamId.Value)
-                    .ToListAsync();
-                _context.TeamPlayers.RemoveRange(teamPlayers);
-
-                // Eliminar el equipo
-                string sql = "DELETE FROM Teams WHERE TeamID = @TeamID";
+                // Eliminar las relaciones de jugadores primero (debido a restricciones de clave externa)
+                string deleteRelationsSql = "DELETE FROM TeamPlayers WHERE TeamID = @TeamID";
                 var parameter = new SqlParameter("@TeamID", teamId.Value);
+                await _context.Database.ExecuteSqlRawAsync(deleteRelationsSql, parameter);
 
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
+                // Ahora eliminar el equipo
+                string deleteTeamSql = "DELETE FROM Teams WHERE TeamID = @TeamID";
+                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(deleteTeamSql, parameter);
+
                 return rowsAffected > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar el equipo con ID {TeamID}", teamId.Value);
+                _logger.LogError(ex, "Error al eliminar el equipo con ID {TeamID}: {Message}",
+                    teamId.Value, ex.Message);
                 return false;
             }
         }

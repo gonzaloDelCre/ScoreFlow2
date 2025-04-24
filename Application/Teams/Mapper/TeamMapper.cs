@@ -18,6 +18,9 @@ namespace Application.Teams.Mapper
                 TeamName = team.Name.Value,
                 LogoUrl = team.Logo,
                 PlayerIds = team.Players?.Select(p => p.PlayerID.Value).ToList() ?? new List<int>(),
+                Category = team.Category,
+                Club = team.Club,
+                Stadium = team.Stadium
             };
         }
 
@@ -30,16 +33,29 @@ namespace Application.Teams.Mapper
 
             if (existingTeam != null)
             {
-                existingTeam.Update(new TeamName(teamDTO.Name), teamDTO.Logo);
+                existingTeam.Update(
+                    new TeamName(teamDTO.Name),
+                    teamDTO.Logo,
+                    teamDTO.Category,
+                    teamDTO.Club,
+                    teamDTO.Stadium
+                );
                 return existingTeam;
             }
 
-            return new Team(
+            var team = new Team(
                 new TeamID(0),
                 new TeamName(teamDTO.Name),
                 DateTime.UtcNow,
                 teamDTO.Logo
             );
+
+            team.SetCategory(teamDTO.Category);
+            team.SetClub(teamDTO.Club);
+            team.SetStadium(teamDTO.Stadium);
+
+            return team;
+
         }
     }
 }

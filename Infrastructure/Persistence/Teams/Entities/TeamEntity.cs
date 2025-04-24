@@ -19,7 +19,7 @@ namespace Infrastructure.Persistence.Teams.Entities
         [MaxLength(100)]
         public string? Club { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(255)]
         public string? Stadium { get; set; }
 
         [MaxLength(500)]

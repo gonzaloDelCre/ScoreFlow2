@@ -17,7 +17,7 @@ namespace Application.Playes.UseCases.Get
         public async Task<PlayerResponseDTO?> ExecuteAsync(PlayerID playerId)
         {
             var player = await _playerService.GetPlayerByIdAsync(playerId);
-            return player != null ? PlayerMapper.MapToResponseDTO(player) : null;
+            return player != null ? PlayerMapper.ToResponseDTO(player) : null;
         }
     }
 }

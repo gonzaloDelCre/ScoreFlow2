@@ -24,6 +24,10 @@ namespace Application.Teams.UseCases.Create
                 teamRequestDTO.Logo
             );
 
+            team.SetCategory(teamRequestDTO.Category);
+            team.SetClub(teamRequestDTO.Club);
+            team.SetStadium(teamRequestDTO.Stadium);
+
             await _teamRepository.AddAsync(team);
 
             return new TeamResponseDTO
@@ -32,7 +36,10 @@ namespace Application.Teams.UseCases.Create
                 TeamName = team.Name.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
                 LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt
+                CreatedAt = team.CreatedAt,
+                Category = team.Category,
+                Club = team.Club,
+                Stadium = team.Stadium
             };
         }
     }

@@ -3,6 +3,7 @@ using Application.TeamPlayers.UseCases;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 namespace API3.Controllers.TeamPlayers
 {
@@ -91,12 +92,11 @@ namespace API3.Controllers.TeamPlayers
         /// <param name="teamId"></param>
         /// <param name="playerId"></param>
         /// <returns></returns>
-        [HttpDelete("{teamId}/{playerId}")]
-        public async Task<IActionResult> DeletePlayerFromTeam(int teamId, int playerId)
+        [HttpPost("scrape/{teamId}")]
+        public async Task<IActionResult> ScrapeRelations(int teamId)
         {
-            var result = await _useCaseHandler.DeleteAsync(teamId, playerId);
-            if (!result) return NotFound();
-            return NoContent();
+            await _useCaseHandler.ScrapeAsync(teamId);
+            return Ok("Relaciones equipo-jugador creadas correctamente.");
         }
     }
 }

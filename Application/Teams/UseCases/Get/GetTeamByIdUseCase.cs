@@ -29,7 +29,10 @@ namespace Application.Teams.UseCases.Get
                 TeamName = team.Name.Value,
                 PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
                 LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt
+                CreatedAt = team.CreatedAt,
+                Category = team.Category,
+                Club = team.Club,
+                Stadium = team.Stadium
             };
         }
     }

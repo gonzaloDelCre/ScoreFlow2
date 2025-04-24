@@ -1,49 +1,53 @@
-﻿using Domain.Entities.Players;
+﻿using Application.Playes.DTOs;
+using Application.Playes.Mappers;
+using Application.TeamPlayers.DTOs;
+using Application.TeamPlayers.Mappers;
+using Domain.Entities.Players;
 using Domain.Entities.TeamPlayers;
-using Infrastructure.Persistence.Players.Entities;
-using Infrastructure.Persistence.TeamPlayers.Entities;
 using Domain.Enum;
 using Domain.Shared;
 
-namespace Infrastructure.Persistence.Players.Mapper
+namespace Application.Playes.Mappers
 {
-    public class PlayerMapper
+    public static class PlayerMapper
     {
-        public PlayerEntity MapToEntity(Player player)
+        // Map DTO → Dominio (sin relaciones, para crear)
+        public static Player ToDomain(this PlayerRequestDTO dto)
         {
-            return new PlayerEntity
+            return new Player(
+                new PlayerID(0), // Se asignará en base de datos
+                new PlayerName(dto.Name),
+                dto.Position,
+                new PlayerAge(dto.Age),
+                dto.Goals,
+                dto.Photo,
+                dto.CreatedAt,
+                new List<TeamPlayer>() // se agregarán después si hace falta
+            );
+        }
+
+        // Map Dominio → DTO (con TeamPlayers)
+        public static PlayerResponseDTO ToResponseDTO(this Player player)
+        {
+            return new PlayerResponseDTO
             {
-                PlayerID = player.PlayerID.Value,
+                PlayerID = player.PlayerID,
                 Name = player.Name.Value,
-                Position = player.Position.ToString(),
                 Age = player.Age.Value,
+                Position = player.Position,
                 Goals = player.Goals,
                 Photo = player.Photo,
-                CreatedAt = player.CreatedAt
+                CreatedAt = player.CreatedAt,
+                TeamPlayers = player.TeamPlayers?
+                    .Select(tp => tp.ToResponseDTO())
+                    .ToList() ?? new List<TeamPlayerResponseDTO>()
             };
         }
 
-        public Player MapToDomain(PlayerEntity entity, ICollection<TeamPlayerEntity> teamPlayers)
+        // Lista completa
+        public static List<PlayerResponseDTO> ToResponseDTOList(this IEnumerable<Player> players)
         {
-            var teamPlayerList = teamPlayers
-                .Where(tp => tp.PlayerID == entity.PlayerID)
-                .Select(tp => new TeamPlayer(
-                    new TeamID(tp.TeamID),
-                    new PlayerID(entity.PlayerID),
-                    tp.JoinedAt,
-                    tp.RoleInTeam
-                )).ToList();
-
-            return new Player(
-                new PlayerID(entity.PlayerID),
-                new PlayerName(entity.Name),
-                Enum.Parse<PlayerPosition>(entity.Position),
-                new PlayerAge(entity.Age),
-                entity.Goals,
-                entity.Photo,
-                entity.CreatedAt,
-                teamPlayerList
-            );
+            return players.Select(p => p.ToResponseDTO()).ToList();
         }
     }
 }

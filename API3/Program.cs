@@ -53,7 +53,20 @@ using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using System.Net;
 using Infrastructure.Services.Scraping.Teams;
-using Application.Playes.Mappers;
+using Infrastructure.Persistence.Players.Mapper;
+using Application.TeamPlayers.UseCases.Create;
+using Application.TeamPlayers.UseCases;
+using Infrastructure.Services.Scraping.Players.Import;
+using Infrastructure.Services.Scraping.Players.Services;
+using Infrastructure.Services.Scraping.TeamPlayers.Imports;
+using Infrastructure.Services.Scraping.Teams.Services;
+using Domain.Ports.TeamPlayers;
+using Infrastructure.Persistence.TeamPlayers.Repositories;
+using Application.TeamPlayers.UseCases.Delete;
+using Application.TeamPlayers.UseCases.Get;
+using Application.TeamPlayers.UseCases.Update;
+using Domain.Services.TeamPlayers;
+using Infrastructure.Services.Scraping.Teams.Import;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +98,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
 //builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<ITeamPlayerRepository, TeamPlayerRepository>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IPlayerStatisticRepository, PlayerStatisticRepository>();
 
@@ -92,7 +106,6 @@ builder.Services.AddScoped<IPlayerStatisticRepository, PlayerStatisticRepository
 builder.Services.AddScoped<LeagueService>();
 //builder.Services.AddScoped<MatchService>();
 builder.Services.AddScoped<TeamService>();
-builder.Services.AddScoped<TeamScraperService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<PlayerStatisticService>();
@@ -152,6 +165,29 @@ builder.Services.AddScoped<UpdatePlayerStatistic>();
 builder.Services.AddScoped<DeletePlayerStatistic>();
 builder.Services.AddScoped<GeneralPlayerStatisticsUseCaseHandler>();
 
+builder.Services.AddHttpClient<TeamScraperService>();
+builder.Services.AddHttpClient<PlayerScraperService>();
+
+builder.Services.AddScoped<TeamImportService>();
+builder.Services.AddScoped<PlayerImportService>();
+builder.Services.AddScoped<TeamPlayerImportService>();
+
+builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
+builder.Services.AddScoped<CreatePlayersFromScraperUseCase>();
+builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
+
+builder.Services.AddScoped<TeamUseCaseHandler>();
+builder.Services.AddScoped<GeneralPlayerUseCaseHandler>();
+builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
+builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+builder.Services.AddScoped<CreateTeamPlayer>();
+builder.Services.AddScoped<GetTeamPlayerByIds>();
+builder.Services.AddScoped<GetTeamPlayersByTeamId>();
+builder.Services.AddScoped<GetTeamPlayersByPlayerId>();
+builder.Services.AddScoped<DeleteTeamPlayer>();
+builder.Services.AddScoped<UpdateTeamPlayer>();
+builder.Services.AddScoped<TeamPlayerService>();
 
 // Swagger completo
 builder.Services.AddEndpointsApiExplorer();

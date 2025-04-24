@@ -9,6 +9,11 @@ namespace Domain.Entities.Teams
 {
     public class Team
     {
+        private TeamID teamID;
+        private string name;
+        private object value;
+        private TeamID teamID1;
+
         public TeamID TeamID { get; private set; }
         public TeamName Name { get; private set; }
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
@@ -35,6 +40,29 @@ namespace Domain.Entities.Teams
 
         public Team() { }
 
+        public Team(TeamID teamID, string name, DateTime createdAt, string logo, string category, string club, string stadium, object value)
+        {
+            this.teamID = teamID;
+            this.name = name;
+            CreatedAt = createdAt;
+            Logo = logo;
+            Category = category;
+            Club = club;
+            Stadium = stadium;
+            this.value = value;
+        }
+
+        public Team(TeamID teamID1, string name, DateTime createdAt, string logo, string category, string club, string stadium)
+        {
+            this.teamID1 = teamID1;
+            this.name = name;
+            CreatedAt = createdAt;
+            Logo = logo;
+            Category = category;
+            Club = club;
+            Stadium = stadium;
+        }
+
         public void Update(TeamName name = null, string logo = null, string? category = null, string? club = null, string? stadium = null)
         {
             if (name != null) Name = name;
@@ -43,6 +71,22 @@ namespace Domain.Entities.Teams
             Club = club;
             Stadium = stadium;
         }
+
+        public void SetCategory(string category)
+        {
+            Category = category;
+        }
+
+        public void SetClub(string club)
+        {
+            Club = club;
+        }
+
+        public void SetStadium(string stadium)
+        {
+            Stadium = stadium;
+        }
+
 
         public void AddPlayer(Player player)
         {
