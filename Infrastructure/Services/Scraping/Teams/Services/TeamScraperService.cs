@@ -16,7 +16,6 @@ namespace Infrastructure.Services.Scraping.Teams.Services
         public TeamScraperService(HttpClient http)
         {
             _http = http;
-            // Forzar User-Agent “real”
             _http.DefaultRequestHeaders.UserAgent.ParseAdd(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
                 "AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -31,14 +30,13 @@ namespace Infrastructure.Services.Scraping.Teams.Services
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 
-            // Extraer todos los logos con su id_equipo
             var logoDict = new Dictionary<int, string>();
-            var logoNodes = doc.DocumentNode
-                .SelectNodes("//td[contains(@class,'celda_peque')]//a");
+            var cabeceraLogoNodes = doc.DocumentNode
+                .SelectNodes("//div[contains(@class,'div_escudos_cabecera')]/a");
 
-            if (logoNodes != null)
+            if (cabeceraLogoNodes != null)
             {
-                foreach (var node in logoNodes)
+                foreach (var node in cabeceraLogoNodes)
                 {
                     var href = node.GetAttributeValue("href", "");
                     var qs = HttpUtility.ParseQueryString(new Uri($"{BaseUrl}/{href}").Query);
@@ -48,13 +46,12 @@ namespace Infrastructure.Services.Scraping.Teams.Services
                         if (img != null)
                         {
                             var src = img.GetAttributeValue("src", "");
-                            logoDict[id] = $"{BaseUrl}/{src.TrimStart('/')}";
+                            logoDict[id] = src.StartsWith("http") ? src : $"{BaseUrl}/{src.TrimStart('/')}";
                         }
                     }
                 }
             }
 
-            // Lista final con los datos de los equipos
             var teams = new List<(int Id, string Name, string Logo, string Category, string Stadium, string Club, string Coach)>();
             var nameNodes = doc.DocumentNode
                 .SelectNodes("//td[@class='p-t-20']/a");
@@ -74,7 +71,6 @@ namespace Infrastructure.Services.Scraping.Teams.Services
                     var name = node.InnerText.Trim();
                     logoDict.TryGetValue(id, out var logo);
 
-                    // Obtener detalles adicionales
                     var details = await GetTeamDetailsAsync(id);
 
                     teams.Add((id, name, logo ?? "", details.Category, details.Stadium, details.Club, null));
@@ -84,8 +80,6 @@ namespace Infrastructure.Services.Scraping.Teams.Services
             return teams;
         }
 
-
-        // Cambiar para devolver un objeto con los detalles
         private async Task<(string Category, string Club, string Responsible, string Stadium)> GetTeamDetailsAsync(int id)
         {
             var url = $"{BaseUrl}/competiciones/equipo.php?seleccion=0&id_equipo={id}&id=1025342";

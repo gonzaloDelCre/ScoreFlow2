@@ -62,7 +62,7 @@ namespace Domain.Entities.Teams
             Club = club;
             Stadium = stadium;
         }
-
+        
         public void Update(TeamName name = null, string logo = null, string? category = null, string? club = null, string? stadium = null)
         {
             if (name != null) Name = name;
