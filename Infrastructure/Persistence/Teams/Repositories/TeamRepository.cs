@@ -134,6 +134,25 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 return null;
             }
         }
+        public async Task<Team?> GetByExternalIdAsync(string externalId)
+        {
+            // Suponemos que has añadido la columna ExternalID en TeamEntity
+            var entity = await _context.Teams
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.ExternalID == externalId);
+
+            if (entity == null) return null;
+
+            // Carga sus TeamPlayers y PlayerEntities si lo necesitas aquí
+            // Para simplicidad, devolvemos solo la entidad sin jugadores
+            return new Team(
+                new TeamID(entity.TeamID),
+                new TeamName(entity.Name),
+                entity.CreatedAt,
+                entity.Logo,
+                entity.ExternalID
+            );
+        }
 
         public async Task<Team> AddAsync(Team team)
         {
@@ -145,19 +164,22 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 var teamEntity = TeamMapper.MapToEntity(team);
 
                 // Insertar equipo
-                string insertSql = @"INSERT INTO Teams (Name, Logo, CreatedAt, Category, Club, Stadium) 
-                                     VALUES (@Name, @Logo, @CreatedAt, @Category, @Club, @Stadium);
-                                     SELECT SCOPE_IDENTITY();"; // Obtener el ID insertado directamente
+                string insertSql = @"INSERT INTO Teams (Name, Logo, CreatedAt, ExternalID, Category, Club, Stadium) 
+                     VALUES (@Name, @Logo, @CreatedAt, @ExternalID, @Category, @Club, @Stadium);
+                     SELECT SCOPE_IDENTITY();";
+
 
                 var parameters = new[]
                 {
                     new SqlParameter("@Name", teamEntity.Name),
                     new SqlParameter("@Logo", teamEntity.Logo),
                     new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
-                    new SqlParameter("@Category", teamEntity.Category ?? (object)DBNull.Value),
-                    new SqlParameter("@Club", teamEntity.Club ?? (object)DBNull.Value),
-                    new SqlParameter("@Stadium", teamEntity.Stadium ?? (object)DBNull.Value)
-                };
+                    new SqlParameter("@ExternalID", (object?)teamEntity.ExternalID ?? DBNull.Value),
+                    new SqlParameter("@Category", (object?)teamEntity.Category ?? DBNull.Value),
+                    new SqlParameter("@Club", (object?)teamEntity.Club ?? DBNull.Value),
+                    new SqlParameter("@Stadium", (object?)teamEntity.Stadium ?? DBNull.Value)
+};
+
 
                 // Ejecutar la consulta y obtener el ID insertado
                 var newTeamId = Convert.ToInt32(await _context.Database.ExecuteSqlRawAsync(insertSql, parameters));
@@ -214,18 +236,21 @@ namespace Infrastructure.Persistence.Teams.Repositories
 
                 // Actualizar equipo
                 string updateSql = @"UPDATE Teams 
-                                     SET Name = @Name, Logo = @Logo, Category = @Category, 
-                                         Club = @Club, Stadium = @Stadium
-                                     WHERE TeamID = @TeamID";
+                     SET Name = @Name, Logo = @Logo, ExternalID = @ExternalID, Category = @Category, 
+                         Club = @Club, Stadium = @Stadium
+                     WHERE TeamID = @TeamID";
+
                 var parameters = new[]
                 {
                     new SqlParameter("@TeamID", teamEntity.TeamID),
                     new SqlParameter("@Name", teamEntity.Name),
                     new SqlParameter("@Logo", teamEntity.Logo),
-                    new SqlParameter("@Category", teamEntity.Category ?? (object)DBNull.Value),
-                    new SqlParameter("@Club", teamEntity.Club ?? (object)DBNull.Value),
-                    new SqlParameter("@Stadium", teamEntity.Stadium ?? (object)DBNull.Value)
+                    new SqlParameter("@ExternalID", (object?)teamEntity.ExternalID ?? DBNull.Value),
+                    new SqlParameter("@Category", (object?)teamEntity.Category ?? DBNull.Value),
+                    new SqlParameter("@Club", (object?)teamEntity.Club ?? DBNull.Value),
+                    new SqlParameter("@Stadium", (object?)teamEntity.Stadium ?? DBNull.Value)
                 };
+
 
                 await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
 

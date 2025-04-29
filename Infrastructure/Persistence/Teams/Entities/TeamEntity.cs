@@ -10,6 +10,9 @@ namespace Infrastructure.Persistence.Teams.Entities
         [Key]
         public int TeamID { get; set; }
 
+        [MaxLength(100)]
+        public string? ExternalID { get; set; } 
+
         [Required, MaxLength(100)]
         public string Name { get; set; }
 
@@ -34,4 +37,5 @@ namespace Infrastructure.Persistence.Teams.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
+
 }

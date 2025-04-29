@@ -29,7 +29,7 @@ namespace Application.TeamPlayers.UseCases.Update
             var dummyPlayer = new Domain.Entities.Players.Player(
                 new Domain.Shared.PlayerID(playerId),
                 new Domain.Entities.Players.PlayerName("Dummy"),
-                Domain.Enum.PlayerPosition.LD,
+                Domain.Enum.PlayerPosition.JUGADOR,
                 new Domain.Entities.Players.PlayerAge(0),
                 0,
                 null, 

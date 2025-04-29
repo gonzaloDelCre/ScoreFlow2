@@ -2,6 +2,8 @@
 using Domain.Ports.Teams;
 using Domain.Shared;
 using Infrastructure.Services.Scraping.Teams.Services;
+using System;
+using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Scraping.Teams.Import
 {
@@ -22,38 +24,45 @@ namespace Infrastructure.Services.Scraping.Teams.Import
             var teams = await _scraper.GetTeamsAsync();
             Console.WriteLine($"📦 Encontrados {teams.Count} equipos.");
 
-            foreach (var (id, name, logo, category, stadium, club, coach) in teams)
+            foreach (var (extId, name, logo, category, stadium, club, coach) in teams)
             {
-                Console.WriteLine($"– Procesando equipo {id} / {name}");
-                var tid = new TeamID(id);
+                Console.WriteLine($"– Procesando extId={extId} / {name}");
+                var tid = new TeamID(extId);
                 var existing = await _repo.GetByIdAsync(tid);
 
                 if (existing == null)
                 {
                     Console.WriteLine("   → Nuevo, añadiendo...");
-                    var newTeam = new Team(tid, new TeamName(name), DateTime.UtcNow, logo);
-                    newTeam.SetCategory(category != "Categoría no disponible" ? category : null);
-                    newTeam.SetStadium(stadium != "Estadio no disponible" ? stadium : null);
-                    newTeam.SetClub(club != "Club no disponible" ? club : null); // ⬅️ nuevo campo
+                    var newTeam = new Team(
+                        new TeamID(0),
+                        new TeamName(name),
+                        DateTime.UtcNow,
+                        logo,
+                        extId.ToString()
+                    );
+                    newTeam.SetCategory(category);
+                    newTeam.SetStadium(stadium);
+                    newTeam.SetClub(club);
                     await _repo.AddAsync(newTeam);
+                    Console.WriteLine("   → Añadido.");
                 }
                 else
                 {
                     Console.WriteLine("   → Ya existía, comprobando cambios...");
-                    if (existing.Name.Value != name || existing.Logo != logo)
+                    if (existing.ExternalID != extId.ToString()
+                        || existing.Name.Value != name
+                        || existing.Logo != logo)
                     {
-                        Console.WriteLine("   → ¡Datos cambiados! Actualizando...");
-                        existing.Update(new TeamName(name), logo);
-                        existing.SetCategory(category != "Categoría no disponible" ? category : null);
-                        existing.SetStadium(stadium != "Estadio no disponible" ? stadium : null);
-                        existing.SetClub(club != "Club no disponible" ? club : null); // ⬅️ actualización del nuevo campo
+                        Console.WriteLine("   → ¡Actualizando datos!");
+                        existing.Update(new TeamName(name), logo, category, club, stadium);
+                        existing.SetExternalID(extId.ToString());
                         await _repo.UpdateAsync(existing);
+                        Console.WriteLine("   → Actualizado.");
                     }
                 }
             }
 
-            Console.WriteLine("✅ Import terminado.");
+            Console.WriteLine("✅ Import de equipos terminado.");
         }
     }
-
 }

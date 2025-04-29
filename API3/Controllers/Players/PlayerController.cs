@@ -1,5 +1,6 @@
 ﻿using Application.Playes.DTOs;
 using Application.Playes.UseCases;
+using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Reflection.Metadata;
 using System.Threading.Tasks;
@@ -70,16 +71,38 @@ namespace API3.Controllers.Players
             return Ok(result);
         }
 
-        /// <summary>
-        /// Delete Player
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpPost("scrape/{teamId}")]
-        public async Task<IActionResult> ScrapePlayers(int teamId)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePlayer(int id)
         {
-            await _useCaseHandler.ScrapeAsync(teamId);
-            return Ok("Jugadores importados correctamente.");
+            try
+            {
+                await _useCaseHandler.DeletePlayerAsync(id);
+                return Ok("Jugador eliminado exitosamente.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene los jugadores de un equipo dado su ExternalId
+        /// </summary>
+        [HttpGet("team/{externalId}")]
+        public async Task<IActionResult> GetByTeam(int externalId)
+        {
+            var players = await _useCaseHandler.GetPlayersByTeamAsync(externalId);
+            return Ok(players);
+        }
+
+        /// <summary>
+        /// Inicia el scraping / import manual de jugadores para un equipo
+        /// </summary>
+        [HttpPost("scrape/{externalId}")]
+        public async Task<IActionResult> ScrapePlayers(int externalId)
+        {
+            await _useCaseHandler.ScrapeAsync(externalId);
+            return Ok("Jugadores importados correctamente");
         }
     }
 }

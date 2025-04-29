@@ -1,10 +1,12 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using Domain.Entities.Teams;
+using Domain.Ports.Teams;
+using Domain.Shared;
 
 namespace Infrastructure.Services.Scraping.Teams.Services
 {
@@ -23,60 +25,67 @@ namespace Infrastructure.Services.Scraping.Teams.Services
             );
         }
 
-        public async Task<List<(int Id, string Name, string Logo, string Category, string Stadium, string Club, string Coach)>> GetTeamsAsync()
+        /// <summary>
+        /// Scrapea la lista de equipos desde la tabla de partidos,
+        /// extrayendo su ExternalID y nombre desde la 3ª columna.
+        /// </summary>
+        public async Task<List<(int ExternalId, string Name, string Logo, string Category, string Stadium, string Club, string Coach)>> GetTeamsAsync()
         {
             var url = $"{BaseUrl}/competiciones/competicion.php?seleccion=0&id=1025342";
             var html = await _http.GetStringAsync(url);
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 
+            // 1) Logos como antes
             var logoDict = new Dictionary<int, string>();
-            var cabeceraLogoNodes = doc.DocumentNode
-                .SelectNodes("//div[contains(@class,'div_escudos_cabecera')]/a");
-
-            if (cabeceraLogoNodes != null)
+            var logoNodes = doc.DocumentNode.SelectNodes("//div[contains(@class,'div_escudos_cabecera')]/a");
+            if (logoNodes != null)
             {
-                foreach (var node in cabeceraLogoNodes)
+                foreach (var node in logoNodes)
                 {
-                    var href = node.GetAttributeValue("href", "");
-                    var qs = HttpUtility.ParseQueryString(new Uri($"{BaseUrl}/{href}").Query);
+                    var qs = HttpUtility.ParseQueryString(new Uri($"{BaseUrl}/{node.GetAttributeValue("href", "")}").Query);
                     if (int.TryParse(qs["id_equipo"], out var id))
                     {
-                        var img = node.SelectSingleNode(".//img");
-                        if (img != null)
-                        {
-                            var src = img.GetAttributeValue("src", "");
-                            logoDict[id] = src.StartsWith("http") ? src : $"{BaseUrl}/{src.TrimStart('/')}";
-                        }
+                        var img = node.SelectSingleNode(".//img")?.GetAttributeValue("src", "");
+                        if (!string.IsNullOrEmpty(img))
+                            logoDict[id] = img.StartsWith("http") ? img : $"{BaseUrl}/{img.TrimStart('/')}";
                     }
                 }
             }
 
-            var teams = new List<(int Id, string Name, string Logo, string Category, string Stadium, string Club, string Coach)>();
-            var nameNodes = doc.DocumentNode
-                .SelectNodes("//td[@class='p-t-20']/a");
+            var teams = new List<(int, string, string, string, string, string, string)>();
+            var seen = new HashSet<int>();
 
-            if (nameNodes == null)
-            {
-                Console.WriteLine("❌ No se encontraron nodos de nombres. Revisa el XPath.");
+            // 2) Seleccionamos los anchors de la 3ª columna de cada fila
+            var nameAnchors = doc.DocumentNode
+                .SelectNodes("//table[contains(@class,'table-striped')]/tbody/tr/td[3]/a");
+
+            if (nameAnchors == null)
                 return teams;
-            }
 
-            foreach (var node in nameNodes)
+            foreach (var anchor in nameAnchors)
             {
-                var href = node.GetAttributeValue("href", "");
-                var qs = HttpUtility.ParseQueryString(new Uri($"{BaseUrl}/{href}").Query);
-                if (int.TryParse(qs["id_equipo"], out var id))
-                {
-                    var name = node.InnerText.Trim();
-                    logoDict.TryGetValue(id, out var logo);
+                // Extraer ExternalId
+                var qs = HttpUtility.ParseQueryString(new Uri($"{BaseUrl}/{anchor.GetAttributeValue("href", "")}").Query);
+                if (!int.TryParse(qs["id_equipo"], out var extId))
+                    continue;
 
-                    var details = await GetTeamDetailsAsync(id);
+                if (!seen.Add(extId))
+                    continue; // ya procesado
 
-                    teams.Add((id, name, logo ?? "", details.Category, details.Stadium, details.Club, null));
-                }
+                // Nombre limpio
+                var name = anchor.InnerText.Trim();
+                if (string.IsNullOrEmpty(name))
+                    continue;
+
+                // Logo y detalles
+                logoDict.TryGetValue(extId, out var logo);
+                var (cat, club, resp, std) = await GetTeamDetailsAsync(extId);
+
+                teams.Add((extId, name, logo ?? "", cat, std, club, resp));
             }
 
+            Console.WriteLine($"🚀 Equipos encontrados: {teams.Count}");
             return teams;
         }
 
@@ -87,35 +96,23 @@ namespace Infrastructure.Services.Scraping.Teams.Services
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
 
-            var categoryNode = doc.DocumentNode.SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'CATEGORÍA')]/following-sibling::div");
-            var clubNode = doc.DocumentNode.SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'CLUB AL QUE PERTENECE')]/following-sibling::div");
-            var responsibleNode = doc.DocumentNode.SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'RESPONSABLE')]/following-sibling::div");
-            var stadiumNode = doc.DocumentNode.SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'PABELLÓN')]/following-sibling::div");
+            string category = doc.DocumentNode
+                .SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'CATEGORÍA')]/following-sibling::div")
+                ?.InnerText.Trim() ?? "Categoría no disponible";
 
-            string category = categoryNode?.InnerText.Trim() ?? "Categoría no disponible";
-            string club = clubNode != null
-                ? LimpiarNombreClub(clubNode.InnerText)
-                : "Club no disponible";
-            string responsible = responsibleNode?.InnerText.Trim() ?? "Responsable no disponible";
-            string stadium = stadiumNode?.InnerText.Trim() ?? "Estadio no disponible";
+            string club = doc.DocumentNode
+                .SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'CLUB AL QUE PERTENECE')]/following-sibling::div")
+                ?.InnerText.Trim() ?? "Club no disponible";
+
+            string responsible = doc.DocumentNode
+                .SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'RESPONSABLE')]/following-sibling::div")
+                ?.InnerText.Trim() ?? "Responsable no disponible";
+
+            string stadium = doc.DocumentNode
+                .SelectSingleNode("//div[@class='col-md-4 cajadatos']/div[contains(text(),'PABELLÓN')]/following-sibling::div")
+                ?.InnerText.Trim() ?? "Estadio no disponible";
 
             return (category, club, responsible, stadium);
         }
-        private string LimpiarNombreClub(string raw)
-        {
-            var limpio = HttpUtility.HtmlDecode(raw)
-                .Replace('\u00a0', ' ') 
-                .Trim();
-
-            var index = limpio.IndexOf("Datos del Club", StringComparison.OrdinalIgnoreCase);
-            if (index > 0)
-            {
-                limpio = limpio.Substring(0, index).Trim();
-            }
-
-            return limpio;
-        }
-
-
     }
 }

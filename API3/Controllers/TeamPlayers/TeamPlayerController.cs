@@ -98,5 +98,14 @@ namespace API3.Controllers.TeamPlayers
             await _useCaseHandler.ScrapeAsync(teamId);
             return Ok("Relaciones equipo-jugador creadas correctamente.");
         }
+
+
+        [HttpGet("roster/{teamId}")]
+        public async Task<IActionResult> GetRoster(int teamId)
+        {
+            var dto = await _useCaseHandler.GetRosterAsync(teamId);
+            if (dto.TeamId == 0) return NotFound($"No existe equipo con ID {teamId}");
+            return Ok(dto);
+        }
     }
 }

@@ -9,6 +9,7 @@ namespace Domain.Ports.Teams
     {
         Task<Team?> GetByIdAsync(TeamID teamId);
         Task<IEnumerable<Team>> GetAllAsync();
+        Task<Team?> GetByExternalIdAsync(string externalId);
         Task<Team> AddAsync(Team team);
         Task UpdateAsync(Team team);
         Task<bool> DeleteAsync(TeamID teamId);

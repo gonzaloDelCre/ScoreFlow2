@@ -13,6 +13,9 @@ namespace Domain.Entities.Teams
         private string name;
         private object value;
         private TeamID teamID1;
+        private TeamName teamName;
+        private DateTime utcNow;
+        private string logoUrl;
 
         public TeamID TeamID { get; private set; }
         public TeamName Name { get; private set; }
@@ -21,6 +24,8 @@ namespace Domain.Entities.Teams
         public string? Category { get; private set; }
         public string? Club { get; private set; }
         public string? Stadium { get; private set; }
+        public string? ExternalID { get; private set; } 
+
 
         public ICollection<Player> Players { get; private set; } = new List<Player>();
         public ICollection<TeamLeague> TeamLeagues { get; private set; } = new List<TeamLeague>();
@@ -28,17 +33,21 @@ namespace Domain.Entities.Teams
 
         public Player Coach { get; private set; }
 
-        public Team(TeamID teamID, TeamName name, DateTime createdAt, string logo)
+        public Team(TeamID teamID, TeamName name, DateTime createdAt, string logo, string? externalID)
         {
             if (string.IsNullOrWhiteSpace(logo))
                 throw new ArgumentException("El logo no puede estar vacío.", nameof(logo));
             TeamID = teamID ?? throw new ArgumentNullException(nameof(teamID));
             Name = name ?? throw new ArgumentNullException(nameof(name));
             Logo = logo;
+            ExternalID = externalID;
             CreatedAt = createdAt;
         }
 
-        public Team() { }
+        public Team(TeamID teamID)
+        {
+            this.teamID = teamID;
+        }
 
         public Team(TeamID teamID, string name, DateTime createdAt, string logo, string category, string club, string stadium, object value)
         {
@@ -62,7 +71,19 @@ namespace Domain.Entities.Teams
             Club = club;
             Stadium = stadium;
         }
-        
+
+        public Team(TeamID teamID, TeamName teamName, DateTime utcNow, string logoUrl)
+        {
+            this.teamID = teamID;
+            this.teamName = teamName;
+            this.utcNow = utcNow;
+            this.logoUrl = logoUrl;
+        }
+
+        public Team()
+        {
+        }
+
         public void Update(TeamName name = null, string logo = null, string? category = null, string? club = null, string? stadium = null)
         {
             if (name != null) Name = name;
@@ -87,6 +108,10 @@ namespace Domain.Entities.Teams
             Stadium = stadium;
         }
 
+        public void SetExternalID(string externalID)
+        {
+            ExternalID = externalID;
+        }
 
         public void AddPlayer(Player player)
         {
@@ -125,5 +150,7 @@ namespace Domain.Entities.Teams
             if (!Standings.Contains(standing))
                 Standings.Add(standing);
         }
+
+        
     }
 }

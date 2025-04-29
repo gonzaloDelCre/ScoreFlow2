@@ -59,5 +59,14 @@ namespace Domain.Entities.Players
             if (teamPlayer != null && !teamPlayers.Contains(teamPlayer))
                 teamPlayers.Add(teamPlayer);
         }
+
+        public void Update(int age, PlayerPosition position, int goals, string photoUrl)
+        {
+            Age = age;
+            Position = position;
+            Goals = goals;
+            Photo = photoUrl;
+
+        }
     }
 }

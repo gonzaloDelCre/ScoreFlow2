@@ -188,6 +188,10 @@ builder.Services.AddScoped<GetTeamPlayersByPlayerId>();
 builder.Services.AddScoped<DeleteTeamPlayer>();
 builder.Services.AddScoped<UpdateTeamPlayer>();
 builder.Services.AddScoped<TeamPlayerService>();
+builder.Services.AddScoped<GetPlayersByTeamUseCase>();
+builder.Services.AddScoped<IGetTeamRosterUseCase, GetTeamRosterUseCase>();
+builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+
 
 // Swagger completo
 builder.Services.AddEndpointsApiExplorer();

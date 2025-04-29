@@ -8,6 +8,8 @@ namespace Domain.Entities.TeamPlayers
 {
     public class TeamPlayer
     {
+        private TeamID teamID;
+
         public TeamID TeamID { get; private set; }
         public PlayerID PlayerID { get; private set; }
         public DateTime JoinedAt { get; private set; }
@@ -24,8 +26,13 @@ namespace Domain.Entities.TeamPlayers
             PlayerID = playerID ?? throw new ArgumentNullException(nameof(playerID));
             JoinedAt = joinedAt;
             RoleInTeam = roleInTeam;
-            Team = team ?? throw new ArgumentNullException(nameof(team));
-            Player = player ?? throw new ArgumentNullException(nameof(player));
+            Team = team;  
+            Player = player; 
+        }
+
+        public TeamPlayer(TeamID teamID)
+        {
+            this.teamID = teamID;
         }
 
         // Método de actualización para la relación (ejemplo: actualizar rol del jugador)

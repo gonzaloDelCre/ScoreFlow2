@@ -6,7 +6,7 @@
 
         public PlayerID(int value)
         {
-            if (value <= 0) throw new ArgumentException("El ID del jugador debe ser mayor que 0.");
+            if (value < 0) throw new ArgumentException("El ID del jugador debe ser mayor que 0.");
             Value = value;
         }
     }

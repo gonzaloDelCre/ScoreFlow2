@@ -14,6 +14,7 @@ namespace Application.Playes.UseCases
         private readonly UpdatePlayer _updatePlayer;
         private readonly DeletePlayer _deletePlayer;
         private readonly GetAllPlayer _getAllPlayer;
+        private readonly GetPlayersByTeamUseCase _getByTeamUseCase;
         private readonly CreatePlayersFromScraperUseCase _scraperUseCase;
 
         public GeneralPlayerUseCaseHandler(
@@ -22,7 +23,8 @@ namespace Application.Playes.UseCases
             UpdatePlayer updatePlayer,
             DeletePlayer deletePlayer,
             GetAllPlayer getAllPlayer,
-            CreatePlayersFromScraperUseCase scraperUseCase)
+            CreatePlayersFromScraperUseCase scraperUseCase,
+            GetPlayersByTeamUseCase getByTeamUseCase)
         {
             _getPlayerById = getPlayerById;
             _createPlayer = createPlayer;
@@ -30,6 +32,7 @@ namespace Application.Playes.UseCases
             _deletePlayer = deletePlayer;
             _getAllPlayer = getAllPlayer;
             _scraperUseCase = scraperUseCase;
+            _getByTeamUseCase = getByTeamUseCase;
         }
 
         public async Task<IEnumerable<PlayerResponseDTO>> GetAllPlayersAsync()
@@ -60,5 +63,11 @@ namespace Application.Playes.UseCases
         {
             await _scraperUseCase.ExecuteAsync(teamId);
         }
+        public async Task<IEnumerable<PlayerResponseDTO>> GetPlayersByTeamAsync(int teamExternalId)
+        {
+            return await _getByTeamUseCase.ExecuteAsync(teamExternalId);
+        }
+
+        
     }
 }

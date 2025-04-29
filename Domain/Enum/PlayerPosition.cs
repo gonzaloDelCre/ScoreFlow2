@@ -2,11 +2,11 @@
 {
     public enum PlayerPosition
     {
-        Portero,
-        LD,
-        LI,
-        EI,
-        ED,
-        Pivote
+        JUGADOR,
+        INVITADO,
+        ENTRENADOR,
+        AYTE_ENTRENADOR,
+        OFICIAL,
+        STAFF_ADICIONAL
     }
 }

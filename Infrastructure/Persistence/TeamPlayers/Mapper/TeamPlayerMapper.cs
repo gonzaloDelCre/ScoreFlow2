@@ -20,13 +20,39 @@ namespace Infrastructure.Persistence.TeamPlayers.Mappers
             };
         }
 
-        public static TeamPlayer MapToDomain(TeamPlayerEntity entity, Team team, Player player)
+        public static TeamPlayer MapEntityToDomain(TeamPlayerEntity e)
         {
+            // Build domain Team
+            var t = e.Team;
+            var team = new Team(
+                new TeamID(t.TeamID),
+                new TeamName(t.Name),
+                t.CreatedAt,
+                t.Logo,
+                t.ExternalID
+            );
+
+            // Build domain Player
+            var p = e.Player;
+            // parse the stored enum string back into PlayerPosition if needed, otherwise default:
+            var position = Enum.TryParse<PlayerPosition>(p.Position, true, out var pos) ? pos : PlayerPosition.JUGADOR;
+
+            var player = new Player(
+                new PlayerID(p.PlayerID),
+                new PlayerName(p.Name),
+                position,
+                new PlayerAge(p.Age),
+                p.Goals,
+                p.Photo,
+                p.CreatedAt,
+                new List<TeamPlayer>()  // avoid circular deps
+            );
+
             return new TeamPlayer(
-                new TeamID(entity.TeamID),
-                new PlayerID(entity.PlayerID),
-                entity.JoinedAt,
-                entity.RoleInTeam,
+                new TeamID(e.TeamID),
+                new PlayerID(e.PlayerID),
+                e.JoinedAt,
+                e.RoleInTeam,
                 team,
                 player
             );

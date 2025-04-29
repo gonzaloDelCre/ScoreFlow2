@@ -25,7 +25,7 @@ namespace Infrastructure.Persistence.Players.Entities
         [MaxLength(500)]
         public string? Photo { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } =DateTime.UtcNow;
 
         // Relación muchos a muchos con equipos
         public ICollection<TeamPlayerEntity> TeamPlayers { get; set; } = new List<TeamPlayerEntity>();

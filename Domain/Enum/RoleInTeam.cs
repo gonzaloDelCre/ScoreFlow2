@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Domain.Enum
+﻿namespace Domain.Enum
 {
     public enum RoleInTeam
     {
         JUGADOR,
-        ENTRENADOR
+        INVITADO,
+        ENTRENADOR,
+        AYTE_ENTRENADOR,
+        OFICIAL,
+        STAFF_ADICIONAL
     }
 }

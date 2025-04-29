@@ -11,6 +11,7 @@ using Infrastructure.Persistence.Conection;
 using Infrastructure.Persistence.Players.Mapper;
 using Infrastructure.Persistence.Players.Entities;
 using Infrastructure.Persistence.TeamPlayers.Entities;
+using System.Text;
 
 namespace Infrastructure.Persistence.Players.Repositories
 {
@@ -56,7 +57,7 @@ namespace Infrastructure.Persistence.Players.Repositories
 
         // Obtiene un jugador por su PlayerID
         public async Task<Player?> GetByIdAsync(PlayerID playerId)
-        {
+       {
             try
             {
                 string sql = "SELECT * FROM Players WHERE PlayerID = @PlayerID";
@@ -156,46 +157,45 @@ namespace Infrastructure.Persistence.Players.Repositories
         public async Task<Player> AddAsync(Player player)
         {
             if (player == null)
-                throw new ArgumentNullException(nameof(player), "El jugador no puede ser null");
+                throw new ArgumentNullException(nameof(player));
 
+            var pe = _mapper.MapToEntity(player);
+
+            // 1) Insert solo en Players + SCOPE_IDENTITY
+            var sql = @"
+        INSERT INTO Players (Name, Position, Age, Goals, Photo, CreatedAt)
+         VALUES (@Name, @Position, @Age, @Goals, @Photo, @CreatedAt);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);
+    ";
+
+            var conn = _context.Database.GetDbConnection();
+            await conn.OpenAsync();
+            int newPlayerId;
             try
             {
-                var playerEntity = _mapper.MapToEntity(player);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = sql;
+                cmd.Parameters.Add(new SqlParameter("@Name", pe.Name));
+                cmd.Parameters.Add(new SqlParameter("@Position", pe.Position));
+                cmd.Parameters.Add(new SqlParameter("@Age", pe.Age));
+                cmd.Parameters.Add(new SqlParameter("@Goals", pe.Goals));
+                cmd.Parameters.Add(new SqlParameter("@Photo", (object?)pe.Photo ?? DBNull.Value));
+                cmd.Parameters.Add(new SqlParameter("@CreatedAt", pe.CreatedAt));
 
-                string insertSql = @"INSERT INTO Players (Name, Position, Age, Goals, Photo, CreatedAt)
-                                     VALUES (@Name, @Position, @Age, @Goals, @Photo, @CreatedAt);";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@Name", playerEntity.Name),
-                    new SqlParameter("@Position", playerEntity.Position),
-                    new SqlParameter("@Age", playerEntity.Age),
-                    new SqlParameter("@Goals", playerEntity.Goals),
-                    new SqlParameter("@Photo", (object)playerEntity.Photo ?? DBNull.Value),
-                    new SqlParameter("@CreatedAt", playerEntity.CreatedAt)
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
-
-                // Obtener el nuevo PlayerID (ejemplo con SQL Server: SELECT SCOPE_IDENTITY())
-                string selectSql = "SELECT CAST(SCOPE_IDENTITY() AS INT)";
-                var newPlayerId = await _context.Players
-                    .FromSqlRaw(selectSql)
-                    .Select(p => p.PlayerID)
-                    .FirstOrDefaultAsync();
-
-                // Reobtener la entidad agregada
-                var dbPlayer = await _context.Players
-                    .FirstOrDefaultAsync(p => p.PlayerID == newPlayerId);
-
-                // No existen relaciones inicialmente, por lo tanto se pasa lista vacía.
-                return _mapper.MapToDomain(dbPlayer, new List<TeamPlayerEntity>());
+                newPlayerId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             }
-            catch (Exception ex)
+            finally
             {
-                _logger.LogError(ex, "Error al agregar un nuevo jugador");
-                throw;
+                await conn.CloseAsync();
             }
+
+            // 2) Recarga el jugador sin tocar TeamPlayers
+            var dbPlayer = await _context.Players
+                .FromSqlRaw("SELECT * FROM Players WHERE PlayerID = {0}", newPlayerId)
+                .AsNoTracking()
+                .FirstAsync();
+
+            return _mapper.MapToDomain(dbPlayer, new List<TeamPlayerEntity>());
         }
 
         // Actualiza la información de un jugador mediante consulta SQL

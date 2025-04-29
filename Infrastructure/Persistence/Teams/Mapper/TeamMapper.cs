@@ -10,9 +10,12 @@ namespace Infrastructure.Persistence.Teams.Mapper
 {
     public static class TeamMapper
     {
-        public static Team MapToDomain(TeamEntity entity, ICollection<TeamPlayerEntity> teamPlayers, ICollection<PlayerEntity> playerEntities)
+        public static Team MapToDomain(
+            TeamEntity entity,
+            ICollection<TeamPlayerEntity> teamPlayers,
+            ICollection<PlayerEntity> playerEntities)
         {
-            // Mapeo de jugadores asociados a este equipo mediante TeamPlayers
+            // Mapeo de jugadores asociados al equipo
             var players = playerEntities
                 .Where(p => teamPlayers.Any(tp => tp.TeamID == entity.TeamID && tp.PlayerID == p.PlayerID))
                 .Select(p => new Player(
@@ -23,15 +26,17 @@ namespace Infrastructure.Persistence.Teams.Mapper
                     p.Goals,
                     p.Photo,
                     p.CreatedAt,
-                    null  // No se asigna el equipo directamente en el modelo de dominio
+                    null // No asignamos directamente el equipo aquí
                 ))
                 .ToList();
 
+            // Crear el equipo base
             var team = new Team(
                 new TeamID(entity.TeamID),
                 new TeamName(entity.Name),
                 entity.CreatedAt,
-                entity.Logo
+                entity.Logo,
+                entity.ExternalID
             );
 
             team.Update(
@@ -40,9 +45,30 @@ namespace Infrastructure.Persistence.Teams.Mapper
                 stadium: entity.Stadium
             );
 
+            // Agregar jugadores
             foreach (var player in players)
             {
                 team.AddPlayer(player);
+            }
+
+            // Asignar el entrenador si existe
+            if (entity.CoachPlayerID.HasValue)
+            {
+                var coachEntity = playerEntities.FirstOrDefault(p => p.PlayerID == entity.CoachPlayerID.Value);
+                if (coachEntity != null)
+                {
+                    var coach = new Player(
+                        new PlayerID(coachEntity.PlayerID),
+                        new PlayerName(coachEntity.Name),
+                        Enum.Parse<Domain.Enum.PlayerPosition>(coachEntity.Position),
+                        new Domain.Entities.Players.PlayerAge(coachEntity.Age),
+                        coachEntity.Goals,
+                        coachEntity.Photo,
+                        coachEntity.CreatedAt,
+                        null
+                    );
+                    team.AssignCoach(coach);
+                }
             }
 
             return team;
@@ -56,6 +82,7 @@ namespace Infrastructure.Persistence.Teams.Mapper
                 Name = team.Name.Value,
                 Logo = team.Logo,
                 CreatedAt = team.CreatedAt,
+                ExternalID = team.ExternalID,
                 Category = team.Category,
                 Club = team.Club,
                 Stadium = team.Stadium,

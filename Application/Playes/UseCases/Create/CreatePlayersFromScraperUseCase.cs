@@ -1,8 +1,4 @@
 ﻿using Infrastructure.Services.Scraping.Players.Import;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Playes.UseCases.Create
@@ -16,10 +12,13 @@ namespace Application.Playes.UseCases.Create
             _importer = importer;
         }
 
-        public async Task ExecuteAsync(int teamId)
+        /// <summary>
+        /// Ejecuta el scraping e importación de jugadores para un equipo,
+        /// usando su ExternalId en lugar del ID interno.
+        /// </summary>
+        public async Task ExecuteAsync(int teamExternalId)
         {
-            await _importer.ImportByTeamIdAsync(teamId);
+            await _importer.ImportByTeamExternalIdAsync(teamExternalId);
         }
     }
-
 }

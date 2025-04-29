@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Domain.Entities.Players;
+using Domain.Entities.Teams;
 using Domain.Shared;
 
 namespace Domain.Ports.Players
