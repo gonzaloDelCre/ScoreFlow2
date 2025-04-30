@@ -1,4 +1,5 @@
 ﻿using Application.Leagues.DTOs;
+using Application.Leagues.Mapper;
 using Domain.Entities.Leagues;
 using Domain.Ports.Leagues;
 using Domain.Services.Leagues;
@@ -8,38 +9,30 @@ using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Update
 {
-    public class UpdateLeague
+    public class UpdateLeagueUseCase
     {
-        private readonly LeagueService _leagueService;
+        private readonly LeagueService _service;
+        private readonly LeagueMapper _mapper;
 
-        public UpdateLeague(LeagueService leagueService)
+        public UpdateLeagueUseCase(LeagueService service, LeagueMapper mapper)
         {
-            _leagueService = leagueService;
+            _service = service;
+            _mapper = mapper;
         }
 
-        public async Task<LeagueResponseDTO> Execute(LeagueRequestDTO leagueDTO, int leagueId)
+        public async Task<LeagueResponseDTO> ExecuteAsync(LeagueRequestDTO dto)
         {
-            if (leagueDTO == null)
-                throw new ArgumentNullException(nameof(leagueDTO), "La liga no puede ser nula.");
+            if (dto.LeagueID == null)
+                throw new ArgumentException("El ID de la liga es obligatorio para actualizar.");
 
-            var existingLeague = await _leagueService.GetLeagueByIdAsync(new LeagueID(leagueId));
-            if (existingLeague == null)
-                throw new InvalidOperationException("La liga no existe. No se puede actualizar.");
+            var existing = await _service.GetLeagueByIdAsync(new LeagueID(dto.LeagueID.Value));
+            if (existing == null)
+                throw new InvalidOperationException("La liga no existe.");
 
-            existingLeague.Update(
-                new LeagueName(leagueDTO.Name),
-                leagueDTO.Description,
-                leagueDTO.CreatedAt
-            );
+            var updated = _mapper.MapToDomain(dto, existing);
+            await _service.UpdateLeagueAsync(updated);
 
-            await _leagueService.UpdateLeagueAsync(existingLeague);
-            return new LeagueResponseDTO
-            {
-                LeagueID = existingLeague.LeagueID.Value,
-                Name = existingLeague.Name.Value,
-                Description = existingLeague.Description,
-                CreatedAt = existingLeague.CreatedAt
-            };
+            return _mapper.MapToDTO(updated);
         }
     }
 }

@@ -7,21 +7,23 @@ using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Get
 {
-    public class GetLeagueById
+    public class GetLeagueByIdUseCase
     {
-        private readonly LeagueService _leagueService;
+        private readonly LeagueService _service;
         private readonly LeagueMapper _mapper;
 
-        public GetLeagueById(LeagueService leagueService, LeagueMapper mapper)
+        public GetLeagueByIdUseCase(LeagueService service, LeagueMapper mapper)
         {
-            _leagueService = leagueService;
+            _service = service;
             _mapper = mapper;
         }
 
-        public async Task<LeagueResponseDTO?> ExecuteAsync(LeagueID leagueId)
+        public async Task<LeagueResponseDTO?> ExecuteAsync(int id)
         {
-            var league = await _leagueService.GetLeagueByIdAsync(leagueId);
-            return league != null ? _mapper.MapToDTO(league) : null;
+            var league = await _service.GetLeagueByIdAsync(new LeagueID(id));
+            return league is null
+                ? null
+                : _mapper.MapToDTO(league);
         }
     }
 }

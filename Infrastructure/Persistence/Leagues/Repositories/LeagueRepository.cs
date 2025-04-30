@@ -1,9 +1,16 @@
-﻿using Domain.Entities.Leagues;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Domain.Entities.Leagues;
 using Domain.Ports.Leagues;
 using Domain.Shared;
 using Infrastructure.Persistence.Conection;
+using Infrastructure.Persistence.Leagues.Entities;
 using Infrastructure.Persistence.Leagues.Mapper;
-using Microsoft.Data.SqlClient;
+using Infrastructure.Persistence.Players.Entities;
+using Infrastructure.Persistence.TeamPlayers.Entities;
+using Infrastructure.Persistence.Teams.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -15,50 +22,55 @@ namespace Infrastructure.Persistence.Leagues.Repositories
         private readonly ILogger<LeagueRepository> _logger;
         private readonly LeagueMapper _mapper;
 
-        public LeagueRepository(ApplicationDbContext context, ILogger<LeagueRepository> logger, LeagueMapper mapper)
+        public LeagueRepository(
+            ApplicationDbContext context,
+            ILogger<LeagueRepository> logger,
+            LeagueMapper mapper)
         {
             _context = context;
             _logger = logger;
             _mapper = mapper;
         }
 
-        /// <summary>
-        /// Get all leagues
-        /// </summary>
         public async Task<IEnumerable<League>> GetAllAsync()
         {
             try
             {
-                string sql = "SELECT * FROM Leagues";
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql)
+                // Cargo Ligas + Equipos
+                var leagues = await _context.Leagues
+                    .Include(l => l.Teams)
                     .ToListAsync();
 
-                return dbLeagues.Select(dbLeague => _mapper.MapToDomain(dbLeague)).ToList();
+                // Cargo relaciones TeamPlayers y Players UNA VEZ
+                var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
+                var allPlayers = await _context.Players.ToListAsync();
+
+                // Mapeo todo
+                return leagues
+                    .Select(l => _mapper.MapToDomain(l, allTeamPlayers, allPlayers))
+                    .ToList();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener la lista de ligas");
-                return new List<League>();
+                return Enumerable.Empty<League>();
             }
         }
 
-        /// <summary>
-        /// Get league by ID
-        /// </summary>
         public async Task<League?> GetByIdAsync(LeagueID leagueId)
         {
             try
             {
-                string sql = "SELECT * FROM Leagues WHERE LeagueID = @LeagueID";
-                var parameter = new SqlParameter("@LeagueID", leagueId.Value);
+                var leagueEntity = await _context.Leagues
+                    .Include(l => l.Teams)
+                    .FirstOrDefaultAsync(l => l.LeagueID == leagueId.Value);
 
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
+                if (leagueEntity == null) return null;
 
-                var dbLeague = dbLeagues.FirstOrDefault();
-                return dbLeague != null ? _mapper.MapToDomain(dbLeague) : null;
+                var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
+                var allPlayers = await _context.Players.ToListAsync();
+
+                return _mapper.MapToDomain(leagueEntity, allTeamPlayers, allPlayers);
             }
             catch (Exception ex)
             {
@@ -67,23 +79,20 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        /// <summary>
-        /// Get league by Name
-        /// </summary>
         public async Task<League?> GetByNameAsync(string name)
         {
             try
             {
-                // Realiza la consulta para obtener una liga por su nombre
-                string sql = "SELECT * FROM Leagues WHERE Name = @Name";
-                var parameter = new SqlParameter("@Name", name);
+                var leagueEntity = await _context.Leagues
+                    .Include(l => l.Teams)
+                    .FirstOrDefaultAsync(l => l.Name == name);
 
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
+                if (leagueEntity == null) return null;
 
-                var dbLeague = dbLeagues.FirstOrDefault();
-                return dbLeague != null ? _mapper.MapToDomain(dbLeague) : null;
+                var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
+                var allPlayers = await _context.Players.ToListAsync();
+
+                return _mapper.MapToDomain(leagueEntity, allTeamPlayers, allPlayers);
             }
             catch (Exception ex)
             {
@@ -92,42 +101,19 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        /// <summary>
-        /// Add a new league
-        /// </summary>
         public async Task<League> AddAsync(League league)
         {
             if (league == null)
-                throw new ArgumentNullException(nameof(league), "La liga no puede ser null");
+                throw new ArgumentNullException(nameof(league));
 
             try
             {
-                var leagueEntity = _mapper.MapToEntity(league);
+                var entity = _mapper.MapToEntity(league);
+                _context.Leagues.Add(entity);
+                await _context.SaveChangesAsync();
 
-                string insertSql = @"INSERT INTO Leagues (Name, Description, CreatedAt) 
-                                     VALUES (@Name, @Description, @CreatedAt);";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@Name", leagueEntity.Name),
-                    new SqlParameter("@Description", leagueEntity.Description ?? (object)DBNull.Value),
-                    new SqlParameter("@CreatedAt", leagueEntity.CreatedAt)
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
-
-                string selectSql = "SELECT TOP 1 LeagueID FROM Leagues ORDER BY LeagueID DESC";
-                var newLeagueId = await _context.Leagues
-                    .FromSqlRaw(selectSql)
-                    .Select(l => l.LeagueID)
-                    .FirstOrDefaultAsync();
-
-                return new League(
-                    new LeagueID(newLeagueId),
-                    league.Name,
-                    league.Description,
-                    league.CreatedAt
-                );
+                // Recargamos con Teams vacíos (se podrán añadir luego)
+                return league;
             }
             catch (Exception ex)
             {
@@ -136,31 +122,26 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        /// <summary>
-        /// Update an existing league
-        /// </summary>
         public async Task UpdateAsync(League league)
         {
             if (league == null)
-                throw new ArgumentNullException(nameof(league), "La liga no puede ser null");
+                throw new ArgumentNullException(nameof(league));
 
             try
             {
-                var leagueEntity = _mapper.MapToEntity(league);
+                var entity = await _context.Leagues
+                    .FirstOrDefaultAsync(l => l.LeagueID == league.LeagueID.Value);
 
-                string updateSql = @"UPDATE Leagues 
-                                     SET Name = @Name, Description = @Description, CreatedAt = @CreatedAt
-                                     WHERE LeagueID = @LeagueID";
+                if (entity == null)
+                    throw new InvalidOperationException("Liga no encontrada.");
 
-                var parameters = new[]
-                {
-                    new SqlParameter("@LeagueID", leagueEntity.LeagueID),
-                    new SqlParameter("@Name", leagueEntity.Name),
-                    new SqlParameter("@Description", leagueEntity.Description ?? (object)DBNull.Value),
-                    new SqlParameter("@CreatedAt", leagueEntity.CreatedAt)
-                };
+                // Mapa campos simples
+                entity.Name = league.Name.Value;
+                entity.Description = league.Description;
+                entity.CreatedAt = league.CreatedAt;
 
-                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
+                // NOTA: no actualizamos Teams aquí—usa otro repositorio o caso de uso
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -169,18 +150,18 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        /// <summary>
-        /// Delete a league by ID
-        /// </summary>
         public async Task<bool> DeleteAsync(LeagueID leagueId)
         {
             try
             {
-                string sql = "DELETE FROM Leagues WHERE LeagueID = @LeagueID";
-                var parameter = new SqlParameter("@LeagueID", leagueId.Value);
+                var entity = await _context.Leagues
+                    .FirstOrDefaultAsync(l => l.LeagueID == leagueId.Value);
 
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
-                return rowsAffected > 0;
+                if (entity == null) return false;
+
+                _context.Leagues.Remove(entity);
+                await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception ex)
             {

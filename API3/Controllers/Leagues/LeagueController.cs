@@ -1,37 +1,76 @@
 ﻿using Application.Leagues.DTOs;
 using Application.Leagues.UseCases;
+using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers.Leagues
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/leagues")]
     public class LeagueController : ControllerBase
     {
-        private readonly GeneralLeagueUseCaseHandler _GeneralLeagueUseCaseHandler;
+        private readonly LeagueUseCaseHandler _useCaseHandler;
 
-        public LeagueController(GeneralLeagueUseCaseHandler GeneralLeagueUseCaseHandler)
+        public LeagueController(LeagueUseCaseHandler useCaseHandler)
         {
-            _GeneralLeagueUseCaseHandler = GeneralLeagueUseCaseHandler;
+            _useCaseHandler = useCaseHandler;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> HandleLeagueAction([FromBody] LeagueActionDTO actionDTO)
+        /// <summary>
+        /// Get All Leagues
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetAllLeagues()
         {
-            try
-            {
-                var result = await _GeneralLeagueUseCaseHandler.Execute(actionDTO);
+            var result = await _useCaseHandler.GetAllAsync();
+            return Ok(result);
+        }
 
-                return Ok(result);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Ocurrió un error en el servidor", details = ex.Message });
-            }
+        /// <summary>
+        /// Get League By Id
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetLeagueById(int id)
+        {
+            var result = await _useCaseHandler.GetByIdAsync(id);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Create League
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateLeague([FromBody] LeagueRequestDTO leagueDTO)
+        {
+            if (leagueDTO == null) return BadRequest("League data is required.");
+
+            var result = await _useCaseHandler.CreateAsync(leagueDTO);
+            return CreatedAtAction(nameof(GetLeagueById), new { id = result.LeagueID }, result);
+        }
+
+        /// <summary>
+        /// Update League
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateLeague(int id, [FromBody] LeagueRequestDTO leagueDTO)
+        {
+            if (leagueDTO == null) return BadRequest("League data is required.");
+
+            // Aseguramos que el DTO lleva el mismo ID de ruta
+            leagueDTO.LeagueID = id;
+            var result = await _useCaseHandler.UpdateAsync(leagueDTO);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Delete League
+        /// </summary>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLeague(int id)
+        {
+            await _useCaseHandler.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

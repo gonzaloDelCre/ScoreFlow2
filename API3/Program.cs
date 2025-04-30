@@ -191,6 +191,25 @@ builder.Services.AddScoped<TeamPlayerService>();
 builder.Services.AddScoped<GetPlayersByTeamUseCase>();
 builder.Services.AddScoped<IGetTeamRosterUseCase, GetTeamRosterUseCase>();
 builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+builder.Services.AddScoped<Application.Standings.Mapper.StandingMapper>();
+builder.Services.AddScoped<Infrastructure.Persistence.Standings.Mapper.StandingMapper>();
+builder.Services.AddScoped<Domain.Ports.Standings.IStandingRepository, Infrastructure.Persistence.Standings.Repositories.StandingRepository>();
+builder.Services.AddScoped<Domain.Services.Standings.StandingService>();
+builder.Services.AddScoped<Application.Standings.UseCases.Create.CreateStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetAllStandingsUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetStandingByIdUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Update.UpdateStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Delete.DeleteStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByLeagueUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetClassificationUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByTeamAndLeagueUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.StandingUseCaseHandler>();
+builder.Services.AddScoped<CreateLeagueUseCase>();
+builder.Services.AddScoped<GetAllLeaguesUseCase>();
+builder.Services.AddScoped<GetLeagueByIdUseCase>();
+builder.Services.AddScoped<UpdateLeagueUseCase>();
+builder.Services.AddScoped<DeleteLeagueUseCase>();
+builder.Services.AddScoped<LeagueUseCaseHandler>();
 
 
 // Swagger completo

@@ -8,21 +8,21 @@ using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Get
 {
-    public class GetAllLeagues
+    public class GetAllLeaguesUseCase
     {
-        private readonly LeagueService _leagueService;
+        private readonly LeagueService _service;
         private readonly LeagueMapper _mapper;
 
-        public GetAllLeagues(LeagueService leagueService, LeagueMapper mapper)
+        public GetAllLeaguesUseCase(LeagueService service, LeagueMapper mapper)
         {
-            _leagueService = leagueService;
+            _service = service;
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<LeagueResponseDTO>> ExecuteAsync()
+        public async Task<List<LeagueResponseDTO>> ExecuteAsync()
         {
-            var leagues = await _leagueService.GetAllLeaguesAsync();
-            return leagues.Select(league => _mapper.MapToDTO(league));
+            var all = await _service.GetAllLeaguesAsync();
+            return all.Select(l => _mapper.MapToDTO(l)).ToList();
         }
     }
 }

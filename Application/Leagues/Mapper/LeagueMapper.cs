@@ -10,7 +10,7 @@ namespace Application.Leagues.Mapper
         public LeagueResponseDTO MapToDTO(League league)
         {
             if (league == null)
-                throw new ArgumentNullException(nameof(league), "La entidad de dominio League no puede ser nula.");
+                throw new ArgumentNullException(nameof(league));
 
             return new LeagueResponseDTO
             {
@@ -21,18 +21,29 @@ namespace Application.Leagues.Mapper
             };
         }
 
-        public League MapToDomain(LeagueRequestDTO leagueDTO)
+        /// <summary>
+        /// Si existingLeague != null, actualiza esa instancia; si es null, crea una nueva con ID=0.
+        /// </summary>
+        public League MapToDomain(LeagueRequestDTO dto, League? existingLeague = null)
         {
-            if (leagueDTO == null)
-                throw new ArgumentNullException(nameof(leagueDTO), "El DTO LeagueRequestDTO no puede ser nulo.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            var leagueID = new LeagueID(1);
+            if (existingLeague != null)
+            {
+                existingLeague.Update(
+                    new LeagueName(dto.Name),
+                    dto.Description,
+                    dto.CreatedAt
+                );
+                return existingLeague;
+            }
 
             return new League(
-                leagueID,
-                new LeagueName(leagueDTO.Name),
-                leagueDTO.Description,
-                leagueDTO.CreatedAt
+                new LeagueID(0),
+                new LeagueName(dto.Name),
+                dto.Description,
+                dto.CreatedAt
             );
         }
     }

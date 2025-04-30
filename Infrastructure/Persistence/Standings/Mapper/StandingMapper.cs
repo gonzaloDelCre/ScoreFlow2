@@ -1,52 +1,52 @@
 ﻿using Domain.Entities.Leagues;
 using Domain.Entities.Standings;
+using Domain.Entities.TeamPlayers;
 using Domain.Entities.Teams;
-using Infrastructure.Persistence.Standings.Entities;
 using Domain.Shared;
+using Infrastructure.Persistence.Players.Entities;
+using Infrastructure.Persistence.Standings.Entities;
+using Infrastructure.Persistence.TeamPlayers.Entities;
+using Infrastructure.Persistence.Teams.Entities;
+using Infrastructure.Persistence.Teams.Mapper;
+using System.Collections.Generic;
 
 namespace Infrastructure.Persistence.Standings.Mapper
 {
-    public class StandingMapper
+    public static class StandingMapper
     {
-        // Convierte la entidad de dominio Standing en la entidad de base de datos StandingEntity.
-        public StandingEntity MapToEntity(Standing standing)
+        public static Standing ToDomain(this StandingEntity entity, League league, ICollection teamPlayers, ICollection playerEntities)
         {
-            if (standing == null)
-            {
-                throw new ArgumentNullException(nameof(standing), "Standing cannot be null.");
-            }
+            return new Standing(
+            standingID: new StandingID(entity.StandingID),
+            leagueID: new LeagueID(entity.LeagueID),
+            teamID: new TeamID(entity.TeamID),
+            wins: new Wins(entity.Wins),
+            draws: new Draws(entity.Draws),
+            losses: new Losses(entity.Losses),
+            goalsFor: new GoalsFor(entity.GoalsFor),
+            goalsAgainst: new GoalsAgainst(entity.GoalsAgainst),
+            points: new Points(entity.Points),
+            team: entity.Team?.MapToDomain(league, teamPlayers, playerEntities),
+            createdAt: entity.CreatedAt
+            );
+        }
 
+        public static StandingEntity ToEntity(this Standing domain)
+        {
             return new StandingEntity
             {
-                LeagueID = standing.LeagueID.Value,
-                TeamID = standing.TeamID.Value,
-                Points = standing.Points.Value,
-                Wins = standing.Wins.Value,
-                Losses = standing.Losses.Value,
-                Draws = standing.Draws.Value,
-                GoalDifference = standing.GoalDifference.Value,
-                CreatedAt = standing.CreatedAt
+                StandingID = domain.StandingID.Value,
+                LeagueID = domain.LeagueID.Value,
+                TeamID = domain.TeamID.Value,
+                Wins = domain.Wins.Value,
+                Draws = domain.Draws.Value,
+                Losses = domain.Losses.Value,
+                GoalsFor = domain.GoalsFor.Value,
+                GoalsAgainst = domain.GoalsAgainst.Value,
+                Points = domain.Points.Value,
+                CreatedAt = domain.CreatedAt
             };
         }
 
-        // Convierte la entidad de base de datos StandingEntity en la entidad de dominio Standing.
-        // Se reciben además las entidades de dominio League y Team correspondientes.
-        public Standing MapToDomain(StandingEntity entity, League league, Team team)
-        {
-            return new Standing(
-                new StandingID(entity.StandingID),
-                new LeagueID(entity.LeagueID),
-                new TeamID(entity.TeamID),
-                new Points(entity.Points),
-                new MatchesPlayed(entity.Wins + entity.Losses + entity.Draws), // Se calcula a partir de wins, losses y draws
-                new Wins(entity.Wins),
-                new Draws(entity.Draws),
-                new Losses(entity.Losses),
-                new GoalDifference(entity.GoalDifference),
-                league,
-                team,
-                entity.CreatedAt
-            );
-        }
     }
 }

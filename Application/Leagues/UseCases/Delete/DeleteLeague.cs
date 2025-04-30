@@ -6,25 +6,24 @@ using System.Threading.Tasks;
 
 namespace Application.Leagues.UseCases.Delete
 {
-    public class DeleteLeague
+    public class DeleteLeagueUseCase
     {
-        private readonly LeagueService _leagueService;
+        private readonly LeagueService _service;
 
-        public DeleteLeague(LeagueService leagueService)
+        public DeleteLeagueUseCase(LeagueService service)
         {
-            _leagueService = leagueService;
+            _service = service;
         }
 
-        public async Task<bool> Execute(LeagueID leagueId)
+        public async Task ExecuteAsync(int id)
         {
-            if (leagueId == null)
-                throw new ArgumentNullException(nameof(leagueId), "El ID de la liga no puede ser nulo.");
-
-            var league = await _leagueService.GetLeagueByIdAsync(leagueId);
+            var league = await _service.GetLeagueByIdAsync(new LeagueID(id));
             if (league == null)
-                throw new InvalidOperationException("La liga no existe. No se puede eliminar.");
+                throw new InvalidOperationException("La liga no existe.");
 
-            return await _leagueService.DeleteLeagueAsync(leagueId);
+            var ok = await _service.DeleteLeagueAsync(new LeagueID(id));
+            if (!ok)
+                throw new ApplicationException("No se pudo eliminar la liga.");
         }
     }
 }

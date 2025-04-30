@@ -1,14 +1,10 @@
-﻿using Domain.Entities.Leagues;
-using Domain.Entities.Standings;
-using Domain.Entities.TeamLeagues;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Domain.Entities.Leagues;
 using Domain.Ports.Leagues;
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Domain.Services.Leagues
 {
@@ -23,49 +19,43 @@ namespace Domain.Services.Leagues
             _logger = logger;
         }
 
+        /// <summary>
+        /// Crea una nueva liga y devuelve la entidad con el ID asignado.
+        /// </summary>
         public async Task<League> CreateLeagueAsync(LeagueName name, string description, DateTime createdAt)
         {
-            if (string.IsNullOrWhiteSpace(name.Value))
-                throw new ArgumentException("El nombre de la liga es obligatorio.");
+            if (name == null || string.IsNullOrWhiteSpace(name.Value))
+                throw new ArgumentException("El nombre de la liga es obligatorio.", nameof(name));
 
             if (createdAt == DateTime.MinValue)
-                throw new ArgumentException("La fecha de creación es obligatoria.");
+                throw new ArgumentException("La fecha de creación es obligatoria.", nameof(createdAt));
 
-            var league = new League(new LeagueID(1), name, description, createdAt);
-            await _leagueRepository.AddAsync(league);
-            return league;
+            // Construyo un objeto temporal con ID 0; el repositorio devolverá el ID real
+            var tempLeague = new League(
+                new LeagueID(0),
+                name,
+                description,
+                createdAt
+            );
+
+            // El AddAsync del repositorio debe retornar la instancia con el ID asignado
+            var createdLeague = await _leagueRepository.AddAsync(tempLeague);
+            return createdLeague;
         }
 
         public async Task<League?> GetLeagueByIdAsync(LeagueID leagueId)
         {
+            if (leagueId == null)
+                throw new ArgumentNullException(nameof(leagueId));
+
             try
             {
                 return await _leagueRepository.GetByIdAsync(leagueId);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener la liga con ID {LeagueID}", leagueId.Value);
                 throw new InvalidOperationException("Hubo un error al obtener la liga.", ex);
-            }
-        }
-
-        public async Task UpdateLeagueAsync(League league)
-        {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league), "La liga no puede ser nula.");
-
-            await _leagueRepository.UpdateAsync(league);
-        }
-
-        public async Task<bool> DeleteLeagueAsync(LeagueID leagueId)
-        {
-            try
-            {
-                return await _leagueRepository.DeleteAsync(leagueId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al eliminar la liga con ID {LeagueID}.", leagueId.Value);
-                throw;
             }
         }
 
@@ -82,6 +72,36 @@ namespace Domain.Services.Leagues
             }
         }
 
-       
+        public async Task UpdateLeagueAsync(League league)
+        {
+            if (league == null)
+                throw new ArgumentNullException(nameof(league), "La liga no puede ser nula.");
+
+            try
+            {
+                await _leagueRepository.UpdateAsync(league);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la liga con ID {LeagueID}", league.LeagueID.Value);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteLeagueAsync(LeagueID leagueId)
+        {
+            if (leagueId == null)
+                throw new ArgumentNullException(nameof(leagueId));
+
+            try
+            {
+                return await _leagueRepository.DeleteAsync(leagueId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la liga con ID {LeagueID}", leagueId.Value);
+                throw;
+            }
+        }
     }
 }

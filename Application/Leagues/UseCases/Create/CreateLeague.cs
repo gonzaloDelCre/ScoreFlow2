@@ -1,4 +1,5 @@
 ﻿using Application.Leagues.DTOs;
+using Application.Leagues.Mapper;
 using Domain.Entities.Leagues;
 using Domain.Ports.Leagues;
 using Domain.Services.Leagues;
@@ -6,42 +7,34 @@ using Domain.Shared;
 
 namespace Application.Leagues.UseCases.Create
 {
-    public class CreateLeague
+    public class CreateLeagueUseCase
     {
-        private readonly ILeagueRepository _leagueRepository;
-        private readonly LeagueService _leagueService;
+        private readonly LeagueService _service;
+        private readonly LeagueMapper _mapper;
 
-        public CreateLeague(ILeagueRepository leagueRepository, LeagueService leagueService)
+        public CreateLeagueUseCase(LeagueService service, LeagueMapper mapper)
         {
-            _leagueRepository = leagueRepository;
-            _leagueService = leagueService;
+            _service = service;
+            _mapper = mapper;
         }
 
-        public async Task<LeagueResponseDTO> Execute(LeagueRequestDTO leagueDTO)
+        public async Task<LeagueResponseDTO> ExecuteAsync(LeagueRequestDTO dto)
         {
-            if (leagueDTO == null)
-                throw new ArgumentNullException(nameof(leagueDTO), "Los detalles de la liga no pueden ser nulos.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            if (string.IsNullOrWhiteSpace(leagueDTO.Name))
+            // Validaciones
+            if (string.IsNullOrWhiteSpace(dto.Name))
                 throw new ArgumentException("El nombre de la liga es obligatorio.");
 
-            var existingLeague = await _leagueRepository.GetByNameAsync(leagueDTO.Name);
-            if (existingLeague != null)
-                throw new ArgumentException("Ya existe una liga con el mismo nombre.");
+            var domainLeague = _mapper.MapToDomain(dto);
+            var created = await _service.CreateLeagueAsync(
+                                    domainLeague.Name,
+                                    domainLeague.Description,
+                                    domainLeague.CreatedAt
+                                );
 
-            var league = await _leagueService.CreateLeagueAsync(
-                new LeagueName(leagueDTO.Name),
-                leagueDTO.Description,
-                leagueDTO.CreatedAt
-            );
-
-            return new LeagueResponseDTO
-            {
-                LeagueID = league.LeagueID.Value,
-                Name = league.Name.Value,
-                Description = league.Description,
-                CreatedAt = league.CreatedAt
-            };
+            return _mapper.MapToDTO(created);
         }
     }
 }

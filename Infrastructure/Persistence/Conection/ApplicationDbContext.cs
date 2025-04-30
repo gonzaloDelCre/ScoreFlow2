@@ -7,7 +7,6 @@ using Infrastructure.Persistence.Players.Entities;
 using Infrastructure.Persistence.PlayerStatistics.Entities;
 using Infrastructure.Persistence.Referees.Entities;
 using Infrastructure.Persistence.Standings.Entities;
-using Infrastructure.Persistence.TeamLeagues.Entities;
 using Infrastructure.Persistence.TeamPlayers.Entities;
 using Infrastructure.Persistence.Teams.Entities;
 using Infrastructure.Persistence.Users.Entities;
@@ -17,9 +16,10 @@ namespace Infrastructure.Persistence.Conection
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
 
-        // Definir las tablas
+        // Tablas
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<TeamEntity> Teams { get; set; }
         public DbSet<PlayerEntity> Players { get; set; }
@@ -27,7 +27,6 @@ namespace Infrastructure.Persistence.Conection
         public DbSet<MatchEventEntity> MatchEvents { get; set; }
         public DbSet<PlayerStatisticEntity> PlayerStatistics { get; set; }
         public DbSet<LeagueEntity> Leagues { get; set; }
-        public DbSet<TeamLeagueEntity> TeamLeagues { get; set; }
         public DbSet<StandingEntity> Standings { get; set; }
         public DbSet<NotificationEntity> Notifications { get; set; }
         public DbSet<RefereeEntity> Referees { get; set; }
@@ -36,103 +35,103 @@ namespace Infrastructure.Persistence.Conection
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<TeamLeagueEntity>().HasKey(tl => new { tl.TeamID, tl.LeagueID });
-            modelBuilder.Entity<MatchRefereeEntity>().HasKey(mr => new { mr.MatchID, mr.RefereeID });
-
-            modelBuilder.Entity<MatchEntity>()
-                .HasOne(m => m.Team1)
-                .WithMany()
-                .HasForeignKey(m => m.Team1ID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<MatchEntity>()
-                .HasOne(m => m.Team2)
-                .WithMany()
-                .HasForeignKey(m => m.Team2ID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<MatchEventEntity>()
-                .HasOne(me => me.Match)
-                .WithMany()
-                .HasForeignKey(me => me.MatchID)
+            // Team ←→ League (1:N)
+            modelBuilder.Entity<TeamEntity>()
+                .HasOne(t => t.League)
+                .WithMany(l => l.Teams)
+                .HasForeignKey(t => t.LeagueID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<MatchEventEntity>()
-                .HasOne(me => me.Player)
-                .WithMany()
-                .HasForeignKey(me => me.PlayerID)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<PlayerStatisticEntity>()
-                .HasOne(ps => ps.Match)
-                .WithMany()
-                .HasForeignKey(ps => ps.MatchID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<PlayerStatisticEntity>()
-                .HasOne(ps => ps.Player)
-                .WithMany()
-                .HasForeignKey(ps => ps.PlayerID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<TeamLeagueEntity>()
-                .HasOne(tl => tl.Team)
-                .WithMany()
-                .HasForeignKey(tl => tl.TeamID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<TeamLeagueEntity>()
-                .HasOne(tl => tl.League)
-                .WithMany()
-                .HasForeignKey(tl => tl.LeagueID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<StandingEntity>()
-                .HasOne(s => s.League)
-                .WithMany()
-                .HasForeignKey(s => s.LeagueID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<StandingEntity>()
-                .HasOne(s => s.Team)
-                .WithMany()
-                .HasForeignKey(s => s.TeamID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<NotificationEntity>()
-                .HasOne(n => n.User)
-                .WithMany(u => u.Notifications)
-                .HasForeignKey(n => n.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<MatchRefereeEntity>()
-                .HasOne(mr => mr.Match)
-                .WithMany(m => m.MatchReferees)
-                .HasForeignKey(mr => mr.MatchID)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<MatchRefereeEntity>()
-                .HasOne(mr => mr.Referee)
-                .WithMany(r => r.MatchReferees)
-                .HasForeignKey(mr => mr.RefereeID)
-                .OnDelete(DeleteBehavior.Cascade);
-
+            // TeamPlayers (PK compuesta)
+            modelBuilder.Entity<TeamPlayerEntity>()
+                .HasKey(tp => new { tp.TeamID, tp.PlayerID });
             modelBuilder.Entity<TeamPlayerEntity>()
                 .HasOne(tp => tp.Team)
                 .WithMany(t => t.TeamPlayers)
                 .HasForeignKey(tp => tp.TeamID)
                 .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<TeamPlayerEntity>()
                 .HasOne(tp => tp.Player)
                 .WithMany(p => p.TeamPlayers)
                 .HasForeignKey(tp => tp.PlayerID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // MatchReferees (PK compuesta)
+            modelBuilder.Entity<MatchRefereeEntity>()
+                .HasKey(mr => new { mr.MatchID, mr.RefereeID });
+            modelBuilder.Entity<MatchRefereeEntity>()
+                .HasOne(mr => mr.Match)
+                .WithMany(m => m.MatchReferees)
+                .HasForeignKey(mr => mr.MatchID)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MatchRefereeEntity>()
+                .HasOne(mr => mr.Referee)
+                .WithMany(r => r.MatchReferees)
+                .HasForeignKey(mr => mr.RefereeID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // MatchEntity relaciones
+            modelBuilder.Entity<MatchEntity>()
+                .HasOne(m => m.Team1)
+                .WithMany()
+                .HasForeignKey(m => m.Team1ID)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MatchEntity>()
+                .HasOne(m => m.Team2)
+                .WithMany()
+                .HasForeignKey(m => m.Team2ID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Eventos de partido
+            modelBuilder.Entity<MatchEventEntity>()
+                .HasOne(me => me.Match)
+                .WithMany(m => m.MatchEvents)
+                .HasForeignKey(me => me.MatchID)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MatchEventEntity>()
+                .HasOne(me => me.Player)
+                .WithMany()
+                .HasForeignKey(me => me.PlayerID)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Estadísticas de jugador
+            modelBuilder.Entity<PlayerStatisticEntity>()
+                .HasOne(ps => ps.Match)
+                .WithMany(m => m.PlayerStatistics)
+                .HasForeignKey(ps => ps.MatchID)
+                .OnDelete(DeleteBehavior.Cascade);
+            //modelBuilder.Entity<PlayerStatisticEntity>()
+            //    .HasOne(ps => ps.Player)
+            //    .WithMany(p => p.PlayerStatistics)
+            //    .HasForeignKey(ps => ps.PlayerID)
+            //    .OnDelete(DeleteBehavior.Cascade);
+
+            // Clasificaciones
+            modelBuilder.Entity<StandingEntity>()
+                        .HasOne(s => s.League)
+                        .WithMany(l => l.Standings)
+                        .HasForeignKey(s => s.LeagueID)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StandingEntity>()
+                        .HasOne(s => s.Team)
+                        .WithMany(t => t.Standings)
+                        .HasForeignKey(s => s.TeamID)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            // Notificaciones
+            modelBuilder.Entity<NotificationEntity>()
+                .HasOne(n => n.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(n => n.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Unicidad email en usuario
             modelBuilder.Entity<UserEntity>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            // Longitudes
             modelBuilder.Entity<UserEntity>().Property(u => u.FullName).HasMaxLength(100);
             modelBuilder.Entity<UserEntity>().Property(u => u.Email).HasMaxLength(255);
             modelBuilder.Entity<TeamEntity>().Property(t => t.Name).HasMaxLength(100);

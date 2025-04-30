@@ -1,70 +1,108 @@
-﻿using System.Linq;
-using Domain.Entities.Teams;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Domain.Entities.Leagues;
 using Domain.Entities.Players;
-using Infrastructure.Persistence.Teams.Entities;
-using Infrastructure.Persistence.TeamPlayers.Entities;
+using Domain.Entities.Teams;
 using Domain.Shared;
 using Infrastructure.Persistence.Players.Entities;
+using Infrastructure.Persistence.TeamPlayers.Entities;
+using Infrastructure.Persistence.Teams.Entities;
 
 namespace Infrastructure.Persistence.Teams.Mapper
 {
     public static class TeamMapper
     {
+        /// <summary>
+        /// Mappea un Team de dominio a TeamEntity (persistencia),
+        /// incluyendo la FK LeagueID.
+        /// </summary>
+        public static TeamEntity MapToEntity(this Team domain)
+        {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
+
+            return new TeamEntity
+            {
+                TeamID = domain.TeamID.Value,
+                Name = domain.Name.Value,
+                Logo = domain.Logo,
+                Category = domain.Category,
+                Club = domain.Club,
+                Stadium = domain.Stadium,
+                ExternalID = domain.ExternalID,
+                CreatedAt = domain.CreatedAt,
+                CoachPlayerID = domain.Coach?.PlayerID.Value,
+
+                // ← aquí asignas la FK de liga
+                LeagueID = domain.LeagueID.Value
+            };
+        }
+
+        /// <summary>
+        /// Mappea un TeamEntity (persistencia) a Team (dominio),
+        /// reconociendo la liga a la que pertenece y los jugadores.
+        /// </summary>
         public static Team MapToDomain(
-            TeamEntity entity,
+            this TeamEntity entity,
+            League league,
             ICollection<TeamPlayerEntity> teamPlayers,
             ICollection<PlayerEntity> playerEntities)
         {
-            // Mapeo de jugadores asociados al equipo
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (league == null) throw new ArgumentNullException(nameof(league));
+
+            // 1) Construyo la lista de Player de dominio
             var players = playerEntities
-                .Where(p => teamPlayers.Any(tp => tp.TeamID == entity.TeamID && tp.PlayerID == p.PlayerID))
+                .Where(p => teamPlayers.Any(tp =>
+                    tp.TeamID == entity.TeamID &&
+                    tp.PlayerID == p.PlayerID))
                 .Select(p => new Player(
                     new PlayerID(p.PlayerID),
                     new PlayerName(p.Name),
-                    Enum.Parse<Domain.Enum.PlayerPosition>(p.Position),
+                    Enum.TryParse<Domain.Enum.PlayerPosition>(p.Position, out var pos)
+                        ? pos
+                        : Domain.Enum.PlayerPosition.JUGADOR,
                     new Domain.Entities.Players.PlayerAge(p.Age),
                     p.Goals,
                     p.Photo,
                     p.CreatedAt,
-                    null // No asignamos directamente el equipo aquí
+                    null
                 ))
                 .ToList();
 
-            // Crear el equipo base
+            // 2) Creo la instancia Team con la liga
             var team = new Team(
                 new TeamID(entity.TeamID),
                 new TeamName(entity.Name),
+                league,
+                entity.Logo ?? string.Empty,
                 entity.CreatedAt,
-                entity.Logo,
                 entity.ExternalID
             );
 
-            team.Update(
-                category: entity.Category,
-                club: entity.Club,
-                stadium: entity.Stadium
-            );
+            // 3) Resto de propiedades
+            team.Update(entity.Category, entity.Club, entity.Stadium);
 
-            // Agregar jugadores
-            foreach (var player in players)
-            {
-                team.AddPlayer(player);
-            }
+            foreach (var pl in players)
+                team.AddPlayer(pl);
 
-            // Asignar el entrenador si existe
+            // coach
             if (entity.CoachPlayerID.HasValue)
             {
-                var coachEntity = playerEntities.FirstOrDefault(p => p.PlayerID == entity.CoachPlayerID.Value);
-                if (coachEntity != null)
+                var coachData = playerEntities
+                    .FirstOrDefault(p => p.PlayerID == entity.CoachPlayerID.Value);
+                if (coachData != null)
                 {
                     var coach = new Player(
-                        new PlayerID(coachEntity.PlayerID),
-                        new PlayerName(coachEntity.Name),
-                        Enum.Parse<Domain.Enum.PlayerPosition>(coachEntity.Position),
-                        new Domain.Entities.Players.PlayerAge(coachEntity.Age),
-                        coachEntity.Goals,
-                        coachEntity.Photo,
-                        coachEntity.CreatedAt,
+                        new PlayerID(coachData.PlayerID),
+                        new PlayerName(coachData.Name),
+                        Enum.TryParse<Domain.Enum.PlayerPosition>(coachData.Position, out var cp)
+                            ? cp
+                            : Domain.Enum.PlayerPosition.JUGADOR,
+                        new Domain.Entities.Players.PlayerAge(coachData.Age),
+                        coachData.Goals,
+                        coachData.Photo,
+                        coachData.CreatedAt,
                         null
                     );
                     team.AssignCoach(coach);
@@ -72,22 +110,6 @@ namespace Infrastructure.Persistence.Teams.Mapper
             }
 
             return team;
-        }
-
-        public static TeamEntity MapToEntity(Team team)
-        {
-            return new TeamEntity
-            {
-                TeamID = team.TeamID.Value,
-                Name = team.Name.Value,
-                Logo = team.Logo,
-                CreatedAt = team.CreatedAt,
-                ExternalID = team.ExternalID,
-                Category = team.Category,
-                Club = team.Club,
-                Stadium = team.Stadium,
-                CoachPlayerID = team.Coach?.PlayerID.Value
-            };
         }
     }
 }

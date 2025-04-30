@@ -1,7 +1,8 @@
-﻿using Domain.Shared;
+﻿using System;
+using System.Collections.Generic;
 using Domain.Entities.Standings;
-using Domain.Entities.TeamLeagues;
-using Domain.Services.Leagues;
+using Domain.Entities.Teams;
+using Domain.Shared;
 
 namespace Domain.Entities.Leagues
 {
@@ -12,26 +13,35 @@ namespace Domain.Entities.Leagues
         public string Description { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
-        public ICollection<TeamLeague> TeamLeagues { get; private set; } = new List<TeamLeague>();
         public ICollection<Standing> Standings { get; private set; } = new List<Standing>();
 
-        public League(LeagueID leagueID, LeagueName name, string description, DateTime createdAt)
+        // ← colección directa de equipos
+        public ICollection<Team> Teams { get; private set; } = new List<Team>();
+
+        public League(LeagueID leagueID,
+                      LeagueName name,
+                      string description,
+                      DateTime? createdAt = null)
         {
-            LeagueID = leagueID;
-            Name = name;
+            LeagueID = leagueID ?? throw new ArgumentNullException(nameof(leagueID));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             Description = description;
-            CreatedAt = createdAt;
+            CreatedAt = createdAt ?? DateTime.UtcNow;
         }
 
-        public League()
-        {
-        }
+        // Sobrecarga vacía para ORMs
+        private League() { }
 
         public void Update(LeagueName name, string description, DateTime createdAt)
         {
             Name = name;
             Description = description;
-            CreatedAt = createdAt;
+        }
+
+        public void AddTeam(Team team)
+        {
+            if (team == null) throw new ArgumentNullException(nameof(team));
+            if (!Teams.Contains(team)) Teams.Add(team);
         }
     }
 }
