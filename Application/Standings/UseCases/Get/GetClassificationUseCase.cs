@@ -2,10 +2,8 @@
 using Application.Standings.Mapper;
 using Domain.Ports.Standings;
 using Domain.Shared;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Standings.UseCases.Get

@@ -3,10 +3,7 @@ using Application.Standings.UseCases.Create;
 using Application.Standings.UseCases.Delete;
 using Application.Standings.UseCases.Get;
 using Application.Standings.UseCases.Update;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Standings.UseCases
@@ -15,12 +12,12 @@ namespace Application.Standings.UseCases
     {
         private readonly CreateStandingUseCase _create;
         private readonly GetAllStandingsUseCase _getAll;
-        private readonly GetStandingByIdUseCase _getById;
-        private readonly UpdateStandingUseCase _update;
-        private readonly DeleteStandingUseCase _delete;
         private readonly GetByLeagueUseCase _byLeague;
         private readonly GetClassificationUseCase _classification;
         private readonly GetByTeamAndLeagueUseCase _byTeamLeague;
+        private readonly UpdateStandingUseCase _update;
+        private readonly DeleteStandingUseCase _delete;
+        private readonly GetStandingByIdUseCase _getById;
 
         public StandingUseCaseHandler(
             CreateStandingUseCase create,
@@ -51,12 +48,6 @@ namespace Application.Standings.UseCases
         public Task<StandingResponseDTO> GetByIdAsync(int id) =>
             _getById.ExecuteAsync(id);
 
-        public Task<StandingResponseDTO> UpdateAsync(StandingRequestDTO dto) =>
-            _update.ExecuteAsync(dto);
-
-        public Task DeleteAsync(int id) =>
-            _delete.ExecuteAsync(id);
-
         public Task<List<StandingResponseDTO>> GetByLeagueAsync(int leagueId) =>
             _byLeague.ExecuteAsync(leagueId);
 
@@ -65,5 +56,11 @@ namespace Application.Standings.UseCases
 
         public Task<StandingResponseDTO> GetByTeamAndLeagueAsync(int teamId, int leagueId) =>
             _byTeamLeague.ExecuteAsync(teamId, leagueId);
+
+        public Task<StandingResponseDTO> UpdateAsync(StandingRequestDTO dto) =>
+            _update.ExecuteAsync(dto);
+
+        public Task DeleteAsync(int id) =>
+            _delete.ExecuteAsync(id);
     }
 }

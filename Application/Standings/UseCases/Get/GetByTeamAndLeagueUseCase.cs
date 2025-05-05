@@ -2,10 +2,6 @@
 using Application.Standings.Mapper;
 using Domain.Ports.Standings;
 using Domain.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Application.Standings.UseCases.Get
@@ -24,7 +20,7 @@ namespace Application.Standings.UseCases.Get
         public async Task<StandingResponseDTO> ExecuteAsync(int teamId, int leagueId)
         {
             var s = await _repo.GetByTeamIdAndLeagueIdAsync(new TeamID(teamId), new LeagueID(leagueId))
-                   ?? throw new KeyNotFoundException($"No standing for team {teamId} in league {leagueId}");
+                ?? throw new KeyNotFoundException($"No standing for team {teamId} in league {leagueId}");
             return _mapper.MapToDTO(s);
         }
     }

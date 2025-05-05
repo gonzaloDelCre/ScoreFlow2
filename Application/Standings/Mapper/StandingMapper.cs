@@ -14,10 +14,11 @@ namespace Application.Standings.Mapper
         public StandingResponseDTO MapToDTO(Standing s)
         {
             if (s == null) throw new ArgumentNullException(nameof(s));
+
             return new StandingResponseDTO
             {
                 StandingID = s.StandingID.Value,
-                LeagueID = s.LeagueID.Value,
+                LeagueID = s.LeagueID.Value, // ✅ NUEVO
                 TeamID = s.TeamID.Value,
                 Wins = s.Wins.Value,
                 Draws = s.Draws.Value,
@@ -33,7 +34,6 @@ namespace Application.Standings.Mapper
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
-            // Si existe, actualizamos
             if (existing != null)
             {
                 existing.Update(
@@ -42,15 +42,14 @@ namespace Application.Standings.Mapper
                     new Losses(dto.Losses),
                     new GoalsFor(dto.GoalsFor),
                     new GoalsAgainst(dto.GoalsAgainst),
-                    new Points(dto.Wins * 2 + dto.Draws) // o regla de puntos que uses
+                    new Points(dto.Wins * 2 + dto.Draws)
                 );
                 return existing;
             }
 
-            // Nuevo
             return new Standing(
                 standingID: new StandingID(dto.StandingID),
-                leagueID: new LeagueID(dto.LeagueID),
+                leagueID: new LeagueID(dto.LeagueID), // ✅ NUEVO
                 teamID: new TeamID(dto.TeamID),
                 wins: new Wins(dto.Wins),
                 draws: new Draws(dto.Draws),
@@ -64,4 +63,5 @@ namespace Application.Standings.Mapper
             );
         }
     }
+
 }

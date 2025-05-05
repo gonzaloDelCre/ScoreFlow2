@@ -1,4 +1,5 @@
-﻿using Domain.Entities.Players;
+﻿using Domain.Entities.Leagues;
+using Domain.Entities.Players;
 using Domain.Entities.Teams;
 using Domain.Ports.Teams;
 using Domain.Shared;
@@ -67,10 +68,12 @@ namespace Infrastructure.Persistence.Teams.Repositories
                         .ToList();
 
                     // Mapear al dominio
+                    var teamPlayersForThisTeam = teamPlayers.Where(tp => tp.TeamID == teamEntity.TeamID).ToList();
                     var team = TeamMapper.MapToDomain(
-                        teamEntity,
-                        teamPlayerRelations,
-                        teamPlayerEntities
+                    teamEntity,
+                        league,
+                        teamPlayersForThisTeam,
+                        players
                     );
 
                     result.Add(team);

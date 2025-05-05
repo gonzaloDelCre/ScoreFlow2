@@ -1,10 +1,6 @@
-﻿using Domain.Entities.Standings;
-using Domain.Ports.Standings;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Domain.Ports.Standings;
 using System.Threading.Tasks;
+using Domain.Shared;
 
 namespace Application.Standings.UseCases.Delete
 {
@@ -19,7 +15,7 @@ namespace Application.Standings.UseCases.Delete
 
         public async Task ExecuteAsync(int id)
         {
-            var ok = await _repo.DeleteAsync(new StandingID(id));
+            var ok = await _repo.DeleteAsync(new Domain.Entities.Standings.StandingID(id));
             if (!ok) throw new KeyNotFoundException($"Standing {id} no existe");
         }
     }

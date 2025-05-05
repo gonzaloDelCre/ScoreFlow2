@@ -6,6 +6,18 @@ namespace Domain.Entities.Standings
 {
     public class Standing
     {
+        private StandingID standingID;
+        private LeagueID leagueID;
+        private TeamID teamID;
+        private Wins wins;
+        private Draws draws;
+        private Losses losses;
+        private GoalsFor goalsFor;
+        private GoalsAgainst goalsAgainst;
+        private Points points;
+        private object league;
+        private object team;
+
         public StandingID StandingID { get; private set; }
 
         public LeagueID LeagueID { get; private set; }
@@ -48,6 +60,22 @@ namespace Domain.Entities.Standings
             Points = points ?? new Points(0);
             Team = team ?? new Team();
             CreatedAt = createdAt ?? DateTime.UtcNow;
+        }
+
+        public Standing(StandingID standingID, LeagueID leagueID, TeamID teamID, Wins wins, Draws draws, Losses losses, GoalsFor goalsFor, GoalsAgainst goalsAgainst, Points points, object league, object team, DateTime createdAt)
+        {
+            this.standingID = standingID;
+            this.leagueID = leagueID;
+            this.teamID = teamID;
+            this.wins = wins;
+            this.draws = draws;
+            this.losses = losses;
+            this.goalsFor = goalsFor;
+            this.goalsAgainst = goalsAgainst;
+            this.points = points;
+            this.league = league;
+            this.team = team;
+            CreatedAt = createdAt;
         }
 
         // Método para actualizar todos los stats de golpe

@@ -1,11 +1,10 @@
 ﻿using Domain.Entities.Standings;
 using Domain.Ports.Standings;
+using Domain.Ports.Teams;
 using Domain.Shared;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Domain.Services.Standings
@@ -13,13 +12,16 @@ namespace Domain.Services.Standings
     public class StandingService
     {
         private readonly IStandingRepository _standingRepository;
+        private readonly ITeamRepository _teamRepository;
         private readonly ILogger<StandingService> _logger;
 
         public StandingService(
             IStandingRepository standingRepository,
+            ITeamRepository teamRepository,
             ILogger<StandingService> logger)
         {
             _standingRepository = standingRepository;
+            _teamRepository = teamRepository;
             _logger = logger;
         }
 
@@ -34,12 +36,15 @@ namespace Domain.Services.Standings
         {
             if (leagueId == null) throw new ArgumentNullException(nameof(leagueId));
             if (teamId == null) throw new ArgumentNullException(nameof(teamId));
-            if (wins < 0 || draws < 0 || losses < 0)
-                throw new ArgumentException("Wins, draws and losses must be non-negative.");
-            if (goalsFor < 0 || goalsAgainst < 0)
-                throw new ArgumentException("Goals for and against must be non-negative.");
 
-            var points = new Points(wins * 2 + draws); // or your league’s point rule
+            // 🔍 Validar que el equipo pertenece a la liga
+            var team = await _teamRepository.GetByIdAsync(teamId)
+                ?? throw new KeyNotFoundException($"El equipo con ID {teamId.Value} no fue encontrado.");
+
+            if (team.LeagueID.Value != leagueId.Value)
+                throw new InvalidOperationException($"El equipo con ID {teamId.Value} no pertenece a la liga con ID {leagueId.Value}.");
+
+            var points = new Points(wins * 2 + draws);
 
             var standing = new Standing(
                 standingID: new StandingID(0),
@@ -51,7 +56,6 @@ namespace Domain.Services.Standings
                 goalsFor: new GoalsFor(goalsFor),
                 goalsAgainst: new GoalsAgainst(goalsAgainst),
                 points: points,
-                league: null,
                 team: null,
                 createdAt: DateTime.UtcNow
             );
@@ -59,74 +63,16 @@ namespace Domain.Services.Standings
             return await _standingRepository.AddAsync(standing);
         }
 
-        public async Task<Standing?> GetStandingByIdAsync(StandingID standingId)
-        {
-            try
-            {
-                return await _standingRepository.GetByIdAsync(standingId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching standing {StandingID}", standingId.Value);
-                throw;
-            }
-        }
-
-        public async Task<IEnumerable<Standing>> GetAllStandingsAsync()
-        {
-            try
-            {
-                return await _standingRepository.GetAllAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching all standings");
-                throw;
-            }
-        }
-
-        public async Task<IEnumerable<Standing>> GetByLeagueIdAsync(LeagueID leagueId)
-        {
-            try
-            {
-                return await _standingRepository.GetByLeagueIdAsync(leagueId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching standings for league {LeagueID}", leagueId.Value);
-                throw;
-            }
-        }
-
-        public async Task<IEnumerable<Standing>> GetClassificationByLeagueIdAsync(LeagueID leagueId)
-        {
-            try
-            {
-                return await _standingRepository.GetClassificationByLeagueIdAsync(leagueId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching classification for league {LeagueID}", leagueId.Value);
-                throw;
-            }
-        }
-
-        public async Task<Standing?> GetByTeamAndLeagueAsync(TeamID teamId, LeagueID leagueId)
-        {
-            try
-            {
-                return await _standingRepository.GetByTeamIdAndLeagueIdAsync(teamId, leagueId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching standing for team {TeamID} in league {LeagueID}", teamId.Value, leagueId.Value);
-                throw;
-            }
-        }
-
         public async Task UpdateStandingAsync(Standing standing)
         {
             if (standing == null) throw new ArgumentNullException(nameof(standing));
+
+            // 🔍 Validar que el equipo aún pertenece a la liga indicada
+            var team = await _teamRepository.GetByIdAsync(standing.TeamID)
+                ?? throw new KeyNotFoundException($"El equipo con ID {standing.TeamID.Value} no fue encontrado.");
+
+            if (team.LeagueID.Value != standing.LeagueID.Value)
+                throw new InvalidOperationException($"El equipo con ID {standing.TeamID.Value} no pertenece a la liga con ID {standing.LeagueID.Value}.");
 
             try
             {
@@ -134,22 +80,29 @@ namespace Domain.Services.Standings
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating standing {StandingID}", standing.StandingID.Value);
+                _logger.LogError(ex, "Error al actualizar el Standing con ID {StandingID}", standing.StandingID.Value);
                 throw;
             }
         }
 
+        public async Task<Standing> GetStandingByIdAsync(StandingID standingId)
+        {
+            return await _standingRepository.GetByIdAsync(standingId);
+        }
+
+        public async Task<IEnumerable<Standing>> GetStandingsByLeagueAsync(LeagueID leagueId)
+        {
+            return await _standingRepository.GetByLeagueIdAsync(leagueId);
+        }
+
+        public async Task<IEnumerable<Standing>> GetClassificationAsync(LeagueID leagueId)
+        {
+            return await _standingRepository.GetClassificationByLeagueIdAsync(leagueId);
+        }
+
         public async Task<bool> DeleteStandingAsync(StandingID standingId)
         {
-            try
-            {
-                return await _standingRepository.DeleteAsync(standingId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting standing {StandingID}", standingId.Value);
-                throw;
-            }
+            return await _standingRepository.DeleteAsync(standingId);
         }
     }
 }
