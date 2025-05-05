@@ -83,7 +83,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Registrar los mappers
 builder.Services.AddScoped<UserMapper>();
 builder.Services.AddScoped<Application.Leagues.Mapper.LeagueMapper>();
-builder.Services.AddScoped<Infrastructure.Persistence.Leagues.Mapper.LeagueMapper>();
+//builder.Services.AddScoped<Infrastructure.Persistence.Leagues.Mapper.LeagueMapper>();
 builder.Services.AddScoped<Application.Matches.Mapper.MatchMapper>();
 //builder.Services.AddScoped<Infrastructure.Persistence.Matches.Mapper.MatchMapper>();
 builder.Services.AddScoped<Application.Teams.Mapper.TeamMapper>();
@@ -125,12 +125,12 @@ builder.Services.AddScoped<RegisterUserUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
 // Registrar casos de uso de Leagues
-builder.Services.AddScoped<GetAllLeagues>();
-builder.Services.AddScoped<GetLeagueById>();
-builder.Services.AddScoped<CreateLeague>();
-builder.Services.AddScoped<UpdateLeague>();
-builder.Services.AddScoped<DeleteLeague>();
-builder.Services.AddScoped<GeneralLeagueUseCaseHandler>();
+builder.Services.AddScoped<GetAllLeaguesUseCase>();
+builder.Services.AddScoped<GetLeagueByIdUseCase>();
+builder.Services.AddScoped<CreateLeagueUseCase>();
+builder.Services.AddScoped<UpdateLeagueUseCase>();
+builder.Services.AddScoped<DeleteLeagueUseCase>();
+builder.Services.AddScoped<LeagueUseCaseHandler>();
 
 // Registrar casos de uso de Matches
 //builder.Services.AddScoped<GetAllMatches>();
@@ -192,7 +192,7 @@ builder.Services.AddScoped<GetPlayersByTeamUseCase>();
 builder.Services.AddScoped<IGetTeamRosterUseCase, GetTeamRosterUseCase>();
 builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
 builder.Services.AddScoped<Application.Standings.Mapper.StandingMapper>();
-builder.Services.AddScoped<Infrastructure.Persistence.Standings.Mapper.StandingMapper>();
+//builder.Services.AddScoped<Infrastructure.Persistence.Standings.Mapper.StandingMapper>();
 builder.Services.AddScoped<Domain.Ports.Standings.IStandingRepository, Infrastructure.Persistence.Standings.Repositories.StandingRepository>();
 builder.Services.AddScoped<Domain.Services.Standings.StandingService>();
 builder.Services.AddScoped<Application.Standings.UseCases.Create.CreateStandingUseCase>();

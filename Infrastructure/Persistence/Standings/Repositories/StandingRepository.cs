@@ -20,143 +20,119 @@ namespace Infrastructure.Persistence.Standings.Repositories
     public class StandingRepository : IStandingRepository
     {
         private readonly ApplicationDbContext _context;
-        private readonly LeagueMapper _leagueMapper;
-        private readonly TeamMapper _teamMapper;
 
-        public StandingRepository(
-            ApplicationDbContext context,
-            LeagueMapper leagueMapper,
-            TeamMapper teamMapper)
+        public StandingRepository(ApplicationDbContext context)
         {
             _context = context;
-            _leagueMapper = leagueMapper;
-            _teamMapper = teamMapper;
         }
 
         public async Task<IEnumerable<Standing>> GetAllAsync()
         {
-            var sql = "SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt FROM Standings";
+            var sql = "SELECT * FROM Standings";
             var dbStandings = await _context.Standings
                 .FromSqlRaw(sql)
+                .AsNoTracking()  
                 .ToListAsync();
 
-            // Cargamos ligas, equipos, teamPlayers y players
-            var leagues = await _context.Leagues.FromSqlRaw("SELECT * FROM Leagues").ToListAsync();
-            var teams = await _context.Teams.FromSqlRaw("SELECT * FROM Teams").ToListAsync();
-            var teamPlayers = await _context.TeamPlayers.FromSqlRaw("SELECT * FROM TeamPlayers").ToListAsync();
-            var players = await _context.Players.FromSqlRaw("SELECT * FROM Players").ToListAsync();
+            var leagues = await _context.Leagues.ToListAsync();
+            var teams = await _context.Teams.ToListAsync();
+            var teamPlayers = await _context.TeamPlayers.ToListAsync();
+            var players = await _context.Players.ToListAsync();
 
             return dbStandings.Select(e =>
             {
-                var leagueEntity = leagues.FirstOrDefault(l => l.LeagueID == e.LeagueID)
-                    ?? throw new InvalidOperationException($"League {e.LeagueID} not found.");
-                var teamEntity = teams.FirstOrDefault(t => t.TeamID == e.TeamID)
-                    ?? throw new InvalidOperationException($"Team {e.TeamID} not found.");
+                var leagueEntity = leagues.First(l => l.LeagueID == e.LeagueID);
+                var teamEntity = teams.First(t => t.TeamID == e.TeamID);
 
-                var league = _leagueMapper.MapToDomainSimple(leagueEntity);
-                var team = _teamMapper.MapToDomain(teamEntity, league, teamPlayers, players);
+                var league = LeagueMapper.MapToDomainSimple(leagueEntity);
+                var team = TeamMapper.MapToDomain(
+                    teamEntity,
+                    league,
+                    teamPlayers.Where(tp => tp.TeamID == e.TeamID).ToList(),
+                    players
+                );
 
-                return e.ToDomain(league, teamPlayers, players);
+                return e.ToDomain(
+                    league,
+                    teamPlayers.Where(tp => tp.TeamID == e.TeamID).ToList(),
+                    players
+                );
             }).ToList();
         }
 
         public async Task<Standing?> GetByIdAsync(StandingID standingId)
         {
-            var sql = "SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt FROM Standings WHERE StandingID = @id";
             var param = new SqlParameter("@id", standingId.Value);
-
             var entity = await _context.Standings
-                .FromSqlRaw(sql, param)
+                .FromSqlRaw("SELECT * FROM Standings WHERE StandingID = @id", param)
                 .FirstOrDefaultAsync();
+
             if (entity == null) return null;
 
-            // Cargar liga y equipo
-            var leagueEntity = await _context.Leagues
-                .FromSqlRaw("SELECT * FROM Leagues WHERE LeagueID = @lid", new SqlParameter("@lid", entity.LeagueID))
-                .FirstOrDefaultAsync()
+            var leagueEntity = await _context.Leagues.FindAsync(entity.LeagueID)
                 ?? throw new InvalidOperationException($"League {entity.LeagueID} not found.");
-
-            var teamEntity = await _context.Teams
-                .FromSqlRaw("SELECT * FROM Teams WHERE TeamID = @tid", new SqlParameter("@tid", entity.TeamID))
-                .FirstOrDefaultAsync()
-                ?? throw new InvalidOperationException($"Team {entity.TeamID} not found.");
+            var league = LeagueMapper.MapToDomainSimple(leagueEntity);
 
             var teamPlayers = await _context.TeamPlayers
-                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE TeamID = @tid", new SqlParameter("@tid", entity.TeamID))
+                .Where(tp => tp.TeamID == entity.TeamID)
                 .ToListAsync();
-
-            var players = await _context.Players
-                .FromSqlRaw("SELECT * FROM Players")
-                .ToListAsync();
-
-            var league = _leagueMapper.MapToDomainSimple(leagueEntity);
+            var players = await _context.Players.ToListAsync();
 
             return entity.ToDomain(league, teamPlayers, players);
         }
 
         public async Task<IEnumerable<Standing>> GetByLeagueIdAsync(LeagueID leagueId)
         {
-            var sql = "SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt FROM Standings WHERE LeagueID = @lid";
             var param = new SqlParameter("@lid", leagueId.Value);
-
             var dbStandings = await _context.Standings
-                .FromSqlRaw(sql, param)
+                .FromSqlRaw("SELECT * FROM Standings WHERE LeagueID = @lid", param)
                 .ToListAsync();
 
-            var leagueEntity = await _context.Leagues
-                .FromSqlRaw("SELECT * FROM Leagues WHERE LeagueID = @lid", param)
-                .FirstOrDefaultAsync()
+            var leagueEntity = await _context.Leagues.FindAsync(leagueId.Value)
                 ?? throw new InvalidOperationException($"League {leagueId.Value} not found.");
+            var league = LeagueMapper.MapToDomainSimple(leagueEntity);
 
-            var league = _leagueMapper.MapToDomainSimple(leagueEntity);
-
-            var teams = await _context.Teams.FromSqlRaw("SELECT * FROM Teams").ToListAsync();
-            var teamPlayers = await _context.TeamPlayers.FromSqlRaw("SELECT * FROM TeamPlayers").ToListAsync();
-            var players = await _context.Players.FromSqlRaw("SELECT * FROM Players").ToListAsync();
+            var teamPlayers = await _context.TeamPlayers.ToListAsync();
+            var players = await _context.Players.ToListAsync();
 
             return dbStandings.Select(e =>
-            {
-                var teamEntity = teams.FirstOrDefault(t => t.TeamID == e.TeamID)
-                    ?? throw new InvalidOperationException($"Team {e.TeamID} not found.");
-                return e.ToDomain(league, teamPlayers, players);
-            }).ToList();
+                e.ToDomain(
+                    league,
+                    teamPlayers.Where(tp => tp.TeamID == e.TeamID).ToList(),
+                    players
+                )
+            ).ToList();
         }
 
         public async Task<IEnumerable<Standing>> GetClassificationByLeagueIdAsync(LeagueID leagueId)
         {
-            var sql = @"
-                SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt
-                FROM Standings
-                WHERE LeagueID = @lid
-                ORDER BY Points DESC, (GoalsFor - GoalsAgainst) DESC";
             var param = new SqlParameter("@lid", leagueId.Value);
-
             var dbStandings = await _context.Standings
-                .FromSqlRaw(sql, param)
+                .FromSqlRaw(@"
+                    SELECT *
+                    FROM Standings
+                    WHERE LeagueID = @lid
+                    ORDER BY Points DESC, (GoalsFor - GoalsAgainst) DESC", param)
                 .ToListAsync();
 
-            var leagueEntity = await _context.Leagues
-                .FromSqlRaw("SELECT * FROM Leagues WHERE LeagueID = @lid", param)
-                .FirstOrDefaultAsync()
+            var leagueEntity = await _context.Leagues.FindAsync(leagueId.Value)
                 ?? throw new InvalidOperationException($"League {leagueId.Value} not found.");
+            var league = LeagueMapper.MapToDomainSimple(leagueEntity);
 
-            var league = _leagueMapper.MapToDomainSimple(leagueEntity);
-
-            var teams = await _context.Teams.FromSqlRaw("SELECT * FROM Teams").ToListAsync();
-            var teamPlayers = await _context.TeamPlayers.FromSqlRaw("SELECT * FROM TeamPlayers").ToListAsync();
-            var players = await _context.Players.FromSqlRaw("SELECT * FROM Players").ToListAsync();
+            var teamPlayers = await _context.TeamPlayers.ToListAsync();
+            var players = await _context.Players.ToListAsync();
 
             return dbStandings.Select(e =>
-            {
-                var teamEntity = teams.FirstOrDefault(t => t.TeamID == e.TeamID)
-                    ?? throw new InvalidOperationException($"Team {e.TeamID} not found.");
-                return e.ToDomain(league, teamPlayers, players);
-            }).ToList();
+                e.ToDomain(
+                    league,
+                    teamPlayers.Where(tp => tp.TeamID == e.TeamID).ToList(),
+                    players
+                )
+            ).ToList();
         }
 
         public async Task<Standing?> GetByTeamIdAndLeagueIdAsync(TeamID teamId, LeagueID leagueId)
         {
-            var sql = "SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt FROM Standings WHERE TeamID = @tid AND LeagueID = @lid";
             var parameters = new[]
             {
                 new SqlParameter("@tid", teamId.Value),
@@ -164,24 +140,18 @@ namespace Infrastructure.Persistence.Standings.Repositories
             };
 
             var entity = await _context.Standings
-                .FromSqlRaw(sql, parameters)
+                .FromSqlRaw("SELECT * FROM Standings WHERE TeamID = @tid AND LeagueID = @lid", parameters)
                 .FirstOrDefaultAsync();
             if (entity == null) return null;
 
-            var leagueEntity = await _context.Leagues
-                .FromSqlRaw("SELECT * FROM Leagues WHERE LeagueID = @lid", parameters[1])
-                .FirstOrDefaultAsync()
+            var leagueEntity = await _context.Leagues.FindAsync(leagueId.Value)
                 ?? throw new InvalidOperationException($"League {leagueId.Value} not found.");
-
-            var league = _leagueMapper.MapToDomainSimple(leagueEntity);
+            var league = LeagueMapper.MapToDomainSimple(leagueEntity);
 
             var teamPlayers = await _context.TeamPlayers
-                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE TeamID = @tid", parameters[0])
+                .Where(tp => tp.TeamID == teamId.Value)
                 .ToListAsync();
-
-            var players = await _context.Players
-                .FromSqlRaw("SELECT * FROM Players")
-                .ToListAsync();
+            var players = await _context.Players.ToListAsync();
 
             return entity.ToDomain(league, teamPlayers, players);
         }
@@ -200,36 +170,27 @@ namespace Infrastructure.Persistence.Standings.Repositories
             {
                 new SqlParameter("@lid", standing.LeagueID.Value),
                 new SqlParameter("@tid", standing.TeamID.Value),
-                new SqlParameter("@w",  standing.Wins.Value),
-                new SqlParameter("@d",  standing.Draws.Value),
-                new SqlParameter("@l",  standing.Losses.Value),
+                new SqlParameter("@w",   standing.Wins.Value),
+                new SqlParameter("@d",   standing.Draws.Value),
+                new SqlParameter("@l",   standing.Losses.Value),
                 new SqlParameter("@gf",  standing.GoalsFor.Value),
                 new SqlParameter("@ga",  standing.GoalsAgainst.Value),
-                new SqlParameter("@p",  standing.Points.Value),
+                new SqlParameter("@p",   standing.Points.Value),
                 new SqlParameter("@ca",  standing.CreatedAt)
             };
 
-            var newId = await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
+            var newId = Convert.ToInt32(await _context.Database.ExecuteSqlRawAsync(insertSql, parameters));
+            var entity = await _context.Standings.FindAsync(newId)
+                         ?? throw new InvalidOperationException("Inserted standing not found.");
 
-            // Volver a leer el registro insertado
-            var entity = await _context.Standings
-                .FromSqlRaw("SELECT StandingID, LeagueID, TeamID, Wins, Draws, Losses, GoalsFor, GoalsAgainst, Points, CreatedAt FROM Standings WHERE StandingID = @id", new SqlParameter("@id", newId))
-                .FirstAsync();
-
-            // Cargar liga y datos relacionados
-            var leagueEntity = await _context.Leagues
-                .FromSqlRaw("SELECT * FROM Leagues WHERE LeagueID = @lid", new SqlParameter("@lid", entity.LeagueID))
-                .FirstAsync();
-
-            var league = _leagueMapper.MapToDomainSimple(leagueEntity);
+            var leagueEntity = await _context.Leagues.FindAsync(entity.LeagueID)
+                ?? throw new InvalidOperationException($"League {entity.LeagueID} not found.");
+            var league = LeagueMapper.MapToDomainSimple(leagueEntity);
 
             var teamPlayers = await _context.TeamPlayers
-                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE TeamID = @tid", new SqlParameter("@tid", entity.TeamID))
+                .Where(tp => tp.TeamID == entity.TeamID)
                 .ToListAsync();
-
-            var players = await _context.Players
-                .FromSqlRaw("SELECT * FROM Players")
-                .ToListAsync();
+            var players = await _context.Players.ToListAsync();
 
             return entity.ToDomain(league, teamPlayers, players);
         }
@@ -239,14 +200,14 @@ namespace Infrastructure.Persistence.Standings.Repositories
             var sql = @"
                 UPDATE Standings
                 SET 
-                    LeagueID       = @lid,
-                    TeamID         = @tid,
-                    Wins           = @w,
-                    Draws          = @d,
-                    Losses         = @l,
-                    GoalsFor       = @gf,
-                    GoalsAgainst   = @ga,
-                    Points         = @p
+                    LeagueID     = @lid,
+                    TeamID       = @tid,
+                    Wins         = @w,
+                    Draws        = @d,
+                    Losses       = @l,
+                    GoalsFor     = @gf,
+                    GoalsAgainst = @ga,
+                    Points       = @p
                 WHERE StandingID = @id;
             ";
 
@@ -268,10 +229,9 @@ namespace Infrastructure.Persistence.Standings.Repositories
 
         public async Task<bool> DeleteAsync(StandingID standingId)
         {
-            var sql = "DELETE FROM Standings WHERE StandingID = @id";
             var param = new SqlParameter("@id", standingId.Value);
-
-            var affected = await _context.Database.ExecuteSqlRawAsync(sql, param);
+            var affected = await _context.Database.ExecuteSqlRawAsync(
+                "DELETE FROM Standings WHERE StandingID = @id", param);
             return affected > 0;
         }
     }

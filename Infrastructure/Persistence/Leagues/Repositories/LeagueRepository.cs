@@ -11,6 +11,7 @@ using Infrastructure.Persistence.Leagues.Mapper;
 using Infrastructure.Persistence.Players.Entities;
 using Infrastructure.Persistence.TeamPlayers.Entities;
 using Infrastructure.Persistence.Teams.Entities;
+using Infrastructure.Persistence.Teams.Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -20,35 +21,49 @@ namespace Infrastructure.Persistence.Leagues.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<LeagueRepository> _logger;
-        private readonly LeagueMapper _mapper;
 
         public LeagueRepository(
             ApplicationDbContext context,
-            ILogger<LeagueRepository> logger,
-            LeagueMapper mapper)
+            ILogger<LeagueRepository> logger)
         {
             _context = context;
             _logger = logger;
-            _mapper = mapper;
         }
 
         public async Task<IEnumerable<League>> GetAllAsync()
         {
             try
             {
-                // Cargo Ligas + Equipos
-                var leagues = await _context.Leagues
+                var leagueEntities = await _context.Leagues
                     .Include(l => l.Teams)
                     .ToListAsync();
 
-                // Cargo relaciones TeamPlayers y Players UNA VEZ
                 var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
                 var allPlayers = await _context.Players.ToListAsync();
 
-                // Mapeo todo
-                return leagues
-                    .Select(l => _mapper.MapToDomain(l, allTeamPlayers, allPlayers))
+                var result = leagueEntities
+                    .Select(entity =>
+                    {
+                        // Mapea entidad base
+                        var league = LeagueMapper.MapToDomainSimple(entity);
+
+                        // Mapea equipos asociados
+                        foreach (var teamEnt in entity.Teams)
+                        {
+                            var teamPlayers = allTeamPlayers.Where(tp => tp.TeamID == teamEnt.TeamID).ToList();
+                            var team = TeamMapper.MapToDomain(
+                                teamEnt,
+                                league,
+                                teamPlayers,
+                                allPlayers
+                            );
+                            league.AddTeam(team);
+                        }
+                        return league;
+                    })
                     .ToList();
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -61,16 +76,28 @@ namespace Infrastructure.Persistence.Leagues.Repositories
         {
             try
             {
-                var leagueEntity = await _context.Leagues
+                var entity = await _context.Leagues
                     .Include(l => l.Teams)
                     .FirstOrDefaultAsync(l => l.LeagueID == leagueId.Value);
 
-                if (leagueEntity == null) return null;
+                if (entity == null) return null;
 
                 var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
                 var allPlayers = await _context.Players.ToListAsync();
 
-                return _mapper.MapToDomain(leagueEntity, allTeamPlayers, allPlayers);
+                var league = LeagueMapper.MapToDomain(entity);
+                foreach (var teamEnt in entity.Teams)
+                {
+                    var teamPlayers = allTeamPlayers.Where(tp => tp.TeamID == teamEnt.TeamID).ToList();
+                    var team = TeamMapper.MapToDomain(
+                        teamEnt,
+                        league,
+                        teamPlayers,
+                        allPlayers
+                    );
+                    league.AddTeam(team);
+                }
+                return league;
             }
             catch (Exception ex)
             {
@@ -83,16 +110,28 @@ namespace Infrastructure.Persistence.Leagues.Repositories
         {
             try
             {
-                var leagueEntity = await _context.Leagues
+                var entity = await _context.Leagues
                     .Include(l => l.Teams)
                     .FirstOrDefaultAsync(l => l.Name == name);
 
-                if (leagueEntity == null) return null;
+                if (entity == null) return null;
 
                 var allTeamPlayers = await _context.TeamPlayers.ToListAsync();
                 var allPlayers = await _context.Players.ToListAsync();
 
-                return _mapper.MapToDomain(leagueEntity, allTeamPlayers, allPlayers);
+                var league = LeagueMapper.MapToDomain(entity);
+                foreach (var teamEnt in entity.Teams)
+                {
+                    var teamPlayers = allTeamPlayers.Where(tp => tp.TeamID == teamEnt.TeamID).ToList();
+                    var team = TeamMapper.MapToDomain(
+                        teamEnt,
+                        league,
+                        teamPlayers,
+                        allPlayers
+                    );
+                    league.AddTeam(team);
+                }
+                return league;
             }
             catch (Exception ex)
             {
@@ -108,11 +147,9 @@ namespace Infrastructure.Persistence.Leagues.Repositories
 
             try
             {
-                var entity = _mapper.MapToEntity(league);
+                var entity = LeagueMapper.MapToEntity(league);
                 _context.Leagues.Add(entity);
                 await _context.SaveChangesAsync();
-
-                // Recargamos con Teams vacíos (se podrán añadir luego)
                 return league;
             }
             catch (Exception ex)
@@ -135,12 +172,10 @@ namespace Infrastructure.Persistence.Leagues.Repositories
                 if (entity == null)
                     throw new InvalidOperationException("Liga no encontrada.");
 
-                // Mapa campos simples
                 entity.Name = league.Name.Value;
                 entity.Description = league.Description;
                 entity.CreatedAt = league.CreatedAt;
 
-                // NOTA: no actualizamos Teams aquí—usa otro repositorio o caso de uso
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -171,3 +206,5 @@ namespace Infrastructure.Persistence.Leagues.Repositories
         }
     }
 }
+
+       

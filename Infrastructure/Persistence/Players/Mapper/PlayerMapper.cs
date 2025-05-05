@@ -11,7 +11,7 @@ namespace Infrastructure.Persistence.Players.Mapper
 {
     public class PlayerMapper
     {
-        public PlayerEntity MapToEntity(Player player)
+        public static PlayerEntity MapToEntity(Player player)
         {
             return new PlayerEntity
             {
@@ -25,7 +25,7 @@ namespace Infrastructure.Persistence.Players.Mapper
             };
         }
 
-        public Player MapToDomain(PlayerEntity entity, ICollection<TeamPlayerEntity> teamPlayers)
+        public static Player MapToDomain(PlayerEntity entity, ICollection<TeamPlayerEntity> teamPlayers)
         {
             var teamPlayerList = teamPlayers
                 .Where(tp => tp.PlayerID == entity.PlayerID)

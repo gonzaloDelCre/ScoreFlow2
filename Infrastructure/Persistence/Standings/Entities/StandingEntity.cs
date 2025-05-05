@@ -11,15 +11,17 @@ namespace Infrastructure.Persistence.Standings.Entities
         [Key]
         public int StandingID { get; set; }
 
-        [ForeignKey(nameof(League))]
+        // Foreign key property
         public int LeagueID { get; set; }
 
+        // Navigation property with explicit FK mapping
+        [ForeignKey(nameof(LeagueID))]
         public LeagueEntity League { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Team))]
         public int TeamID { get; set; }
 
+        [ForeignKey(nameof(TeamID))]
         public TeamEntity Team { get; set; }
 
         public int Wins { get; set; } = 0;

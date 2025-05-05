@@ -13,6 +13,8 @@ namespace Domain.Entities.Teams
         private TeamName teamName;
         private DateTime utcNow;
         private string logoUrl;
+        private TeamID teamID1;
+        private string value;
 
         public TeamID TeamID { get; private set; }
         public TeamName Name { get; private set; }
@@ -69,6 +71,17 @@ namespace Domain.Entities.Teams
             this.logoUrl = logoUrl;
         }
 
+        public Team(TeamID teamID1, string value, DateTime createdAt, string logo, string? category, string? club, string? stadium)
+        {
+            this.teamID1 = teamID1;
+            this.value = value;
+            CreatedAt = createdAt;
+            Logo = logo;
+            Category = category;
+            Club = club;
+            Stadium = stadium;
+        }
+
         public void Update(TeamName? name = null,
                            string? logo = null,
                            string? category = null,
@@ -119,6 +132,11 @@ namespace Domain.Entities.Teams
         public void SetStadium(string? stadium)
         {
             Stadium = stadium;
+        }
+
+        public void SetExternalID(string extId)
+        {
+            ExternalID = extId;
         }
     }
 }

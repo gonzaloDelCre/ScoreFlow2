@@ -20,10 +20,12 @@ namespace Infrastructure.Persistence.Conection
 
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            optionsBuilder.UseSqlServer(connectionString, sqlServerOptions =>
-                        sqlServerOptions.EnableRetryOnFailure());
+            optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure();
+                sqlOptions.MigrationsAssembly("Infrastructure");
+            });
 
-            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("Infrastructure"));
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }

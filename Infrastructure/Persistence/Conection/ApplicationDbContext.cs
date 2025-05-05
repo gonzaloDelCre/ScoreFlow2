@@ -35,6 +35,8 @@ namespace Infrastructure.Persistence.Conection
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             // Team ←→ League (1:N)
             modelBuilder.Entity<TeamEntity>()
                 .HasOne(t => t.League)
