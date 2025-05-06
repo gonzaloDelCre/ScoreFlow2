@@ -1,13 +1,13 @@
-﻿using Infrastructure.Services.Scraping.Players.Import;
+﻿using Domain.Ports.Players;
 using System.Threading.Tasks;
 
 namespace Application.Playes.UseCases.Create
 {
     public class CreatePlayersFromScraperUseCase
     {
-        private readonly PlayerImportService _importer;
+        private readonly IPlayerImporter _importer;
 
-        public CreatePlayersFromScraperUseCase(PlayerImportService importer)
+        public CreatePlayersFromScraperUseCase(IPlayerImporter importer)
         {
             _importer = importer;
         }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Scraping.Teams.Import
 {
-    public class TeamImportService
+    public class TeamImportService: ITeamImporter
     {
         private readonly TeamScraperService _scraper;
         private readonly ITeamRepository _repo;

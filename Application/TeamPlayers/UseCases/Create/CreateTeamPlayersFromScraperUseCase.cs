@@ -1,4 +1,4 @@
-﻿using Infrastructure.Services.Scraping.TeamPlayers.Imports;
+﻿using Domain.Ports.TeamPlayers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,16 +9,16 @@ namespace Application.TeamPlayers.UseCases.Create
 {
     public class CreateTeamPlayersFromScraperUseCase
     {
-        private readonly TeamPlayerImportService _importer;
+        private readonly ITeamPlayerImporter _importer;
 
-        public CreateTeamPlayersFromScraperUseCase(TeamPlayerImportService importer)
+        public CreateTeamPlayersFromScraperUseCase(ITeamPlayerImporter importer)
         {
             _importer = importer;
         }
 
-        public async Task ExecuteAsync(int teamId)
+        public async Task ExecuteAsync(int teamExternalId)
         {
-            await _importer.LinkPlayersToTeamAsync(teamId);
+            await _importer.LinkPlayersToTeamAsync(teamExternalId);
         }
     }
 

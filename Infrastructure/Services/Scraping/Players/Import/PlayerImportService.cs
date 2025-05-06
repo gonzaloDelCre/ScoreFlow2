@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Scraping.Players.Import
 {
-    public class PlayerImportService
+    public class PlayerImportService: IPlayerImporter
     {
         private readonly PlayerScraperService _scraper;
         private readonly IPlayerRepository _playerRepo;

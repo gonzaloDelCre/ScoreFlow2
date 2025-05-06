@@ -147,6 +147,7 @@ builder.Services.AddScoped<UpdateTeamUseCase>();
 builder.Services.AddScoped<DeleteTeamUseCase>();
 builder.Services.AddScoped<GetAllTeamsUseCase>();
 builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
+builder.Services.AddScoped<ITeamImporter, TeamImportService>();
 builder.Services.AddScoped<TeamUseCaseHandler>();
 
 //Registrar casos de uso de Players
@@ -156,6 +157,7 @@ builder.Services.AddScoped<GetPlayerById>();
 builder.Services.AddScoped<UpdatePlayer>();
 builder.Services.AddScoped<DeletePlayer>();
 builder.Services.AddScoped<GeneralPlayerUseCaseHandler>();
+builder.Services.AddScoped<ITeamPlayerImporter, TeamPlayerImportService>();
 
 //Registrar casos de uso de Player Statistics
 builder.Services.AddScoped<CreatePlayerStatistic>();
@@ -175,6 +177,8 @@ builder.Services.AddScoped<TeamPlayerImportService>();
 builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
 builder.Services.AddScoped<CreatePlayersFromScraperUseCase>();
 builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
+builder.Services.AddScoped<IPlayerImporter, PlayerImportService>();
+builder.Services.AddHttpClient<PlayerScraperService>();
 
 builder.Services.AddScoped<TeamUseCaseHandler>();
 builder.Services.AddScoped<GeneralPlayerUseCaseHandler>();

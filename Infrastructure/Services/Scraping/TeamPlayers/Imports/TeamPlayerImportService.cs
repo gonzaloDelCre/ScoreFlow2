@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Scraping.TeamPlayers.Imports
 {
-    public class TeamPlayerImportService
+    public class TeamPlayerImportService : ITeamPlayerImporter
     {
         private readonly ITeamRepository _teamRepo;
         private readonly IPlayerRepository _playerRepo;
