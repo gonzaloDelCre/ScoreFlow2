@@ -1,57 +1,51 @@
-﻿using Domain.Entities.TeamPlayers;
+﻿using System;
 using Domain.Entities.Players;
-using Domain.Entities.Teams;
-using Domain.Enum;
-using Infrastructure.Persistence.TeamPlayers.Entities;
+using Domain.Entities.TeamPlayers;
 using Domain.Shared;
+using Infrastructure.Persistence.Players.Mapper;
+using Infrastructure.Persistence.TeamPlayers.Entities;
+using Infrastructure.Persistence.TeamPlayers.Mapper;
+using Infrastructure.Persistence.Teams.Mapper;
 
 namespace Infrastructure.Persistence.TeamPlayers.Mappers
 {
-    public static class TeamPlayerMapper
+    public class TeamPlayerMapper : ITeamPlayerMapper
     {
-        public static TeamPlayerEntity MapToEntity(TeamPlayer teamPlayer)
+        private readonly IPlayerMapper _playerMapper;
+        private readonly ITeamMapper _teamMapper;
+
+        public TeamPlayerMapper(IPlayerMapper playerMapper, ITeamMapper teamMapper)
         {
+            _playerMapper = playerMapper ?? throw new ArgumentNullException(nameof(playerMapper));
+            _teamMapper = teamMapper ?? throw new ArgumentNullException(nameof(teamMapper));
+        }
+
+        public TeamPlayerEntity MapToEntity(TeamPlayer domain)
+        {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
+
             return new TeamPlayerEntity
             {
-                TeamID = teamPlayer.TeamID.Value,
-                PlayerID = teamPlayer.PlayerID.Value,
-                JoinedAt = teamPlayer.JoinedAt,
-                RoleInTeam = teamPlayer.RoleInTeam.HasValue ? teamPlayer.RoleInTeam.Value : default(RoleInTeam)
+                ID = domain.ID.Value,
+                TeamID = domain.TeamID.Value,
+                PlayerID = domain.PlayerID.Value,
+                RoleInTeam = domain.RoleInTeam ?? default,
+                JoinedAt = domain.JoinedAt.Value
             };
         }
 
-        public static TeamPlayer MapEntityToDomain(TeamPlayerEntity e)
+        public TeamPlayer MapToDomain(TeamPlayerEntity e)
         {
-            // Build domain Team
-            var t = e.Team;
-            var team = new Team(
-                new TeamID(t.TeamID),
-                new TeamName(t.Name),
-                t.CreatedAt,
-                t.Logo,
-                t.ExternalID
-            );
+            if (e == null) throw new ArgumentNullException(nameof(e));
 
-            // Build domain Player
-            var p = e.Player;
-            // parse the stored enum string back into PlayerPosition if needed, otherwise default:
-            var position = Enum.TryParse<PlayerPosition>(p.Position, true, out var pos) ? pos : PlayerPosition.JUGADOR;
-
-            var player = new Player(
-                new PlayerID(p.PlayerID),
-                new PlayerName(p.Name),
-                position,
-                new PlayerAge(p.Age),
-                p.Goals,
-                p.Photo,
-                p.CreatedAt,
-                new List<TeamPlayer>()  // avoid circular deps
-            );
+            var player = _playerMapper.ToDomain(e.Player, Enumerable.Empty<Infrastructure.Persistence.TeamPlayers.Entities.TeamPlayerEntity>());
+            var team = _teamMapper.ToDomain(e.Team, Enumerable.Empty<Player>(), (IEnumerable<Domain.Entities.Standings.Standing>)Enumerable.Empty<Infrastructure.Persistence.Standings.Entities.StandingEntity>());
 
             return new TeamPlayer(
+                new TeamPlayerID(e.ID),
                 new TeamID(e.TeamID),
                 new PlayerID(e.PlayerID),
-                e.JoinedAt,
+                new JoinedAt(e.JoinedAt),
                 e.RoleInTeam,
                 team,
                 player

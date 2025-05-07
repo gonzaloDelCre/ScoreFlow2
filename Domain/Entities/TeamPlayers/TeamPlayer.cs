@@ -8,37 +8,43 @@ namespace Domain.Entities.TeamPlayers
 {
     public class TeamPlayer
     {
-        private TeamID teamID;
-
+        public TeamPlayerID ID { get; private set; }
         public TeamID TeamID { get; private set; }
         public PlayerID PlayerID { get; private set; }
-        public DateTime JoinedAt { get; private set; }
+        public JoinedAt JoinedAt { get; private set; }
         public RoleInTeam? RoleInTeam { get; private set; }
 
-        // Relaciones
         public Team Team { get; private set; }
         public Player Player { get; private set; }
 
-        // Constructor
-        public TeamPlayer(TeamID teamID, PlayerID playerID, DateTime joinedAt, RoleInTeam? roleInTeam = null, Team team = null, Player player = null)
+        public TeamPlayer(
+            TeamPlayerID id,
+            TeamID teamID,
+            PlayerID playerID,
+            JoinedAt joinedAt,
+            RoleInTeam? roleInTeam = null,
+            Team team = null,
+            Player player = null)
         {
+            ID = id ?? throw new ArgumentNullException(nameof(id));
             TeamID = teamID ?? throw new ArgumentNullException(nameof(teamID));
             PlayerID = playerID ?? throw new ArgumentNullException(nameof(playerID));
-            JoinedAt = joinedAt;
+            JoinedAt = joinedAt ?? throw new ArgumentNullException(nameof(joinedAt));
             RoleInTeam = roleInTeam;
-            Team = team;  
-            Player = player; 
+            Team = team;
+            Player = player;
         }
 
-        public TeamPlayer(TeamID teamID)
-        {
-            this.teamID = teamID;
-        }
+        public TeamPlayer(TeamID teamID, PlayerID playerID, JoinedAt? joinedAt = null, RoleInTeam? roleInTeam = null)
+            : this(new TeamPlayerID(0), teamID, playerID, joinedAt ?? new JoinedAt(DateTime.UtcNow), roleInTeam)
+        { }
 
-        // Método de actualización para la relación (ejemplo: actualizar rol del jugador)
-        public void UpdateRole(RoleInTeam? newRoleInTeam)
-        {
-            RoleInTeam = newRoleInTeam;
-        }
+        protected TeamPlayer() { }
+
+        public void UpdateRole(RoleInTeam? newRole)
+            => RoleInTeam = newRole;
+
+        public void UpdateJoinedAt(JoinedAt joinedAt)
+            => JoinedAt = joinedAt ?? JoinedAt;
     }
 }

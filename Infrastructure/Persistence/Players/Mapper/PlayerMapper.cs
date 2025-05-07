@@ -6,18 +6,21 @@ using Domain.Shared;
 using Infrastructure.Persistence.Players.Entities;
 using Infrastructure.Persistence.TeamPlayers.Entities;
 using Infrastructure.Persistence.Teams.Entities;
+using System.Linq;
 
 namespace Infrastructure.Persistence.Players.Mapper
 {
-    public class PlayerMapper
+    public class PlayerMapper : IPlayerMapper
     {
-        public PlayerEntity MapToEntity(Player player)
+        public PlayerEntity ToEntity(Player player)
         {
+            if (player == null) throw new ArgumentNullException(nameof(player));
+
             return new PlayerEntity
             {
                 PlayerID = player.PlayerID.Value,
                 Name = player.Name.Value,
-                Position = player.Position.ToString(), // Convertimos a string
+                Position = player.Position.ToString(),
                 Age = player.Age.Value,
                 Goals = player.Goals,
                 Photo = player.Photo,
@@ -25,16 +28,20 @@ namespace Infrastructure.Persistence.Players.Mapper
             };
         }
 
-        public Player MapToDomain(PlayerEntity entity, ICollection<TeamPlayerEntity> teamPlayers)
+        public Player ToDomain(
+            PlayerEntity entity,
+            IEnumerable<TeamPlayerEntity> teamPlayers)
         {
-            var teamPlayerList = teamPlayers
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            var domainTPs = teamPlayers
                 .Where(tp => tp.PlayerID == entity.PlayerID)
                 .Select(tp => new TeamPlayer(
                     new TeamID(tp.TeamID),
-                    new PlayerID(entity.PlayerID),
+                    new PlayerID(tp.PlayerID),
                     tp.JoinedAt,
-                    tp.RoleInTeam
-                )).ToList();
+                    tp.RoleInTeam))
+                .ToList();
 
             return new Player(
                 new PlayerID(entity.PlayerID),
@@ -44,9 +51,7 @@ namespace Infrastructure.Persistence.Players.Mapper
                 entity.Goals,
                 entity.Photo,
                 entity.CreatedAt,
-                teamPlayerList
-            );
+                domainTPs);
         }
-
     }
 }

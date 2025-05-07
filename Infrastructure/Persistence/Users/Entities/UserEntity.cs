@@ -1,5 +1,4 @@
 ﻿using Domain.Enum;
-using Infrastructure.Persistence.Notifications.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace Infrastructure.Persistence.Users.Entities
@@ -24,6 +23,5 @@ namespace Infrastructure.Persistence.Users.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public ICollection<NotificationEntity> Notifications { get; set; }
     }
 }

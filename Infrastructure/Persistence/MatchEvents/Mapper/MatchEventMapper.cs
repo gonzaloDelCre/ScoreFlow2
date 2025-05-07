@@ -1,40 +1,48 @@
-﻿//using Domain.Entities.Matches;
-//using Domain.Entities.MatchEvents;
-//using Domain.Entities.Players;
-//using Infrastructure.Persistence.MatchEvents.Entities;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
-//using System.Threading.Tasks;
+﻿using System;
+using Domain.Entities.MatchEvents;
+using Domain.Shared;
+using Infrastructure.Persistence.MatchEvents.Entities;
+using DEnum = Domain.Enum.EventType;
 
-//namespace Infrastructure.Persistence.MatchEvents.Mapper
-//{
-//    public class MatchEventMapper
-//    {
-//        public MatchEventEntity MapToEntity(MatchEvent matchEvent)
-//        {
-//            return new MatchEventEntity
-//            {
-//                EventID = matchEvent.EventID,
-//                MatchID = matchEvent.Match.MatchID,
-//                PlayerID = matchEvent.Player?.PlayerID,
-//                EventType = matchEvent.EventType,
-//                Minute = matchEvent.Minute,
-//                CreatedAt = matchEvent.CreatedAt
-//            };
-//        }
+namespace Infrastructure.Persistence.MatchEvents.Mapper
+{
+    public class MatchEventMapper : IMatchEventMapper
+    {
+        public MatchEventEntity MapToEntity(MatchEvent domain)
+        {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
 
-//        public MatchEvent MapToDomain(MatchEventEntity entity, Match match, Player? player)
-//        {
-//            return new MatchEvent(
-//                entity.EventID,
-//                match,
-//                player,
-//                entity.EventType,
-//                entity.Minute,
-//                entity.CreatedAt
-//            );
-//        }
-//    }
-//}
+            return new MatchEventEntity
+            {
+                ID = domain.MatchEventID.Value,
+                MatchID = domain.MatchID.Value,
+                PlayerID = domain.PlayerID?.Value,
+                EventType = (DEnum)domain.EventType,
+                Minute = domain.Minute,
+                CreatedAt = domain.CreatedAt
+            };
+        }
+
+        public MatchEvent MapToDomain(
+            MatchEventEntity entity,
+            Domain.Entities.Matches.Match match,
+            Domain.Entities.Players.Player? player)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (match == null) throw new ArgumentNullException(nameof(match));
+
+            return new MatchEvent(
+                new MatchEventID(entity.ID),
+                new MatchID(entity.MatchID),
+                entity.PlayerID.HasValue
+                    ? new PlayerID(entity.PlayerID.Value)
+                    : (PlayerID?)null,
+                (DEnum)entity.EventType,
+                entity.Minute,
+                match,
+                player,
+                entity.CreatedAt
+            );
+        }
+    }
+}

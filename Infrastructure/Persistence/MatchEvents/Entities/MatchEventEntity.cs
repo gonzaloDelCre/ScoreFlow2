@@ -6,18 +6,21 @@ using Infrastructure.Persistence.Matches.Entities;
 
 namespace Infrastructure.Persistence.MatchEvents.Entities
 {
+    [Table("MatchEvents")]
     public class MatchEventEntity
     {
         [Key]
-        public int EventID { get; set; }
+        public int ID { get; set; }
 
         [Required]
-        [ForeignKey("Match")]
         public int MatchID { get; set; }
+
+        [ForeignKey(nameof(MatchID))]
         public MatchEntity Match { get; set; }
 
-        [ForeignKey("Player")]
         public int? PlayerID { get; set; }
+
+        [ForeignKey(nameof(PlayerID))]
         public PlayerEntity Player { get; set; }
 
         [Required]
@@ -25,6 +28,8 @@ namespace Infrastructure.Persistence.MatchEvents.Entities
 
         [Required]
         public int Minute { get; set; }
+
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

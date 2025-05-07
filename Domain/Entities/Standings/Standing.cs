@@ -21,37 +21,44 @@ namespace Domain.Entities.Standings
         public League League { get; private set; }
         public Team Team { get; private set; }
 
-        // Constructor
         public Standing(
-            StandingID standingID = null,
-            LeagueID leagueID = null,
-            TeamID teamID = null,
-            Points points = null,
-            MatchesPlayed matchesPlayed = null,
-            Wins wins = null,
-            Draws draws = null,
-            Losses losses = null,
-            GoalDifference goalDifference = null,
-            League league = null,
-            Team team = null,
+            StandingID standingID,
+            LeagueID leagueID,
+            TeamID teamID,
+            Points points,
+            MatchesPlayed matchesPlayed,
+            Wins wins,
+            Draws draws,
+            Losses losses,
+            GoalDifference goalDifference,
+            League league,
+            Team team,
             DateTime? createdAt = null)
         {
-            StandingID = standingID ?? new StandingID(0);  
-            LeagueID = leagueID ?? new LeagueID(0);     
-            TeamID = teamID ?? new TeamID(0);            
-            Points = points ?? new Points(0);           
-            MatchesPlayed = matchesPlayed ?? new MatchesPlayed(0);  
-            Wins = wins ?? new Wins(0);  
-            Draws = draws ?? new Draws(0);  
-            Losses = losses ?? new Losses(0);  
-            GoalDifference = goalDifference ?? new GoalDifference(0);  
-            League = league ?? new League(); 
-            Team = team ?? new Team();  
-            CreatedAt = createdAt ?? DateTime.UtcNow; 
+            StandingID = standingID ?? throw new ArgumentNullException(nameof(standingID));
+            LeagueID = leagueID ?? throw new ArgumentNullException(nameof(leagueID));
+            TeamID = teamID ?? throw new ArgumentNullException(nameof(teamID));
+            Points = points ?? throw new ArgumentNullException(nameof(points));
+            MatchesPlayed = matchesPlayed ?? throw new ArgumentNullException(nameof(matchesPlayed));
+            Wins = wins ?? throw new ArgumentNullException(nameof(wins));
+            Draws = draws ?? throw new ArgumentNullException(nameof(draws));
+            Losses = losses ?? throw new ArgumentNullException(nameof(losses));
+            GoalDifference = goalDifference ?? throw new ArgumentNullException(nameof(goalDifference));
+            League = league ?? throw new ArgumentNullException(nameof(league));
+            Team = team ?? throw new ArgumentNullException(nameof(team));
+            CreatedAt = createdAt == null || createdAt == default
+                             ? DateTime.UtcNow
+                             : createdAt.Value;
         }
+        protected Standing() { }
 
-        // Update Method
-        public void Update(Points points, MatchesPlayed matchesPlayed, Wins wins, Draws draws, Losses losses, GoalDifference goalDifference)
+        public void Update(
+            Points points,
+            MatchesPlayed matchesPlayed,
+            Wins wins,
+            Draws draws,
+            Losses losses,
+            GoalDifference goalDifference)
         {
             Points = points ?? Points;
             MatchesPlayed = matchesPlayed ?? MatchesPlayed;
@@ -61,34 +68,15 @@ namespace Domain.Entities.Standings
             GoalDifference = goalDifference ?? GoalDifference;
         }
 
-        public void UpdatePoints(Points points)
-        {
-            Points = points ?? Points;
-        }
 
-        public void UpdateMatchesPlayed(MatchesPlayed matchesPlayed)
+        public void ApplyResult(int scored, int conceded)
         {
-            MatchesPlayed = matchesPlayed ?? MatchesPlayed;
-        }
-
-        public void UpdateWins(Wins wins)
-        {
-            Wins = wins ?? Wins;
-        }
-
-        public void UpdateDraws(Draws draws)
-        {
-            Draws = draws ?? Draws;
-        }
-
-        public void UpdateLosses(Losses losses)
-        {
-            Losses = losses ?? Losses;
-        }
-
-        public void UpdateGoalDifference(GoalDifference goalDifference)
-        {
-            GoalDifference = goalDifference ?? GoalDifference;
+            MatchesPlayed = new MatchesPlayed(MatchesPlayed.Value + 1);
+            Points = new Points(Points.Value + (scored > conceded ? 3 : (scored == conceded ? 1 : 0)));
+            Wins = new Wins(Wins.Value + (scored > conceded ? 1 : 0));
+            Draws = new Draws(Draws.Value + (scored == conceded ? 1 : 0));
+            Losses = new Losses(Losses.Value + (scored < conceded ? 1 : 0));
+            GoalDifference = new GoalDifference(GoalDifference.Value + (scored - conceded));
         }
     }
 }

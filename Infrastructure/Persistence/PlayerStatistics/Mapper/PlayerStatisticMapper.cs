@@ -11,28 +11,37 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence.PlayerStatistics.Mapper
 {
-    public class PlayerStatisticMapper
+    public class PlayerStatisticMapper : IPlayerStatisticMapper
     {
-        public PlayerStatisticEntity MapToEntity(PlayerStatistic stat)
+        public PlayerStatisticEntity MapToEntity(PlayerStatistic domain)
         {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
+
             return new PlayerStatisticEntity
             {
-                StatID = stat.PlayerStatisticID.Value,
-                PlayerID = stat.Player.PlayerID.Value,
-                MatchID = stat.Match.MatchID.Value,
-                Goals = stat.Goals.Value,
-                Assists = stat.Assists.Value,
-                YellowCards = stat.YellowCards.Value,
-                RedCards = stat.RedCards.Value,
-                MinutesPlayed = stat.MinutesPlayed,
-                CreatedAt = stat.CreatedAt
+                ID = domain.PlayerStatisticID.Value,
+                PlayerID = domain.PlayerID.Value,
+                MatchID = domain.MatchID.Value,
+                Goals = domain.Goals.Value,
+                Assists = domain.Assists.Value,
+                YellowCards = domain.YellowCards.Value,
+                RedCards = domain.RedCards.Value,
+                MinutesPlayed = domain.MinutesPlayed,
+                CreatedAt = domain.CreatedAt
             };
         }
 
-        public PlayerStatistic MapToDomain(PlayerStatisticEntity entity, Player player, Match match)
+        public PlayerStatistic MapToDomain(
+            PlayerStatisticEntity entity,
+            Player player,
+            Match match)
         {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+            if (player == null) throw new ArgumentNullException(nameof(player));
+            if (match == null) throw new ArgumentNullException(nameof(match));
+
             return new PlayerStatistic(
-                new PlayerStatisticID(entity.StatID),
+                new PlayerStatisticID(entity.ID),
                 new MatchID(entity.MatchID),
                 new PlayerID(entity.PlayerID),
                 new Goals(entity.Goals),

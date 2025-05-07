@@ -1,4 +1,5 @@
 ﻿using Domain.Entities.Leagues;
+using Domain.Entities.Standings;
 using Domain.Shared;
 using System;
 using System.Collections.Generic;
@@ -16,5 +17,7 @@ namespace Domain.Ports.Leagues
         Task<League> AddAsync(League league);
         Task UpdateAsync(League league);
         Task<bool> DeleteAsync(LeagueID leagueId);
+        Task<IEnumerable<Standing>> GetStandingsAsync(LeagueID leagueId);
+        Task UpdateStandingsAsync(LeagueID leagueId, IEnumerable<Standing> standings);
     }
 }

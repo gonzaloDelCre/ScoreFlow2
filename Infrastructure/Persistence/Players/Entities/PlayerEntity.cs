@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Domain.Enum;
 using Infrastructure.Persistence.TeamPlayers.Entities;
 
 namespace Infrastructure.Persistence.Players.Entities
 {
+    [Table("Players")]
     public class PlayerEntity
     {
         [Key]
@@ -14,20 +16,23 @@ namespace Infrastructure.Persistence.Players.Entities
         public string Name { get; set; }
 
         [Required]
-        public string Position { get; set; } // Convertimos en string para la persistencia, ya que PlayerPosition es un enum
+        [MaxLength(50)]
+        public string Position { get; set; } 
 
+        [Required]
         [Range(0, 100)]
         public int Age { get; set; }
 
+        [Required]
         [Range(0, int.MaxValue)]
         public int Goals { get; set; }
 
         [MaxLength(500)]
         public string? Photo { get; set; }
 
-        public DateTime CreatedAt { get; set; } =DateTime.UtcNow;
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Relación muchos a muchos con equipos
         public ICollection<TeamPlayerEntity> TeamPlayers { get; set; } = new List<TeamPlayerEntity>();
     }
 }

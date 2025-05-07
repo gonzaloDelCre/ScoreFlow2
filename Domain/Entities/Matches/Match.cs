@@ -1,6 +1,5 @@
 ﻿using Domain.Enum;
 using Domain.Entities.MatchEvents;
-using Domain.Entities.MatchReferees;
 using Domain.Entities.PlayerStatistics;
 using Domain.Entities.Teams;
 using Domain.Shared;
@@ -14,25 +13,43 @@ namespace Domain.Entities.Matches
         public Team Team2 { get; private set; }
         public DateTime MatchDate { get; private set; }
         public MatchStatus Status { get; private set; }
-        public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
         public string Location { get; private set; }
+        public DateTime CreatedAt { get; private set; }
 
-        public ICollection<MatchEvent> MatchEvents { get; private set; } = new List<MatchEvent>();
-        public ICollection<PlayerStatistic> PlayerStatistics { get; private set; } = new List<PlayerStatistic>();
-        public ICollection<MatchReferee> MatchReferees { get; private set; } = new List<MatchReferee>();
+        public ICollection<MatchEvent> MatchEvents { get; private set; }
+            = new List<MatchEvent>();
+        public ICollection<PlayerStatistic> PlayerStatistics { get; private set; }
+            = new List<PlayerStatistic>();
 
-        // Constructor
-        public Match(MatchID matchID, Team team1, Team team2, DateTime matchDate, MatchStatus status, string location)
+        public Match(
+            MatchID matchID,
+            Team team1,
+            Team team2,
+            DateTime matchDate,
+            MatchStatus status,
+            string location)
         {
-            MatchID = matchID ?? throw new ArgumentNullException(nameof(matchID));  
-            Team1 = team1 ?? throw new ArgumentNullException(nameof(team1));       
+            MatchID = matchID ?? throw new ArgumentNullException(nameof(matchID));
+            Team1 = team1 ?? throw new ArgumentNullException(nameof(team1));
             Team2 = team2 ?? throw new ArgumentNullException(nameof(team2));
-            MatchDate = matchDate == default ? throw new ArgumentException("La fecha del partido es obligatoria.") : matchDate;  
+            MatchDate = matchDate == default
+                         ? throw new ArgumentException("La fecha es obligatoria.")
+                         : matchDate;
             Status = status;
-            Location = location ?? throw new ArgumentNullException(nameof(location), "La ubicación es obligatoria."); 
+            Location = !string.IsNullOrWhiteSpace(location)
+                         ? location
+                         : throw new ArgumentNullException(nameof(location));
+            CreatedAt = DateTime.UtcNow;
         }
 
-        public void Update(Team team1, Team team2, DateTime matchDate, MatchStatus status, string location)
+        protected Match() { }
+
+        public void Update(
+            Team team1,
+            Team team2,
+            DateTime matchDate,
+            MatchStatus status,
+            string location)
         {
             Team1 = team1;
             Team2 = team2;
@@ -40,26 +57,27 @@ namespace Domain.Entities.Matches
             Status = status;
             Location = location;
         }
-        public void AddMatchEvent(MatchEvent matchEvent)
+
+        public void AddMatchEvent(MatchEvent ev)
         {
-            if (matchEvent == null)
-                throw new ArgumentNullException(nameof(matchEvent));
-            MatchEvents.Add(matchEvent);
+            MatchEvents.Add(ev ?? throw new ArgumentNullException(nameof(ev)));
         }
 
-        public void AddPlayerStatistic(PlayerStatistic playerStatistic)
+        public void SetMatchEvents(IEnumerable<MatchEvent> events)
         {
-            if (playerStatistic == null)
-                throw new ArgumentNullException(nameof(playerStatistic));
-            PlayerStatistics.Add(playerStatistic);
+            MatchEvents.Clear();
+            foreach (var ev in events) MatchEvents.Add(ev);
         }
 
-        public void AddMatchReferee(MatchReferee matchReferee)
+        public void AddPlayerStatistic(PlayerStatistic stat)
         {
-            if (matchReferee == null)
-                throw new ArgumentNullException(nameof(matchReferee));
-            MatchReferees.Add(matchReferee);
+            PlayerStatistics.Add(stat ?? throw new ArgumentNullException(nameof(stat)));
+        }
+
+        public void SetPlayerStatistics(IEnumerable<PlayerStatistic> stats)
+        {
+            PlayerStatistics.Clear();
+            foreach (var s in stats) PlayerStatistics.Add(s);
         }
     }
-
 }

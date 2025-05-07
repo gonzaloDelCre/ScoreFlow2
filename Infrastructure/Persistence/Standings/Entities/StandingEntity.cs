@@ -10,27 +10,40 @@ using Infrastructure.Persistence.Leagues.Entities;
 
 namespace Infrastructure.Persistence.Standings.Entities
 {
+    [Table("Standings")]
     public class StandingEntity
     {
         [Key]
-        public int StandingID { get; set; }
+        public int ID { get; set; }
 
         [Required]
-        [ForeignKey("League")]
         public int LeagueID { get; set; }
+
+        [ForeignKey(nameof(LeagueID))]
         public LeagueEntity League { get; set; }
 
         [Required]
-        [ForeignKey("Team")]
         public int TeamID { get; set; }
+
+        [ForeignKey(nameof(TeamID))]
         public TeamEntity Team { get; set; }
 
+        [Required]
         public int Points { get; set; } = 0;
+
+        [Required]
         public int Wins { get; set; } = 0;
+
+        [Required]
         public int Losses { get; set; } = 0;
+
+        [Required]
         public int Draws { get; set; } = 0;
+
+        [Required]
         public int GoalDifference { get; set; } = 0;
 
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

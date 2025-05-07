@@ -14,9 +14,7 @@ namespace Domain.Entities.Players
         public string? Photo { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
-        private List<TeamPlayer> teamPlayers;
-        private PlayerID playerID;
-
+        private readonly List<TeamPlayer> teamPlayers = new();
         public IReadOnlyCollection<TeamPlayer> TeamPlayers => teamPlayers.AsReadOnly();
 
         public Player(
@@ -26,25 +24,35 @@ namespace Domain.Entities.Players
             PlayerAge age,
             int goals,
             string? photo,
-            DateTime createdAt,
-            List<TeamPlayer> teamPlayers)
+            DateTime? createdAt,
+            IEnumerable<TeamPlayer>? teamPlayers = null)
         {
-            PlayerID = playerID;
-            Name = name;
+            PlayerID = playerID ?? throw new ArgumentNullException(nameof(playerID));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
             Position = position;
-            Age = age;
-            Goals = goals;
+            Age = age ?? throw new ArgumentNullException(nameof(age));
+            Goals = goals >= 0
+                        ? goals
+                        : throw new ArgumentOutOfRangeException(nameof(goals));
             Photo = photo;
-            CreatedAt = createdAt == default ? DateTime.UtcNow : createdAt;
-            this.teamPlayers = teamPlayers ?? new List<TeamPlayer>();
+            CreatedAt = createdAt == null || createdAt == default
+                        ? DateTime.UtcNow
+                        : createdAt.Value;
+
+            if (teamPlayers != null)
+                foreach (var tp in teamPlayers)
+                    AddTeamPlayer(tp);
         }
 
-        public Player(PlayerID playerID)
-        {
-            this.playerID = playerID;
-        }
+        protected Player() { }
 
-        public void Update(PlayerName name, PlayerPosition position, PlayerAge age, int goals, string? photo, DateTime createdAt)
+        public void Update(
+            PlayerName name,
+            PlayerPosition position,
+            PlayerAge age,
+            int goals,
+            string? photo,
+            DateTime createdAt)
         {
             Name = name;
             Position = position;
@@ -56,17 +64,16 @@ namespace Domain.Entities.Players
 
         public void AddTeamPlayer(TeamPlayer teamPlayer)
         {
-            if (teamPlayer != null && !teamPlayers.Contains(teamPlayer))
+            if (teamPlayer == null)
+                throw new ArgumentNullException(nameof(teamPlayer));
+            if (!teamPlayers.Contains(teamPlayer))
                 teamPlayers.Add(teamPlayer);
         }
 
-        public void Update(int age, PlayerPosition position, int goals, string photoUrl)
+        public void SetTeamPlayers(IEnumerable<TeamPlayer> list)
         {
-            Age = age;
-            Position = position;
-            Goals = goals;
-            Photo = photoUrl;
-
+            teamPlayers.Clear();
+            foreach (var tp in list) AddTeamPlayer(tp);
         }
     }
 }

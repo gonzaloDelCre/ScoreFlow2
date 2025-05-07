@@ -4,33 +4,33 @@ using Infrastructure.Persistence.Leagues.Entities;
 
 namespace Infrastructure.Persistence.Leagues.Mapper
 {
-    public class LeagueMapper
+    public class LeagueMapper : ILeagueMapper
     {
-        public LeagueEntity MapToEntity(League league)
-        {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league), "La entidad de dominio League no puede ser nula.");
-
-            return new LeagueEntity
-            {
-                LeagueID = league.LeagueID.Value,
-                Name = league.Name.Value,
-                Description = league.Description,
-                CreatedAt = league.CreatedAt
-            };
-        }
-
         public League MapToDomain(LeagueEntity entity)
         {
             if (entity == null)
-                throw new ArgumentNullException(nameof(entity), "La entidad persistente LeagueEntity no puede ser nula.");
+                throw new ArgumentNullException(nameof(entity));
 
             return new League(
-                new LeagueID(entity.LeagueID),
+                new LeagueID(entity.ID),
                 new LeagueName(entity.Name),
                 entity.Description,
                 entity.CreatedAt
             );
+        }
+
+        public LeagueEntity MapToEntity(League domain)
+        {
+            if (domain == null)
+                throw new ArgumentNullException(nameof(domain));
+
+            return new LeagueEntity
+            {
+                ID = domain.LeagueID.Value,
+                Name = domain.Name.Value,
+                Description = domain.Description,
+                CreatedAt = domain.CreatedAt
+            };
         }
     }
 }

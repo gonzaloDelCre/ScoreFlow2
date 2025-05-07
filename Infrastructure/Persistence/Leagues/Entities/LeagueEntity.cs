@@ -1,23 +1,25 @@
 ﻿using Infrastructure.Persistence.Standings.Entities;
-using Infrastructure.Persistence.TeamLeagues.Entities;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Infrastructure.Persistence.Leagues.Entities
 {
+    [Table("Leagues")]
     public class LeagueEntity
     {
         [Key]
-        public int LeagueID { get; set; }
+        public int ID { get; set; }
 
-        [Required, MaxLength(100)]
+        [Required]
+        [MaxLength(100)]
         public string Name { get; set; }
 
+        [MaxLength(500)]
         public string Description { get; set; }
+
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-
-        // Relations
-        public ICollection<TeamLeagueEntity> TeamLeagues { get; set; } = new List<TeamLeagueEntity>();
         public ICollection<StandingEntity> Standings { get; set; } = new List<StandingEntity>();
     }
 }

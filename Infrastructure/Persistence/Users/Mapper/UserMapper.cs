@@ -5,23 +5,15 @@ using Domain.Shared;
 
 namespace Infrastructure.Persistence.Users.Mapper
 {
-    public class UserMapper
+    public class UserMapper : IUserMapper
     {
-        //User Entity Domain to User Entity DB
-        public UserEntity MapToEntity(User user)
+        public UserEntity ToEntity(User user)
         {
-            if (user == null)
-            {
-                throw new ArgumentNullException(nameof(user), "User cannot be null.");
-            }
-
-            if (user.FullName == null || user.Email == null || user.PasswordHash == null)
-            {
-                throw new ArgumentException("One or more required properties are null.");
-            }
+            if (user == null) throw new ArgumentNullException(nameof(user));
 
             return new UserEntity
             {
+                UserID = user.UserID.Value,
                 FullName = user.FullName.Value,
                 Email = user.Email.Value,
                 PasswordHash = user.PasswordHash.Value,
@@ -30,16 +22,20 @@ namespace Infrastructure.Persistence.Users.Mapper
             };
         }
 
-        //User Entity DB to User Entity Domain
-        public User MapToDomain(UserEntity entity)
+        public User ToDomain(UserEntity e)
         {
+            if (e == null) throw new ArgumentNullException(nameof(e));
+
+            if (!Enum.TryParse<UserRole>(e.Role, true, out var role))
+                throw new ArgumentException("Rol almacenado inválido.", nameof(e.Role));
+
             return new User(
-                new UserID(entity.UserID),
-                new UserFullName(entity.FullName),
-                new UserEmail(entity.Email),
-                new UserPasswordHash(entity.PasswordHash),
-                Enum.Parse<UserRole>(entity.Role),
-                entity.CreatedAt
+                new UserID(e.UserID),
+                new UserFullName(e.FullName),
+                new UserEmail(e.Email),
+                new UserPasswordHash(e.PasswordHash),
+                role,
+                e.CreatedAt
             );
         }
     }

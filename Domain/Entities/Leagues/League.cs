@@ -1,7 +1,7 @@
 ﻿using Domain.Shared;
 using Domain.Entities.Standings;
-using Domain.Entities.TeamLeagues;
-using Domain.Services.Leagues;
+using System;
+using System.Collections.Generic;
 
 namespace Domain.Entities.Leagues
 {
@@ -12,7 +12,6 @@ namespace Domain.Entities.Leagues
         public string Description { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
-        public ICollection<TeamLeague> TeamLeagues { get; private set; } = new List<TeamLeague>();
         public ICollection<Standing> Standings { get; private set; } = new List<Standing>();
 
         public League(LeagueID leagueID, LeagueName name, string description, DateTime createdAt)

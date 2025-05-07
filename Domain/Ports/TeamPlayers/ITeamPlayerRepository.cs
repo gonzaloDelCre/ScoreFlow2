@@ -9,11 +9,14 @@ namespace Domain.Ports.TeamPlayers
     public interface ITeamPlayerRepository
     {
         Task<TeamPlayer?> GetByIdsAsync(TeamID teamId, PlayerID playerId);
+        Task<IEnumerable<TeamPlayer>> GetAllAsync();
         Task<IEnumerable<TeamPlayer>> GetByTeamIdAsync(TeamID teamId);
         Task<IEnumerable<TeamPlayer>> GetByPlayerIdAsync(PlayerID playerId);
-        Task AddAsync(TeamID teamId, PlayerID playerId, DateTime? joinedAt = null, RoleInTeam? role = null);
+        Task<TeamPlayer> AddAsync(TeamPlayer teamPlayer);
         Task UpdateAsync(TeamPlayer teamPlayer);
         Task<bool> DeleteAsync(TeamID teamId, PlayerID playerId);
-        Task<TeamPlayer?> AddAsync(TeamPlayer teamPlayer);
+
+        Task<IEnumerable<TeamPlayer>> GetByRoleAsync(RoleInTeam role);
+        Task<IEnumerable<TeamPlayer>> GetByJoinDateRangeAsync(DateTime from, DateTime to);
     }
 }

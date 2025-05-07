@@ -8,10 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Persistence\MatchEvents\Repositories\" />
-    <Folder Include="Persistence\MatchReferees\Repositories\" />
-    <Folder Include="Persistence\Notifications\Repositories\" />
-    <Folder Include="Persistence\Referees\Repositories\" />
-    <Folder Include="Persistence\TeamLeagues\Repositories\" />
     <Folder Include="Services\Scraping\TeamPlayers\Services\" />
   </ItemGroup>
 

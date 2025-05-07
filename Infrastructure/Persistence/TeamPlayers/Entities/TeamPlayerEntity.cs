@@ -6,22 +6,28 @@ using Infrastructure.Persistence.Teams.Entities;
 
 namespace Infrastructure.Persistence.TeamPlayers.Entities
 {
+    [Table("TeamPlayers")]
     public class TeamPlayerEntity
     {
         [Key]
-        public int Id { get; set; }
+        public int ID { get; set; }
 
+        [Required]
         public int TeamID { get; set; }
-        [ForeignKey("TeamID")]
+
+        [ForeignKey(nameof(TeamID))]
         public TeamEntity Team { get; set; }
 
+        [Required]
         public int PlayerID { get; set; }
-        [ForeignKey("PlayerID")]
+
+        [ForeignKey(nameof(PlayerID))]
         public PlayerEntity Player { get; set; }
 
+        [Required]
+        public RoleInTeam RoleInTeam { get; set; }
+
+        [Required]
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-
-        public RoleInTeam RoleInTeam { get; set; } 
-
     }
 }
