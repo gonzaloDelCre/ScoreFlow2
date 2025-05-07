@@ -12,20 +12,20 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250313081548_MakePlayerIDNullable")]
-    partial class MakePlayerIDNullable
+    [Migration("20250507061426_FixCascadeDelete")]
+    partial class FixCascadeDelete
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Infrastructure.Persistence.Leagues.Entities.League", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", b =>
                 {
                     b.Property<int>("LeagueID")
                         .ValueGeneratedOnAdd()
@@ -50,7 +50,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Leagues");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.MatchEvents.Entities.MatchEvent", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.MatchEvents.Entities.MatchEventEntity", b =>
                 {
                     b.Property<int>("EventID")
                         .ValueGeneratedOnAdd()
@@ -82,7 +82,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("MatchEvents");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.MatchReferees.Entities.MatchReferee", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.MatchReferees.Entities.MatchRefereeEntity", b =>
                 {
                     b.Property<int>("MatchID")
                         .HasColumnType("int")
@@ -99,7 +99,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("MatchReferees");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.Match", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.MatchEntity", b =>
                 {
                     b.Property<int>("MatchID")
                         .ValueGeneratedOnAdd()
@@ -141,7 +141,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Matches");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Notifications.Entities.Notification", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Notifications.Entities.NotificationEntity", b =>
                 {
                     b.Property<int>("NotificationID")
                         .ValueGeneratedOnAdd()
@@ -172,7 +172,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Notifications");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.PlayerStatistics.Entities.PlayerStatistic", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.PlayerStatistics.Entities.PlayerStatisticEntity", b =>
                 {
                     b.Property<int>("StatID")
                         .ValueGeneratedOnAdd()
@@ -213,7 +213,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("PlayerStatistics");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Players.Entities.Player", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Players.Entities.PlayerEntity", b =>
                 {
                     b.Property<int>("PlayerID")
                         .ValueGeneratedOnAdd()
@@ -221,32 +221,34 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlayerID"));
 
+                    b.Property<int>("Age")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("Dorsal")
+                    b.Property<int>("Goals")
                         .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Photo")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Position")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TeamID")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserID")
-                        .HasColumnType("int");
-
                     b.HasKey("PlayerID");
-
-                    b.HasIndex("TeamID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Referees.Entities.Referee", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Referees.Entities.RefereeEntity", b =>
                 {
                     b.Property<int>("RefereeID")
                         .ValueGeneratedOnAdd()
@@ -264,7 +266,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("Referees");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Standings.Entities.Standing", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Standings.Entities.StandingEntity", b =>
                 {
                     b.Property<int>("StandingID")
                         .ValueGeneratedOnAdd()
@@ -278,7 +280,10 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Draws")
                         .HasColumnType("int");
 
-                    b.Property<int>("GoalDifference")
+                    b.Property<int>("GoalsAgainst")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GoalsFor")
                         .HasColumnType("int");
 
                     b.Property<int>("LeagueID")
@@ -305,27 +310,31 @@ namespace Infrastructure.Migrations
                     b.ToTable("Standings");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.TeamLeagues.Entities.TeamLeague", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.TeamPlayers.Entities.TeamPlayerEntity", b =>
                 {
                     b.Property<int>("TeamID")
-                        .HasColumnType("int")
-                        .HasColumnOrder(1);
+                        .HasColumnType("int");
 
-                    b.Property<int>("LeagueID")
-                        .HasColumnType("int")
-                        .HasColumnOrder(2);
+                    b.Property<int>("PlayerID")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("JoinDate")
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("TeamID", "LeagueID");
+                    b.Property<int>("RoleInTeam")
+                        .HasColumnType("int");
 
-                    b.HasIndex("LeagueID");
+                    b.HasKey("TeamID", "PlayerID");
 
-                    b.ToTable("TeamLeagues");
+                    b.HasIndex("PlayerID");
+
+                    b.ToTable("TeamPlayers");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.Team", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.TeamEntity", b =>
                 {
                     b.Property<int>("TeamID")
                         .ValueGeneratedOnAdd()
@@ -333,24 +342,45 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamID"));
 
-                    b.Property<int>("CoachID")
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Club")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("CoachPlayerID")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ExternalID")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("LeagueID")
+                        .HasColumnType("int");
+
                     b.Property<string>("Logo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("Stadium")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.HasKey("TeamID");
 
-                    b.HasIndex("CoachID");
+                    b.HasIndex("CoachPlayerID");
+
+                    b.HasIndex("LeagueID");
 
                     b.ToTable("Teams");
                 });
@@ -381,8 +411,9 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("UserID");
 
@@ -392,15 +423,15 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.MatchEvents.Entities.MatchEvent", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.MatchEvents.Entities.MatchEventEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Persistence.Matches.Entities.Match", "Match")
-                        .WithMany()
+                    b.HasOne("Infrastructure.Persistence.Matches.Entities.MatchEntity", "Match")
+                        .WithMany("MatchEvents")
                         .HasForeignKey("MatchID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Persistence.Players.Entities.Player", "Player")
+                    b.HasOne("Infrastructure.Persistence.Players.Entities.PlayerEntity", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerID")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -410,15 +441,15 @@ namespace Infrastructure.Migrations
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.MatchReferees.Entities.MatchReferee", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.MatchReferees.Entities.MatchRefereeEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Persistence.Matches.Entities.Match", "Match")
+                    b.HasOne("Infrastructure.Persistence.Matches.Entities.MatchEntity", "Match")
                         .WithMany("MatchReferees")
                         .HasForeignKey("MatchID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Persistence.Referees.Entities.Referee", "Referee")
+                    b.HasOne("Infrastructure.Persistence.Referees.Entities.RefereeEntity", "Referee")
                         .WithMany("MatchReferees")
                         .HasForeignKey("RefereeID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -429,15 +460,15 @@ namespace Infrastructure.Migrations
                     b.Navigation("Referee");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.Match", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.MatchEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Persistence.Teams.Entities.Team", "Team1")
+                    b.HasOne("Infrastructure.Persistence.Teams.Entities.TeamEntity", "Team1")
                         .WithMany()
                         .HasForeignKey("Team1ID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Persistence.Teams.Entities.Team", "Team2")
+                    b.HasOne("Infrastructure.Persistence.Teams.Entities.TeamEntity", "Team2")
                         .WithMany()
                         .HasForeignKey("Team2ID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -448,7 +479,7 @@ namespace Infrastructure.Migrations
                     b.Navigation("Team2");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Notifications.Entities.Notification", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Notifications.Entities.NotificationEntity", b =>
                 {
                     b.HasOne("Infrastructure.Persistence.Users.Entities.UserEntity", "User")
                         .WithMany("Notifications")
@@ -459,15 +490,15 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.PlayerStatistics.Entities.PlayerStatistic", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.PlayerStatistics.Entities.PlayerStatisticEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Persistence.Matches.Entities.Match", "Match")
-                        .WithMany()
+                    b.HasOne("Infrastructure.Persistence.Matches.Entities.MatchEntity", "Match")
+                        .WithMany("PlayerStatistics")
                         .HasForeignKey("MatchID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Persistence.Players.Entities.Player", "Player")
+                    b.HasOne("Infrastructure.Persistence.Players.Entities.PlayerEntity", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -478,80 +509,92 @@ namespace Infrastructure.Migrations
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Players.Entities.Player", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Standings.Entities.StandingEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Persistence.Teams.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Infrastructure.Persistence.Users.Entities.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserID");
-
-                    b.Navigation("Team");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Infrastructure.Persistence.Standings.Entities.Standing", b =>
-                {
-                    b.HasOne("Infrastructure.Persistence.Leagues.Entities.League", "League")
-                        .WithMany()
+                    b.HasOne("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", "League")
+                        .WithMany("Standings")
                         .HasForeignKey("LeagueID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Infrastructure.Persistence.Teams.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("League");
-
-                    b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("Infrastructure.Persistence.TeamLeagues.Entities.TeamLeague", b =>
-                {
-                    b.HasOne("Infrastructure.Persistence.Leagues.Entities.League", "League")
-                        .WithMany()
-                        .HasForeignKey("LeagueID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Infrastructure.Persistence.Teams.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("League");
-
-                    b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.Team", b =>
-                {
-                    b.HasOne("Infrastructure.Persistence.Users.Entities.UserEntity", "Coach")
-                        .WithMany()
-                        .HasForeignKey("CoachID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Infrastructure.Persistence.Teams.Entities.TeamEntity", "Team")
+                        .WithMany("Standings")
+                        .HasForeignKey("TeamID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("League");
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Infrastructure.Persistence.TeamPlayers.Entities.TeamPlayerEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Persistence.Players.Entities.PlayerEntity", "Player")
+                        .WithMany("TeamPlayers")
+                        .HasForeignKey("PlayerID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Infrastructure.Persistence.Teams.Entities.TeamEntity", "Team")
+                        .WithMany("TeamPlayers")
+                        .HasForeignKey("TeamID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Player");
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.TeamEntity", b =>
+                {
+                    b.HasOne("Infrastructure.Persistence.Players.Entities.PlayerEntity", "Coach")
+                        .WithMany()
+                        .HasForeignKey("CoachPlayerID");
+
+                    b.HasOne("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", "League")
+                        .WithMany("Teams")
+                        .HasForeignKey("LeagueID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Coach");
+
+                    b.Navigation("League");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.Match", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", b =>
+                {
+                    b.Navigation("Standings");
+
+                    b.Navigation("Teams");
+                });
+
+            modelBuilder.Entity("Infrastructure.Persistence.Matches.Entities.MatchEntity", b =>
+                {
+                    b.Navigation("MatchEvents");
+
+                    b.Navigation("MatchReferees");
+
+                    b.Navigation("PlayerStatistics");
+                });
+
+            modelBuilder.Entity("Infrastructure.Persistence.Players.Entities.PlayerEntity", b =>
+                {
+                    b.Navigation("TeamPlayers");
+                });
+
+            modelBuilder.Entity("Infrastructure.Persistence.Referees.Entities.RefereeEntity", b =>
                 {
                     b.Navigation("MatchReferees");
                 });
 
-            modelBuilder.Entity("Infrastructure.Persistence.Referees.Entities.Referee", b =>
+            modelBuilder.Entity("Infrastructure.Persistence.Teams.Entities.TeamEntity", b =>
                 {
-                    b.Navigation("MatchReferees");
+                    b.Navigation("Standings");
+
+                    b.Navigation("TeamPlayers");
                 });
 
             modelBuilder.Entity("Infrastructure.Persistence.Users.Entities.UserEntity", b =>

@@ -140,17 +140,27 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        public async Task<League> AddAsync(League league)
+        public async Task<League> AddAsync(League domain)
         {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league));
+            if (domain == null)
+                throw new ArgumentNullException(nameof(domain));
 
             try
             {
-                var entity = LeagueMapper.MapToEntity(league);
+                // 1) Mapear sin ID
+                var entity = domain.MapToEntity();
                 _context.Leagues.Add(entity);
+
+                // 2) EF Core insertará con LeagueID = IDENTITY
                 await _context.SaveChangesAsync();
-                return league;
+
+                // 3) Devolver un nuevo dominio con el ID generado
+                return new League(
+                    new LeagueID(entity.LeagueID),
+                    domain.Name,
+                    domain.Description,
+                    domain.CreatedAt
+                );
             }
             catch (Exception ex)
             {
@@ -159,28 +169,28 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             }
         }
 
-        public async Task UpdateAsync(League league)
+        public async Task UpdateAsync(League domain)
         {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league));
+            if (domain == null)
+                throw new ArgumentNullException(nameof(domain));
 
             try
             {
                 var entity = await _context.Leagues
-                    .FirstOrDefaultAsync(l => l.LeagueID == league.LeagueID.Value);
+                    .FirstOrDefaultAsync(l => l.LeagueID == domain.LeagueID.Value);
 
                 if (entity == null)
                     throw new InvalidOperationException("Liga no encontrada.");
 
-                entity.Name = league.Name.Value;
-                entity.Description = league.Description;
-                entity.CreatedAt = league.CreatedAt;
+                entity.Name = domain.Name.Value;
+                entity.Description = domain.Description;
+                entity.CreatedAt = domain.CreatedAt;
 
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar la liga con ID {LeagueID}", league.LeagueID.Value);
+                _logger.LogError(ex, "Error al actualizar la liga con ID {LeagueID}", domain.LeagueID.Value);
                 throw;
             }
         }
@@ -191,7 +201,6 @@ namespace Infrastructure.Persistence.Leagues.Repositories
             {
                 var entity = await _context.Leagues
                     .FirstOrDefaultAsync(l => l.LeagueID == leagueId.Value);
-
                 if (entity == null) return false;
 
                 _context.Leagues.Remove(entity);
@@ -206,5 +215,6 @@ namespace Infrastructure.Persistence.Leagues.Repositories
         }
     }
 }
+
 
        

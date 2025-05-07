@@ -11,6 +11,7 @@ using Infrastructure.Persistence.TeamPlayers.Entities;
 using Infrastructure.Persistence.Teams.Entities;
 using Infrastructure.Persistence.Users.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal;
 
 namespace Infrastructure.Persistence.Conection
 {
@@ -32,7 +33,15 @@ namespace Infrastructure.Persistence.Conection
         public DbSet<RefereeEntity> Referees { get; set; }
         public DbSet<MatchRefereeEntity> MatchReferees { get; set; }
         public DbSet<TeamPlayerEntity> TeamPlayers { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Obtenemos la extensión de SQL Server sin abrir la conexión
+            var sqlExt = optionsBuilder.Options.FindExtension<SqlServerOptionsExtension>();
+            var cs = sqlExt?.ConnectionString ?? "[null]";
+            Console.WriteLine($"[OnConfiguring] ConnectionString from Options: '{cs}'    IsConfigured={optionsBuilder.IsConfigured}");
 
+            base.OnConfiguring(optionsBuilder);
+        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -113,7 +122,7 @@ namespace Infrastructure.Persistence.Conection
                         .HasOne(s => s.League)
                         .WithMany(l => l.Standings)
                         .HasForeignKey(s => s.LeagueID)
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<StandingEntity>()
                         .HasOne(s => s.Team)

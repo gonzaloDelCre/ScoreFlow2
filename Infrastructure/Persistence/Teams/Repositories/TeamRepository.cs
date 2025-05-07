@@ -119,25 +119,33 @@ namespace Infrastructure.Persistence.Teams.Repositories
             try
             {
                 var teamEntity = TeamMapper.MapToEntity(team);
-                var insertSql = @"INSERT INTO Teams (Name, Logo, CreatedAt, ExternalID, Category, Club, Stadium, LeagueID) 
-                     VALUES (@Name, @Logo, @CreatedAt, @ExternalID, @Category, @Club, @Stadium, @LeagueID);
-                     SELECT SCOPE_IDENTITY();";
+                var insertSql = @"
+            INSERT INTO Teams (Name, Logo, CreatedAt, ExternalID, Category, Club, Stadium, LeagueID) 
+            VALUES (@Name, @Logo, @CreatedAt, @ExternalID, @Category, @Club, @Stadium, @LeagueID);
+            SELECT CAST(SCOPE_IDENTITY() as int);
+        ";
 
-                var parameters = new[]
-                {
-                    new SqlParameter("@Name", teamEntity.Name),
-                    new SqlParameter("@Logo", teamEntity.Logo),
-                    new SqlParameter("@CreatedAt", teamEntity.CreatedAt),
-                    new SqlParameter("@ExternalID", (object?)teamEntity.ExternalID ?? DBNull.Value),
-                    new SqlParameter("@Category", (object?)teamEntity.Category ?? DBNull.Value),
-                    new SqlParameter("@Club", (object?)teamEntity.Club ?? DBNull.Value),
-                    new SqlParameter("@Stadium", (object?)teamEntity.Stadium ?? DBNull.Value),
-                    new SqlParameter("@LeagueID", teamEntity.LeagueID)
-                };
+                using var connection = _context.Database.GetDbConnection();
+                await connection.OpenAsync();
 
-                var newId = Convert.ToInt32(await _context.Database.ExecuteSqlRawAsync(insertSql, parameters));
+                using var command = connection.CreateCommand();
+                command.CommandText = insertSql;
+
+                command.Parameters.Add(new SqlParameter("@Name", teamEntity.Name));
+                command.Parameters.Add(new SqlParameter("@Logo", (object?)teamEntity.Logo ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@CreatedAt", teamEntity.CreatedAt));
+                command.Parameters.Add(new SqlParameter("@ExternalID", (object?)teamEntity.ExternalID ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@Category", (object?)teamEntity.Category ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@Club", (object?)teamEntity.Club ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@Stadium", (object?)teamEntity.Stadium ?? DBNull.Value));
+                command.Parameters.Add(new SqlParameter("@LeagueID", teamEntity.LeagueID));
+
+                var newId = await command.ExecuteScalarAsync();
+                if (newId == null || Convert.ToInt32(newId) <= 0)
+                    throw new InvalidOperationException("Failed to retrieve valid Team ID.");
+
                 var created = new Team(
-                    new TeamID(newId),
+                    new TeamID(Convert.ToInt32(newId)),  // Usamos el ID obtenido de la base de datos
                     team.Name,
                     team.League,
                     team.Logo,
@@ -146,6 +154,7 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 );
                 created.Update(team.Category, team.Club, team.Stadium);
 
+                // Insertar jugadores si los hay
                 if (team.Players.Any())
                 {
                     var tpSql = string.Join(", ", team.Players.Select((p, i) => $"(@TeamID, @PlayerID{i})"));
@@ -164,6 +173,8 @@ namespace Infrastructure.Persistence.Teams.Repositories
                 throw;
             }
         }
+
+
 
         public async Task UpdateAsync(Team team)
         {

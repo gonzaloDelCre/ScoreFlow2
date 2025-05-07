@@ -10,7 +10,7 @@ namespace Infrastructure.Persistence.Conection
     {
         public ApplicationDbContext CreateDbContext(string[] args)
         {
-            var basePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).FullName, "API3");
+            var basePath = Directory.GetCurrentDirectory();
             Console.WriteLine($"Using base path: {basePath}");
 
             var configuration = new ConfigurationBuilder()

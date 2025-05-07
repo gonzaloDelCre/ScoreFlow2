@@ -36,7 +36,6 @@ namespace Infrastructure.Persistence.Teams.Entities
         [ForeignKey("CoachPlayerID")]
         public PlayerEntity? Coach { get; set; }
 
-        // ← FK de liga
         public int LeagueID { get; set; }
         [ForeignKey("LeagueID")]
         public LeagueEntity League { get; set; }

@@ -4,6 +4,7 @@ using Domain.Entities.Players;
 using Domain.Entities.Standings;
 using Domain.Entities.Leagues;
 using Domain.Shared;
+using System.Xml.Linq;
 
 namespace Domain.Entities.Teams
 {
@@ -54,12 +55,20 @@ namespace Domain.Entities.Teams
         // Sobrecarga vacía para ORMs
         public Team() { }
 
-        public Team(TeamID teamID, TeamName teamName, DateTime createdAt, string? logo, string? externalID)
+        public Team(TeamID teamID,
+                TeamName name,
+                League league,
+                string logo,
+                DateTime createdAt,
+                string? externalID = null)
         {
-            this.teamID = teamID;
-            this.teamName = teamName;
+            TeamID = teamID ?? throw new ArgumentNullException(nameof(teamID));
+            Name = name ?? throw new ArgumentNullException(nameof(name));
+            League = league ?? throw new ArgumentNullException(nameof(league));
+            Logo = !string.IsNullOrWhiteSpace(logo)
+                ? logo
+                : throw new ArgumentException("Logo no puede estar vacío", nameof(logo));
             CreatedAt = createdAt;
-            Logo = logo;
             ExternalID = externalID;
         }
 
@@ -71,15 +80,8 @@ namespace Domain.Entities.Teams
             this.logoUrl = logoUrl;
         }
 
-        public Team(TeamID teamID1, string value, DateTime createdAt, string logo, string? category, string? club, string? stadium)
+        public Team(TeamID teamID, TeamName teamName, DateTime utcNow, string logoUrl, string? externalID) : this(teamID, teamName, utcNow, logoUrl)
         {
-            this.teamID1 = teamID1;
-            this.value = value;
-            CreatedAt = createdAt;
-            Logo = logo;
-            Category = category;
-            Club = club;
-            Stadium = stadium;
         }
 
         public void Update(TeamName? name = null,

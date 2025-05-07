@@ -511,7 +511,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Infrastructure.Persistence.Leagues.Entities.LeagueEntity", "League")
                         .WithMany("Standings")
                         .HasForeignKey("LeagueID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Infrastructure.Persistence.Teams.Entities.TeamEntity", "Team")

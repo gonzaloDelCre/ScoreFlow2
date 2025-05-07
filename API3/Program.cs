@@ -1,116 +1,114 @@
+﻿using System.Net;
+using System.Text.Json.Serialization;
+using Application.Leagues.UseCases;
 using Application.Leagues.UseCases.Create;
 using Application.Leagues.UseCases.Delete;
 using Application.Leagues.UseCases.Get;
 using Application.Leagues.UseCases.Update;
-using Application.Leagues.UseCases;
-//using Application.Matches.UseCases.Create;
-//using Application.Matches.UseCases.Delete;
-//using Application.Matches.UseCases.Get;
-//using Application.Matches.UseCases.Update;
-//using Application.Matches.UseCases;
+using Application.PlayerStatistics.UseCases;
 using Application.PlayerStatistics.UseCases.Create;
 using Application.PlayerStatistics.UseCases.Delete;
 using Application.PlayerStatistics.UseCases.Get;
 using Application.PlayerStatistics.UseCases.Update;
-using Application.PlayerStatistics.UseCases;
+using Application.Playes.UseCases;
 using Application.Playes.UseCases.Create;
 using Application.Playes.UseCases.Delete;
 using Application.Playes.UseCases.Get;
 using Application.Playes.UseCases.Update;
-using Application.Playes.UseCases;
+using Application.Teams.UseCases;
 using Application.Teams.UseCases.Create;
 using Application.Teams.UseCases.Delete;
 using Application.Teams.UseCases.Get;
 using Application.Teams.UseCases.Update;
-using Application.Teams.UseCases;
+using Application.Users.UseCases;
 using Application.Users.UseCases.Access;
 using Application.Users.UseCases.Create;
 using Application.Users.UseCases.Delete;
 using Application.Users.UseCases.Get;
 using Application.Users.UseCases.Profile;
 using Application.Users.UseCases.Update;
-using Application.Users.UseCases;
+using Application.TeamPlayers.UseCases;
+using Application.TeamPlayers.UseCases.Create;
+using Application.TeamPlayers.UseCases.Delete;
+using Application.TeamPlayers.UseCases.Get;
+using Application.TeamPlayers.UseCases.Update;
 using Domain.Ports.Leagues;
 using Domain.Ports.Players;
 using Domain.Ports.PlayerStatistics;
 using Domain.Ports.Teams;
+using Domain.Ports.TeamPlayers;
 using Domain.Ports.Users;
 using Domain.Services.Leagues;
-//using Domain.Services.Matches;
 using Domain.Services.Players;
 using Domain.Services.PlayerStatistics;
 using Domain.Services.Teams;
+using Domain.Services.TeamPlayers;
 using Domain.Services.Users;
 using Infrastructure.Persistence.Conection;
 using Infrastructure.Persistence.Leagues.Repositories;
+using Infrastructure.Persistence.Players.Mapper;
 using Infrastructure.Persistence.Players.Repositories;
+using Infrastructure.Persistence.PlayerStatistics.Mapper;
 using Infrastructure.Persistence.PlayerStatistics.Repositories;
 using Infrastructure.Persistence.Teams.Repositories;
-using Infrastructure.Persistence.Users.Repositories;
-using Microsoft.EntityFrameworkCore;
+using Infrastructure.Persistence.TeamPlayers.Repositories;
 using Infrastructure.Persistence.Users.Mapper;
-using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
-using System.Net;
-using Infrastructure.Services.Scraping.Teams;
-using Infrastructure.Persistence.Players.Mapper;
-using Application.TeamPlayers.UseCases.Create;
-using Application.TeamPlayers.UseCases;
+using Infrastructure.Persistence.Users.Repositories;
 using Infrastructure.Services.Scraping.Players.Import;
 using Infrastructure.Services.Scraping.Players.Services;
 using Infrastructure.Services.Scraping.TeamPlayers.Imports;
-using Infrastructure.Services.Scraping.Teams.Services;
-using Domain.Ports.TeamPlayers;
-using Infrastructure.Persistence.TeamPlayers.Repositories;
-using Application.TeamPlayers.UseCases.Delete;
-using Application.TeamPlayers.UseCases.Get;
-using Application.TeamPlayers.UseCases.Update;
-using Domain.Services.TeamPlayers;
 using Infrastructure.Services.Scraping.Teams.Import;
+using Infrastructure.Services.Scraping.Teams.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar Kestrel y puertos (para conexiones LAN/remotas)
+// --- Configurar Kestrel (LAN/externo) ---
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Listen(IPAddress.Any, 5000);
 });
 
-// Configurar conexi�n a base de datos
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// --- Verificación de cadena de conexión ---
+Console.WriteLine("🔍 ContentRootPath: " + builder.Environment.ContentRootPath);
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("🔌 Connection string leída: " + rawConnectionString);
 
-// Registrar los mappers
+// --- DbContext ---
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(rawConnectionString, sql =>
+        sql.MigrationsAssembly("Infrastructure"))
+);
+
+// --- Mappers ---
 builder.Services.AddScoped<UserMapper>();
 builder.Services.AddScoped<Application.Leagues.Mapper.LeagueMapper>();
-//builder.Services.AddScoped<Infrastructure.Persistence.Leagues.Mapper.LeagueMapper>();
-builder.Services.AddScoped<Application.Matches.Mapper.MatchMapper>();
-//builder.Services.AddScoped<Infrastructure.Persistence.Matches.Mapper.MatchMapper>();
 builder.Services.AddScoped<Application.Teams.Mapper.TeamMapper>();
-//builder.Services.AddScoped<Application.Playes.Mappers.PlayerMapper>();
 builder.Services.AddScoped<PlayerMapper>();
 builder.Services.AddScoped<Application.PlayerStatistics.Mappers.PlayerStatisticMapper>();
-builder.Services.AddScoped<Infrastructure.Persistence.PlayerStatistics.Mapper.PlayerStatisticMapper>();
+builder.Services.AddScoped<PlayerStatisticMapper>();
+builder.Services.AddScoped<Application.Standings.Mapper.StandingMapper>();
 
-
-// Registrar los repositorios
+// --- Repositorios ---
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
-//builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
-builder.Services.AddScoped<ITeamPlayerRepository, TeamPlayerRepository>();
 builder.Services.AddScoped<IPlayerRepository, PlayerRepository>();
 builder.Services.AddScoped<IPlayerStatisticRepository, PlayerStatisticRepository>();
+builder.Services.AddScoped<ITeamPlayerRepository, TeamPlayerRepository>();
+builder.Services.AddScoped<Domain.Ports.Standings.IStandingRepository, Infrastructure.Persistence.Standings.Repositories.StandingRepository>();
 
-// Registrar servicios de dominio
-builder.Services.AddScoped<LeagueService>();
-//builder.Services.AddScoped<MatchService>();
-builder.Services.AddScoped<TeamService>();
+// --- Servicios de dominio ---
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<LeagueService>();
+builder.Services.AddScoped<TeamService>();
 builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<PlayerStatisticService>();
+builder.Services.AddScoped<TeamPlayerService>();
+builder.Services.AddScoped<Domain.Services.Standings.StandingService>();
 
-// Registrar casos de uso de Users
+// --- Casos de uso Users ---
 builder.Services.AddScoped<CreateUserUseCase>();
 builder.Services.AddScoped<UpdateUserUseCase>();
 builder.Services.AddScoped<GetAllUsersUseCase>();
@@ -124,117 +122,92 @@ builder.Services.AddScoped<UpdateUserProfileUseCase>();
 builder.Services.AddScoped<RegisterUserUseCase>();
 builder.Services.AddScoped<GeneralUserUseCaseHandler>();
 
-// Registrar casos de uso de Leagues
-builder.Services.AddScoped<GetAllLeaguesUseCase>();
-builder.Services.AddScoped<GetLeagueByIdUseCase>();
+// --- Casos de uso Leagues ---
 builder.Services.AddScoped<CreateLeagueUseCase>();
 builder.Services.AddScoped<UpdateLeagueUseCase>();
 builder.Services.AddScoped<DeleteLeagueUseCase>();
+builder.Services.AddScoped<GetAllLeaguesUseCase>();
+builder.Services.AddScoped<GetLeagueByIdUseCase>();
 builder.Services.AddScoped<LeagueUseCaseHandler>();
 
-// Registrar casos de uso de Matches
-//builder.Services.AddScoped<GetAllMatches>();
-//builder.Services.AddScoped<GetMatchById>();
-//builder.Services.AddScoped<CreateMatch>();
-//builder.Services.AddScoped<UpdateMatch>();
-//builder.Services.AddScoped<DeleteMatch>();
-//builder.Services.AddScoped<GeneralMatchUseCaseHandler>();
-
-// Registrar casos de uso de Teams
+// --- Casos de uso Teams ---
 builder.Services.AddScoped<CreateTeamUseCase>();
-builder.Services.AddScoped<GetTeamByIdUseCase>();
 builder.Services.AddScoped<UpdateTeamUseCase>();
 builder.Services.AddScoped<DeleteTeamUseCase>();
 builder.Services.AddScoped<GetAllTeamsUseCase>();
+builder.Services.AddScoped<GetTeamByIdUseCase>();
 builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
 builder.Services.AddScoped<ITeamImporter, TeamImportService>();
 builder.Services.AddScoped<TeamUseCaseHandler>();
 
-//Registrar casos de uso de Players
+// --- Casos de uso Players ---
 builder.Services.AddScoped<CreatePlayer>();
-builder.Services.AddScoped<GetAllPlayer>();
-builder.Services.AddScoped<GetPlayerById>();
 builder.Services.AddScoped<UpdatePlayer>();
 builder.Services.AddScoped<DeletePlayer>();
+builder.Services.AddScoped<GetAllPlayer>();
+builder.Services.AddScoped<GetPlayerById>();
 builder.Services.AddScoped<GeneralPlayerUseCaseHandler>();
-builder.Services.AddScoped<ITeamPlayerImporter, TeamPlayerImportService>();
+builder.Services.AddScoped<IPlayerImporter, PlayerImportService>();
 
-//Registrar casos de uso de Player Statistics
+// --- Casos de uso PlayerStatistics ---
 builder.Services.AddScoped<CreatePlayerStatistic>();
-builder.Services.AddScoped<GetAllPlayerStatistics>();
-builder.Services.AddScoped<GetPlayerStatisticById>();
 builder.Services.AddScoped<UpdatePlayerStatistic>();
 builder.Services.AddScoped<DeletePlayerStatistic>();
+builder.Services.AddScoped<GetAllPlayerStatistics>();
+builder.Services.AddScoped<GetPlayerStatisticById>();
 builder.Services.AddScoped<GeneralPlayerStatisticsUseCaseHandler>();
 
+// --- Casos de uso TeamPlayers ---
+builder.Services.AddScoped<CreateTeamPlayer>();
+builder.Services.AddScoped<UpdateTeamPlayer>();
+builder.Services.AddScoped<DeleteTeamPlayer>();
+builder.Services.AddScoped<GetTeamPlayerByIds>();
+builder.Services.AddScoped<GetTeamPlayersByPlayerId>();
+builder.Services.AddScoped<GetTeamPlayersByTeamId>();
+builder.Services.AddScoped<GetPlayersByTeamUseCase>();
+builder.Services.AddScoped<IGetTeamRosterUseCase, GetTeamRosterUseCase>();
+builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
+builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+
+// --- Casos de uso Standings ---
+builder.Services.AddScoped<Application.Standings.UseCases.Create.CreateStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Update.UpdateStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Delete.DeleteStandingUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetAllStandingsUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetStandingByIdUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByLeagueUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByTeamAndLeagueUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.Get.GetClassificationUseCase>();
+builder.Services.AddScoped<Application.Standings.UseCases.StandingUseCaseHandler>();
+
+// --- Scrapers y servicios externos ---
 builder.Services.AddHttpClient<TeamScraperService>();
 builder.Services.AddHttpClient<PlayerScraperService>();
-
 builder.Services.AddScoped<TeamImportService>();
 builder.Services.AddScoped<PlayerImportService>();
 builder.Services.AddScoped<TeamPlayerImportService>();
-
-builder.Services.AddScoped<CreateTeamsFromScraperUseCase>();
+// Para Players
 builder.Services.AddScoped<CreatePlayersFromScraperUseCase>();
-builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
 builder.Services.AddScoped<IPlayerImporter, PlayerImportService>();
-builder.Services.AddHttpClient<PlayerScraperService>();
 
-builder.Services.AddScoped<TeamUseCaseHandler>();
-builder.Services.AddScoped<GeneralPlayerUseCaseHandler>();
-builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
+// Para TeamPlayers
 builder.Services.AddScoped<CreateTeamPlayersFromScraperUseCase>();
-builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
-builder.Services.AddScoped<CreateTeamPlayer>();
-builder.Services.AddScoped<GetTeamPlayerByIds>();
-builder.Services.AddScoped<GetTeamPlayersByTeamId>();
-builder.Services.AddScoped<GetTeamPlayersByPlayerId>();
-builder.Services.AddScoped<DeleteTeamPlayer>();
-builder.Services.AddScoped<UpdateTeamPlayer>();
-builder.Services.AddScoped<TeamPlayerService>();
-builder.Services.AddScoped<GetPlayersByTeamUseCase>();
-builder.Services.AddScoped<IGetTeamRosterUseCase, GetTeamRosterUseCase>();
-builder.Services.AddScoped<GeneralTeamPlayerUseCaseHandler>();
-builder.Services.AddScoped<Application.Standings.Mapper.StandingMapper>();
-//builder.Services.AddScoped<Infrastructure.Persistence.Standings.Mapper.StandingMapper>();
-builder.Services.AddScoped<Domain.Ports.Standings.IStandingRepository, Infrastructure.Persistence.Standings.Repositories.StandingRepository>();
-builder.Services.AddScoped<Domain.Services.Standings.StandingService>();
-builder.Services.AddScoped<Application.Standings.UseCases.Create.CreateStandingUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Get.GetAllStandingsUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Get.GetStandingByIdUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Update.UpdateStandingUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Delete.DeleteStandingUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByLeagueUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Get.GetClassificationUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.Get.GetByTeamAndLeagueUseCase>();
-builder.Services.AddScoped<Application.Standings.UseCases.StandingUseCaseHandler>();
-builder.Services.AddScoped<CreateLeagueUseCase>();
-builder.Services.AddScoped<GetAllLeaguesUseCase>();
-builder.Services.AddScoped<GetLeagueByIdUseCase>();
-builder.Services.AddScoped<UpdateLeagueUseCase>();
-builder.Services.AddScoped<DeleteLeagueUseCase>();
-builder.Services.AddScoped<LeagueUseCaseHandler>();
+builder.Services.AddScoped<ITeamPlayerImporter, TeamPlayerImportService>();
 
 
-// Swagger completo
+
+// --- Swagger ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "ScoreFlow API",
-        Version = "v1"
-    });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ScoreFlow API", Version = "v1" });
 });
 
+// --- JSON enum como string ---
+builder.Services.AddControllers().AddJsonOptions(options =>
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Configurar JSON para enums como string
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-
-// CORS para permitir acceso desde otros dispositivos o frontend
+// --- CORS ---
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -245,24 +218,23 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Migraciones autom�ticas
+// --- Aplicar migraciones ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
 
-// Middleware
+// --- Middleware ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "ScoreFlow API V1");
-        c.RoutePrefix = string.Empty; // Muestra Swagger en la ra�z (http://localhost:5000/)
+        c.RoutePrefix = string.Empty;
     });
 }
-
 
 app.UseCors();
 app.UseAuthorization();

@@ -12,33 +12,38 @@ namespace Infrastructure.Persistence.Leagues.Mapper
 {
     public static class LeagueMapper
     {
-        public static League MapToDomain(LeagueEntity entity)
+        public static LeagueEntity MapToEntity(this League domain)
         {
-            return new League(
-                new LeagueID(entity.LeagueID),
-                new LeagueName(entity.Name),
-                entity.Description
-            );
-        }
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
 
-        // Método simple usado en repositorios para evitar carga excesiva
-        public static League MapToDomainSimple(LeagueEntity entity)
-        {
-            return new League(
-                new LeagueID(entity.LeagueID),
-                new LeagueName(entity.Name),
-                entity.Description
-            );
-        }
-
-        public static LeagueEntity MapToEntity(League domain)
-        {
             return new LeagueEntity
             {
-                LeagueID = domain.LeagueID.Value,
                 Name = domain.Name.Value,
-                Description = domain.Description
+                Description = domain.Description,
+                CreatedAt = domain.CreatedAt
             };
+        }
+
+        public static League MapToDomain(this LeagueEntity entity)
+        {
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            return new League(
+                new LeagueID(entity.LeagueID),
+                new LeagueName(entity.Name),
+                entity.Description,
+                entity.CreatedAt
+            );
+        }
+
+        public static League MapToDomainSimple(this LeagueEntity entity)
+        {
+            return new League(
+                new LeagueID(entity.LeagueID),
+                new LeagueName(entity.Name),
+                entity.Description,
+                entity.CreatedAt
+            );
         }
     }
 }

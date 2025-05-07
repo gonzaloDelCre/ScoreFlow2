@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class MakePlayerIDNullable : Migration
+    public partial class FixCascadeDelete : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,6 +24,24 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Leagues", x => x.LeagueID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Players",
+                columns: table => new
+                {
+                    PlayerID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Position = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Age = table.Column<int>(type: "int", nullable: false),
+                    Goals = table.Column<int>(type: "int", nullable: false),
+                    Photo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Players", x => x.PlayerID);
                 });
 
             migrationBuilder.CreateTable(
@@ -48,12 +66,44 @@ namespace Infrastructure.Migrations
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Role = table.Column<int>(type: "int", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.UserID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Teams",
+                columns: table => new
+                {
+                    TeamID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Logo = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Category = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Club = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Stadium = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    ExternalID = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    CoachPlayerID = table.Column<int>(type: "int", nullable: true),
+                    LeagueID = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Teams", x => x.TeamID);
+                    table.ForeignKey(
+                        name: "FK_Teams_Leagues_LeagueID",
+                        column: x => x.LeagueID,
+                        principalTable: "Leagues",
+                        principalColumn: "LeagueID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Teams_Players_CoachPlayerID",
+                        column: x => x.CoachPlayerID,
+                        principalTable: "Players",
+                        principalColumn: "PlayerID");
                 });
 
             migrationBuilder.CreateTable(
@@ -77,28 +127,6 @@ namespace Infrastructure.Migrations
                         principalTable: "Users",
                         principalColumn: "UserID",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Teams",
-                columns: table => new
-                {
-                    TeamID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Logo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CoachID = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Teams", x => x.TeamID);
-                    table.ForeignKey(
-                        name: "FK_Teams_Users_CoachID",
-                        column: x => x.CoachID,
-                        principalTable: "Users",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -134,34 +162,6 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Players",
-                columns: table => new
-                {
-                    PlayerID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserID = table.Column<int>(type: "int", nullable: true),
-                    TeamID = table.Column<int>(type: "int", nullable: false),
-                    Position = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Dorsal = table.Column<int>(type: "int", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Players", x => x.PlayerID);
-                    table.ForeignKey(
-                        name: "FK_Players_Teams_TeamID",
-                        column: x => x.TeamID,
-                        principalTable: "Teams",
-                        principalColumn: "TeamID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Players_Users_UserID",
-                        column: x => x.UserID,
-                        principalTable: "Users",
-                        principalColumn: "UserID");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Standings",
                 columns: table => new
                 {
@@ -169,11 +169,12 @@ namespace Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     LeagueID = table.Column<int>(type: "int", nullable: false),
                     TeamID = table.Column<int>(type: "int", nullable: false),
-                    Points = table.Column<int>(type: "int", nullable: false),
                     Wins = table.Column<int>(type: "int", nullable: false),
-                    Losses = table.Column<int>(type: "int", nullable: false),
                     Draws = table.Column<int>(type: "int", nullable: false),
-                    GoalDifference = table.Column<int>(type: "int", nullable: false),
+                    Losses = table.Column<int>(type: "int", nullable: false),
+                    GoalsFor = table.Column<int>(type: "int", nullable: false),
+                    GoalsAgainst = table.Column<int>(type: "int", nullable: false),
+                    Points = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -184,7 +185,7 @@ namespace Infrastructure.Migrations
                         column: x => x.LeagueID,
                         principalTable: "Leagues",
                         principalColumn: "LeagueID",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Standings_Teams_TeamID",
                         column: x => x.TeamID,
@@ -194,51 +195,29 @@ namespace Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TeamLeagues",
+                name: "TeamPlayers",
                 columns: table => new
                 {
                     TeamID = table.Column<int>(type: "int", nullable: false),
-                    LeagueID = table.Column<int>(type: "int", nullable: false),
-                    JoinDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    PlayerID = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false),
+                    JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RoleInTeam = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TeamLeagues", x => new { x.TeamID, x.LeagueID });
+                    table.PrimaryKey("PK_TeamPlayers", x => new { x.TeamID, x.PlayerID });
                     table.ForeignKey(
-                        name: "FK_TeamLeagues_Leagues_LeagueID",
-                        column: x => x.LeagueID,
-                        principalTable: "Leagues",
-                        principalColumn: "LeagueID",
+                        name: "FK_TeamPlayers_Players_PlayerID",
+                        column: x => x.PlayerID,
+                        principalTable: "Players",
+                        principalColumn: "PlayerID",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_TeamLeagues_Teams_TeamID",
+                        name: "FK_TeamPlayers_Teams_TeamID",
                         column: x => x.TeamID,
                         principalTable: "Teams",
                         principalColumn: "TeamID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MatchReferees",
-                columns: table => new
-                {
-                    MatchID = table.Column<int>(type: "int", nullable: false),
-                    RefereeID = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MatchReferees", x => new { x.MatchID, x.RefereeID });
-                    table.ForeignKey(
-                        name: "FK_MatchReferees_Matches_MatchID",
-                        column: x => x.MatchID,
-                        principalTable: "Matches",
-                        principalColumn: "MatchID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_MatchReferees_Referees_RefereeID",
-                        column: x => x.RefereeID,
-                        principalTable: "Referees",
-                        principalColumn: "RefereeID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -269,6 +248,30 @@ namespace Infrastructure.Migrations
                         principalTable: "Players",
                         principalColumn: "PlayerID",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MatchReferees",
+                columns: table => new
+                {
+                    MatchID = table.Column<int>(type: "int", nullable: false),
+                    RefereeID = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchReferees", x => new { x.MatchID, x.RefereeID });
+                    table.ForeignKey(
+                        name: "FK_MatchReferees_Matches_MatchID",
+                        column: x => x.MatchID,
+                        principalTable: "Matches",
+                        principalColumn: "MatchID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchReferees_Referees_RefereeID",
+                        column: x => x.RefereeID,
+                        principalTable: "Referees",
+                        principalColumn: "RefereeID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -334,16 +337,6 @@ namespace Infrastructure.Migrations
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Players_TeamID",
-                table: "Players",
-                column: "TeamID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Players_UserID",
-                table: "Players",
-                column: "UserID");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PlayerStatistics_MatchID",
                 table: "PlayerStatistics",
                 column: "MatchID");
@@ -364,14 +357,19 @@ namespace Infrastructure.Migrations
                 column: "TeamID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TeamLeagues_LeagueID",
-                table: "TeamLeagues",
-                column: "LeagueID");
+                name: "IX_TeamPlayers_PlayerID",
+                table: "TeamPlayers",
+                column: "PlayerID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Teams_CoachID",
+                name: "IX_Teams_CoachPlayerID",
                 table: "Teams",
-                column: "CoachID");
+                column: "CoachPlayerID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Teams_LeagueID",
+                table: "Teams",
+                column: "LeagueID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
@@ -399,25 +397,25 @@ namespace Infrastructure.Migrations
                 name: "Standings");
 
             migrationBuilder.DropTable(
-                name: "TeamLeagues");
+                name: "TeamPlayers");
 
             migrationBuilder.DropTable(
                 name: "Referees");
 
             migrationBuilder.DropTable(
+                name: "Users");
+
+            migrationBuilder.DropTable(
                 name: "Matches");
-
-            migrationBuilder.DropTable(
-                name: "Players");
-
-            migrationBuilder.DropTable(
-                name: "Leagues");
 
             migrationBuilder.DropTable(
                 name: "Teams");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Leagues");
+
+            migrationBuilder.DropTable(
+                name: "Players");
         }
     }
 }
