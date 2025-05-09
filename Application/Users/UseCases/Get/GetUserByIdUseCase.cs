@@ -8,22 +8,13 @@ namespace Application.Users.UseCases.Get
 {
     public class GetUserByIdUseCase
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IUserRepository _repo;
+        public GetUserByIdUseCase(IUserRepository repo) => _repo = repo;
 
-        public GetUserByIdUseCase(IUserRepository userRepository)
+        public async Task<UserResponseDTO?> ExecuteAsync(int id)
         {
-            _userRepository = userRepository;
-        }
-
-        /// <summary>
-        /// Get User By Id Case
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public async Task<UserResponseDTO?> ExecuteAsync(int userId)
-        {
-            var user = await _userRepository.GetByIdAsync(new UserID(userId));
-            return user != null ? UserMapper.ToResponseDTO(user) : null;
+            var user = await _repo.GetByIdAsync(new UserID(id));
+            return user is null ? null : user.ToDTO();
         }
     }
 }

@@ -7,105 +7,179 @@ using System.Reflection.Metadata;
 
 namespace API3.Controllers.TeamPlayers
 {
-    [Route("api/team-players")]
+    [Route("api/[controller]")]
     [ApiController]
     public class TeamPlayerController : ControllerBase
     {
-        private readonly GeneralTeamPlayerUseCaseHandler _useCaseHandler;
+        private readonly ILogger<TeamPlayerController> _logger;
+        private readonly TeamPlayerUseCaseHandler _handler;
 
-        public TeamPlayerController(GeneralTeamPlayerUseCaseHandler useCaseHandler)
+        public TeamPlayerController(
+            ILogger<TeamPlayerController> logger,
+            TeamPlayerUseCaseHandler handler)
         {
-            _useCaseHandler = useCaseHandler;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _handler = handler ?? throw new ArgumentNullException(nameof(handler));
         }
 
         /// <summary>
-        /// Add Player to Team
+        /// Añade un jugador a un equipo
         /// </summary>
-        /// <param name="teamPlayerDTO"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<IActionResult> AddPlayerToTeam([FromBody] TeamPlayerRequestDTO teamPlayerDTO)
+        [HttpPost("crear")]
+        public async Task<IActionResult> AddPlayerToTeam([FromBody] TeamPlayerRequestDTO dto)
         {
-            if (teamPlayerDTO == null) return BadRequest("TeamPlayer data is required.");
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de añadir jugador con datos nulos");
+                return BadRequest("Datos de TeamPlayer inválidos");
+            }
 
-            var result = await _useCaseHandler.AddAsync(teamPlayerDTO);
-            return CreatedAtAction(nameof(GetByIds), new { teamId = result.TeamID, playerId = result.PlayerID }, result);
+            try
+            {
+                var result = await _handler.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetByIds), new { teamId = result.TeamID, playerId = result.PlayerID }, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al añadir jugador al equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get Player by Team and Player Id
+        /// Obtiene la relación equipo-jugador por IDs
         /// </summary>
-        /// <param name="teamId"></param>
-        /// <param name="playerId"></param>
-        /// <returns></returns>
         [HttpGet("{teamId}/{playerId}")]
         public async Task<IActionResult> GetByIds(int teamId, int playerId)
         {
-            var result = await _useCaseHandler.GetByIdsAsync(teamId, playerId);
-            if (result == null) return NotFound();
-            return Ok(result);
+            try
+            {
+                var item = await _handler.GetByIdsAsync(teamId, playerId);
+                if (item == null)
+                {
+                    _logger.LogWarning($"No encontrada relación para TeamID {teamId} y PlayerID {playerId}");
+                    return NotFound($"Relación para TeamID {teamId} y PlayerID {playerId} no encontrada");
+                }
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener relación equipo-jugador");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get All Players in a Team
+        /// Obtiene todos los jugadores de un equipo
         /// </summary>
-        /// <param name="teamId"></param>
-        /// <returns></returns>
-        [HttpGet("team/{teamId}")]
-        public async Task<IActionResult> GetByTeamId(int teamId)
+        [HttpGet("por-team/{teamId}")]
+        public async Task<IActionResult> GetByTeam(int teamId)
         {
-            var result = await _useCaseHandler.GetByTeamIdAsync(teamId);
-            return Ok(result);
+            try
+            {
+                var list = await _handler.GetByTeamAsync(teamId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener jugadores por equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get All Teams for a Player
+        /// Obtiene todos los equipos de un jugador
         /// </summary>
-        /// <param name="playerId"></param>
-        /// <returns></returns>
-        [HttpGet("player/{playerId}")]
-        public async Task<IActionResult> GetByPlayerId(int playerId)
+        [HttpGet("por-player/{playerId}")]
+        public async Task<IActionResult> GetByPlayer(int playerId)
         {
-            var result = await _useCaseHandler.GetByPlayerIdAsync(playerId);
-            return Ok(result);
+            try
+            {
+                var list = await _handler.GetByPlayerAsync(playerId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener equipos por jugador");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Update Player in Team
+        /// Actualiza la relación jugador-equipo
         /// </summary>
-        /// <param name="teamId"></param>
-        /// <param name="playerId"></param>
-        /// <param name="teamPlayerDTO"></param>
-        /// <returns></returns>
-        [HttpPut("{teamId}/{playerId}")]
-        public async Task<IActionResult> UpdatePlayerInTeam(int teamId, int playerId, [FromBody] TeamPlayerRequestDTO teamPlayerDTO)
+        [HttpPut("actualizar/{teamId}/{playerId}")]
+        public async Task<IActionResult> UpdatePlayerInTeam(int teamId, int playerId, [FromBody] TeamPlayerRequestDTO dto)
         {
-            if (teamPlayerDTO == null) return BadRequest("TeamPlayer data is required.");
+            if (dto == null || dto.TeamID != teamId || dto.PlayerID != playerId)
+            {
+                _logger.LogWarning("ID en ruta no coincide o datos nulos");
+                return BadRequest("IDs no coinciden o datos inválidos");
+            }
 
-            await _useCaseHandler.UpdateAsync(teamPlayerDTO, teamId, playerId);
-            return NoContent();
+            try
+            {
+                var updated = await _handler.UpdateAsync(dto);
+                if (updated == null)
+                {
+                    _logger.LogWarning($"Relación con TeamID {teamId} y PlayerID {playerId} no encontrada");
+                    return NotFound($"Relación con TeamID {teamId} y PlayerID {playerId} no encontrada");
+                }
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al actualizar relación");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar relación equipo-jugador");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Delete Player from Team
+        /// Elimina la relación jugador-equipo
         /// </summary>
-        /// <param name="teamId"></param>
-        /// <param name="playerId"></param>
-        /// <returns></returns>
-        [HttpPost("scrape/{teamId}")]
-        public async Task<IActionResult> ScrapeRelations(int teamId)
+        [HttpDelete("eliminar/{teamId}/{playerId}")]
+        public async Task<IActionResult> Delete(int teamId, int playerId)
         {
-            await _useCaseHandler.ScrapeAsync(teamId);
-            return Ok("Relaciones equipo-jugador creadas correctamente.");
+            try
+            {
+                var ok = await _handler.DeleteAsync(teamId, playerId);
+                if (!ok)
+                {
+                    _logger.LogWarning($"No pudo eliminarse relación para TeamID {teamId} y PlayerID {playerId}");
+                    return NotFound($"Relación para TeamID {teamId} y PlayerID {playerId} no encontrada");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar relación equipo-jugador");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-
-        [HttpGet("roster/{teamId}")]
-        public async Task<IActionResult> GetRoster(int teamId)
+        [HttpPost("vincular-masivo/{teamId}")]
+        public async Task<IActionResult> LinkPlayersToTeam(int teamId)
         {
-            var dto = await _useCaseHandler.GetRosterAsync(teamId);
-            if (dto.TeamId == 0) return NotFound($"No existe equipo con ID {teamId}");
-            return Ok(dto);
+            try
+            {
+                var count = await _handler.LinkPlayersToTeamAsync(teamId);
+                return Ok($"✅ Se vincularon {count} jugadores al equipo {teamId}.");
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al vincular jugadores");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
     }
 }

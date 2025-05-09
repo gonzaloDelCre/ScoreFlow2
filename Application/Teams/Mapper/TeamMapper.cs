@@ -5,57 +5,34 @@ using Domain.Shared;
 
 namespace Application.Teams.Mapper
 {
-    public class TeamMapper
+    public static class TeamMapper
     {
-        public TeamResponseDTO MapToDTO(Team team)
-        {
-            if (team == null)
-                throw new ArgumentNullException(nameof(team), "La entidad de dominio Team no puede ser nula.");
-
-            return new TeamResponseDTO
+        public static TeamResponseDTO ToDTO(this Team t)
+            => new TeamResponseDTO
             {
-                TeamID = team.TeamID.Value,
-                TeamName = team.Name.Value,
-                LogoUrl = team.Logo,
-                PlayerIds = team.Players?.Select(p => p.PlayerID.Value).ToList() ?? new List<int>(),
-                Category = team.Category,
-                Club = team.Club,
-                Stadium = team.Stadium
+                ID = t.TeamID.Value,
+                ExternalID = t.ExternalID,
+                Name = t.Name.Value,
+                LogoUrl = t.Logo.Value,
+                Category = t.Category,
+                Club = t.Club,
+                Stadium = t.Stadium,
+                CoachPlayerID = t.Coach?.PlayerID.Value,
+                CoachName = t.Coach?.Name.Value,
+                CreatedAt = t.CreatedAt
             };
-        }
 
-        public Team MapToDomain(TeamRequestDTO teamDTO, Team? existingTeam = null)
-        {
-            if (teamDTO == null)
-                throw new ArgumentNullException(nameof(teamDTO), "El DTO TeamRequestDTO no puede ser nulo.");
-
-            var players = teamDTO.PlayerIds?.Select(id => new Player(new PlayerID(id))).ToList() ?? new List<Player>();
-
-            if (existingTeam != null)
-            {
-                existingTeam.Update(
-                    new TeamName(teamDTO.Name),
-                    teamDTO.Logo,
-                    teamDTO.Category,
-                    teamDTO.Club,
-                    teamDTO.Stadium
-                );
-                return existingTeam;
-            }
-
-            var team = new Team(
-                new TeamID(0),
-                new TeamName(teamDTO.Name),
-                DateTime.UtcNow,
-                teamDTO.Logo
+        public static Team ToDomain(this TeamRequestDTO dto)
+            => new Team(
+                teamID: new TeamID(dto.ID ?? 0),
+                name: new TeamName(dto.Name),
+                logo: new LogoUrl(dto.LogoUrl),
+                createdAt: default,
+                category: dto.Category,
+                club: dto.Club,
+                stadium: dto.Stadium,
+                externalID: dto.ExternalID,
+                coach: null!
             );
-
-            team.SetCategory(teamDTO.Category);
-            team.SetClub(teamDTO.Club);
-            team.SetStadium(teamDTO.Stadium);
-
-            return team;
-
-        }
     }
 }

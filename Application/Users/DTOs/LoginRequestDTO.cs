@@ -8,8 +8,7 @@ namespace Application.Users.DTOs
 {
     public class LoginRequestDTO
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public string Email { get; set; } = null!;
+        public string PasswordHash { get; set; } = null!;
     }
-
 }

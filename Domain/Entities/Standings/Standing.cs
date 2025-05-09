@@ -7,6 +7,17 @@ namespace Domain.Entities.Standings
 {
     public class Standing
     {
+        private StandingID standingID;
+        private LeagueID leagueId;
+        private TeamID teamID;
+        private Points points;
+        private MatchesPlayed matchesPlayed;
+        private Wins wins;
+        private Draws draws;
+        private Losses losses;
+        private GoalDifference goalDifference;
+        private DateTime utcNow;
+
         public StandingID StandingID { get; private set; }
         public LeagueID LeagueID { get; private set; }
         public TeamID TeamID { get; private set; }
@@ -52,6 +63,20 @@ namespace Domain.Entities.Standings
         }
         protected Standing() { }
 
+        public Standing(StandingID standingID, LeagueID leagueId, TeamID teamID, Points points, MatchesPlayed matchesPlayed, Wins wins, Draws draws, Losses losses, GoalDifference goalDifference, DateTime utcNow)
+        {
+            this.standingID = standingID;
+            this.leagueId = leagueId;
+            this.teamID = teamID;
+            this.points = points;
+            this.matchesPlayed = matchesPlayed;
+            this.wins = wins;
+            this.draws = draws;
+            this.losses = losses;
+            this.goalDifference = goalDifference;
+            this.utcNow = utcNow;
+        }
+
         public void Update(
             Points points,
             MatchesPlayed matchesPlayed,
@@ -78,5 +103,48 @@ namespace Domain.Entities.Standings
             Losses = new Losses(Losses.Value + (scored < conceded ? 1 : 0));
             GoalDifference = new GoalDifference(GoalDifference.Value + (scored - conceded));
         }
+
+        public void UpdatePoints(Points points)
+        {
+            if (points == null)
+                throw new ArgumentNullException(nameof(points));
+            Points = points;
+        }
+
+        public void UpdateMatchesPlayed(MatchesPlayed matchesPlayed)
+        {
+            if (matchesPlayed == null)
+                throw new ArgumentNullException(nameof(matchesPlayed));
+            MatchesPlayed = matchesPlayed;
+        }
+
+        public void UpdateWins(Wins wins)
+        {
+            if (wins == null)
+                throw new ArgumentNullException(nameof(wins));
+            Wins = wins;
+        }
+
+        public void UpdateDraws(Draws draws)
+        {
+            if (draws == null)
+                throw new ArgumentNullException(nameof(draws));
+            Draws = draws;
+        }
+
+        public void UpdateLosses(Losses losses)
+        {
+            if (losses == null)
+                throw new ArgumentNullException(nameof(losses));
+            Losses = losses;
+        }
+
+        public void UpdateGoalDifference(GoalDifference goalDifference)
+        {
+            if (goalDifference == null)
+                throw new ArgumentNullException(nameof(goalDifference));
+            GoalDifference = goalDifference;
+        }
+
     }
 }

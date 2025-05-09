@@ -1,4 +1,5 @@
 ﻿using Application.Teams.DTOs;
+using Application.Teams.Mapper;
 using Domain.Ports.Teams;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,28 +8,13 @@ namespace Application.Teams.UseCases.Get
 {
     public class GetAllTeamsUseCase
     {
-        private readonly ITeamRepository _teamRepository;
-
-        public GetAllTeamsUseCase(ITeamRepository teamRepository)
-        {
-            _teamRepository = teamRepository;
-        }
+        private readonly ITeamRepository _repo;
+        public GetAllTeamsUseCase(ITeamRepository repo) => _repo = repo;
 
         public async Task<List<TeamResponseDTO>> ExecuteAsync()
         {
-            var teams = await _teamRepository.GetAllAsync();
-
-            return teams.Select(team => new TeamResponseDTO
-            {
-                TeamID = team.TeamID.Value,
-                TeamName = team.Name.Value,
-                PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
-                LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt,
-                Category = team.Category,
-                Club = team.Club,
-                Stadium = team.Stadium
-            }).ToList();
+            var list = await _repo.GetAllAsync();
+            return list.Select(t => t.ToDTO()).ToList();
         }
     }
 }

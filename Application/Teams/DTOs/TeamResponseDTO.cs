@@ -2,13 +2,15 @@
 {
     public class TeamResponseDTO
     {
-        public int TeamID { get; set; }
-        public string TeamName { get; set; }
-        public List<int> PlayerIds { get; set; } = new List<int>();
-        public string LogoUrl { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public int ID { get; set; }
+        public string? ExternalID { get; set; }
+        public string Name { get; set; } = null!;
+        public string LogoUrl { get; set; } = null!;
         public string? Category { get; set; }
-        public string? Stadium { get; set; }
         public string? Club { get; set; }
+        public string? Stadium { get; set; }
+        public int? CoachPlayerID { get; set; }
+        public string? CoachName { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

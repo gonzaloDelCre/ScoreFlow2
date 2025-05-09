@@ -1,4 +1,5 @@
-﻿namespace Domain.Shared
+﻿
+namespace Domain.Shared
 {
     public class UserID
     {
@@ -7,6 +8,11 @@
         public UserID(int value)
         {
             Value = value;
+        }
+
+        public static UserID New()
+        {
+            throw new NotImplementedException();
         }
     }
 }

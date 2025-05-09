@@ -51,6 +51,12 @@ namespace Domain.Entities.Teams
 
         protected Team() { }
 
+        public Team(TeamID teamID)
+        {
+            TeamID = teamID;
+           
+        }
+
         public void UpdateInfo(
             TeamName? name = null,
             LogoUrl? logo = null,
@@ -85,5 +91,41 @@ namespace Domain.Entities.Teams
             if (s == null) throw new ArgumentNullException(nameof(s));
             if (!standings.Contains(s)) standings.Add(s);
         }
+
+        public void UpdateName(TeamName teamName)
+        {
+            if (teamName == null)
+                throw new ArgumentNullException(nameof(teamName));
+            Name = teamName;
+        }
+
+        public void UpdateLogo(LogoUrl logoUrl)
+        {
+            if (logoUrl == null)
+                throw new ArgumentNullException(nameof(logoUrl));
+            Logo = logoUrl;
+        }
+
+        public void SetCategory(string category)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                throw new ArgumentException("La categoría no puede estar vacía.", nameof(category));
+            Category = category.Trim();
+        }
+
+        public void SetClub(string club)
+        {
+            if (string.IsNullOrWhiteSpace(club))
+                throw new ArgumentException("El club no puede estar vacío.", nameof(club));
+            Club = club.Trim();
+        }
+
+        public void SetStadium(string stadium)
+        {
+            if (string.IsNullOrWhiteSpace(stadium))
+                throw new ArgumentException("El estadio no puede estar vacío.", nameof(stadium));
+            Stadium = stadium.Trim();
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Services.Scraping.Players.Services;
+﻿using Infrastructure.Services.Scraping.Leagues.Services;
+using Infrastructure.Services.Scraping.Players.Services;
 using Infrastructure.Services.Scraping.Teams.Services;
 using System;
 using System.Collections.Generic;
@@ -12,11 +13,13 @@ namespace Infrastructure.Services.Scraping
     {
         public TeamScraperService Teams { get; }
         public PlayerScraperService Players { get; }
+        public LeagueScraperService Leagues { get; }
 
         public ScrapingService(HttpClient client)
         {
             Teams = new TeamScraperService(client);
             Players = new PlayerScraperService(client);
+            Leagues = new LeagueScraperService(client);
         }
     }
 

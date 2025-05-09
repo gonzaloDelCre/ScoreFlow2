@@ -9,21 +9,13 @@ namespace Application.Users.UseCases.Get
 {
     public class GetAllUsersUseCase
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IUserRepository _repo;
+        public GetAllUsersUseCase(IUserRepository repo) => _repo = repo;
 
-        public GetAllUsersUseCase(IUserRepository userRepository)
+        public async Task<List<UserResponseDTO>> ExecuteAsync()
         {
-            _userRepository = userRepository;
-        }
-
-        /// <summary>
-        /// Get All User Case
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IEnumerable<UserResponseDTO>> ExecuteAsync()
-        {
-            var users = await _userRepository.GetAllAsync();
-            return users?.Select(UserMapper.ToResponseDTO) ?? Enumerable.Empty<UserResponseDTO>();
+            var users = await _repo.GetAllAsync();
+            return users.Select(u => u.ToDTO()).ToList();
         }
     }
 }

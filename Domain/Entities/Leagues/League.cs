@@ -26,11 +26,27 @@ namespace Domain.Entities.Leagues
         {
         }
 
+        public League(LeagueID leagueID, LeagueName name)
+        {
+            LeagueID = leagueID;
+            Name = name;
+        }
+
         public void Update(LeagueName name, string description, DateTime createdAt)
         {
             Name = name;
             Description = description;
             CreatedAt = createdAt;
+        }
+
+        public void UpdateName(LeagueName leagueName)
+        {
+            Name = leagueName;
+        }
+
+        public void UpdateDescription(string description)
+        {
+            Description = description;
         }
     }
 }

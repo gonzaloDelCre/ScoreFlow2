@@ -1,4 +1,5 @@
 ﻿using Application.Teams.DTOs;
+using Application.Teams.Mapper;
 using Domain.Entities.Teams;
 using Domain.Ports.Teams;
 using Domain.Shared;
@@ -8,39 +9,14 @@ namespace Application.Teams.UseCases.Create
 {
     public class CreateTeamUseCase
     {
-        private readonly ITeamRepository _teamRepository;
+        private readonly ITeamRepository _repo;
+        public CreateTeamUseCase(ITeamRepository repo) => _repo = repo;
 
-        public CreateTeamUseCase(ITeamRepository teamRepository)
+        public async Task<TeamResponseDTO> ExecuteAsync(TeamRequestDTO dto)
         {
-            _teamRepository = teamRepository;
-        }
-
-        public async Task<TeamResponseDTO> ExecuteAsync(TeamRequestDTO teamRequestDTO)
-        {
-            var team = new Team(
-                new TeamID(0),
-                new TeamName(teamRequestDTO.Name),
-                DateTime.UtcNow,
-                teamRequestDTO.Logo
-            );
-
-            team.SetCategory(teamRequestDTO.Category);
-            team.SetClub(teamRequestDTO.Club);
-            team.SetStadium(teamRequestDTO.Stadium);
-
-            await _teamRepository.AddAsync(team);
-
-            return new TeamResponseDTO
-            {
-                TeamID = team.TeamID.Value,
-                TeamName = team.Name.Value,
-                PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
-                LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt,
-                Category = team.Category,
-                Club = team.Club,
-                Stadium = team.Stadium
-            };
+            var team = dto.ToDomain();
+            var created = await _repo.AddAsync(team);
+            return created.ToDTO();
         }
     }
 }

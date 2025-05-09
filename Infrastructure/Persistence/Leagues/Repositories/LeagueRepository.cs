@@ -1,11 +1,15 @@
 ﻿using Domain.Entities.Leagues;
+using Domain.Entities.Standings;
 using Domain.Ports.Leagues;
 using Domain.Shared;
 using Infrastructure.Persistence.Conection;
 using Infrastructure.Persistence.Leagues.Mapper;
+using Infrastructure.Persistence.Standings.Mapper;
+using Infrastructure.Persistence.Teams.Mapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace Infrastructure.Persistence.Leagues.Repositories
 {
@@ -13,179 +17,215 @@ namespace Infrastructure.Persistence.Leagues.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<LeagueRepository> _logger;
-        private readonly LeagueMapper _mapper;
+        private readonly ILeagueMapper _leagueMapper;
+        private readonly IStandingMapper _standingMapper;
+        private readonly ITeamMapper _teamMapper;
 
-        public LeagueRepository(ApplicationDbContext context, ILogger<LeagueRepository> logger, LeagueMapper mapper)
+        public LeagueRepository(
+            ApplicationDbContext context,
+            ILogger<LeagueRepository> logger,
+            ILeagueMapper leagueMapper,
+            IStandingMapper standingMapper,
+            ITeamMapper teamMapper)
         {
             _context = context;
             _logger = logger;
-            _mapper = mapper;
+            _leagueMapper = leagueMapper;
+            _standingMapper = standingMapper;
+            _teamMapper = teamMapper;
         }
 
         /// <summary>
-        /// Get all leagues
+        /// Obtiene una liga por su ID
         /// </summary>
-        public async Task<IEnumerable<League>> GetAllAsync()
-        {
-            try
-            {
-                string sql = "SELECT * FROM Leagues";
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql)
-                    .ToListAsync();
-
-                return dbLeagues.Select(dbLeague => _mapper.MapToDomain(dbLeague)).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la lista de ligas");
-                return new List<League>();
-            }
-        }
-
-        /// <summary>
-        /// Get league by ID
-        /// </summary>
+        /// <param name="leagueId">ID de la liga</param>
+        /// <returns>Liga o null si no existe</returns>
         public async Task<League?> GetByIdAsync(LeagueID leagueId)
         {
-            try
-            {
-                string sql = "SELECT * FROM Leagues WHERE LeagueID = @LeagueID";
-                var parameter = new SqlParameter("@LeagueID", leagueId.Value);
+            var entity = await _context.Leagues
+                .FromSqlRaw("SELECT * FROM Leagues WHERE ID = @ID", new SqlParameter("@ID", leagueId.Value))
+                .FirstOrDefaultAsync();
 
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbLeague = dbLeagues.FirstOrDefault();
-                return dbLeague != null ? _mapper.MapToDomain(dbLeague) : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la liga con ID {LeagueID}", leagueId.Value);
-                return null;
-            }
+            return entity == null
+                ? null
+                : _leagueMapper.MapToDomain(entity);
         }
 
         /// <summary>
-        /// Get league by Name
+        /// Obtiene todas las ligas
         /// </summary>
+        /// <returns>Lista de ligas</returns>
+        public async Task<IEnumerable<League>> GetAllAsync()
+        {
+            var entities = await _context.Leagues
+                .FromSqlRaw("SELECT * FROM Leagues")
+                .ToListAsync();
+
+            return entities.Select(e => _leagueMapper.MapToDomain(e));
+        }
+
+        /// <summary>
+        /// Obtiene una liga por su nombre
+        /// </summary>
+        /// <param name="name">Nombre de la liga</param>
+        /// <returns>Liga o null si no existe</returns>
         public async Task<League?> GetByNameAsync(string name)
         {
-            try
-            {
-                // Realiza la consulta para obtener una liga por su nombre
-                string sql = "SELECT * FROM Leagues WHERE Name = @Name";
-                var parameter = new SqlParameter("@Name", name);
+            var entity = await _context.Leagues
+                .FromSqlRaw("SELECT * FROM Leagues WHERE Name = @Name", new SqlParameter("@Name", name))
+                .FirstOrDefaultAsync();
 
-                var dbLeagues = await _context.Leagues
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbLeague = dbLeagues.FirstOrDefault();
-                return dbLeague != null ? _mapper.MapToDomain(dbLeague) : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la liga con nombre {Name}", name);
-                return null;
-            }
+            return entity == null
+                ? null
+                : _leagueMapper.MapToDomain(entity);
         }
 
         /// <summary>
-        /// Add a new league
+        /// Añade una nueva liga
         /// </summary>
+        /// <param name="league">Liga a añadir</param>
+        /// <returns>Liga añadida</returns>
         public async Task<League> AddAsync(League league)
         {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league), "La liga no puede ser null");
+            const string sql = @"
+                INSERT INTO Leagues (Name, Description, CreatedAt)
+                VALUES (@Name, @Description, @CreatedAt)";
 
-            try
+            var parameters = new[]
             {
-                var leagueEntity = _mapper.MapToEntity(league);
+                new SqlParameter("@Name", league.Name.Value),
+                new SqlParameter("@Description", league.Description ?? (object)DBNull.Value),
+                new SqlParameter("@CreatedAt", league.CreatedAt)
+            };
 
-                string insertSql = @"INSERT INTO Leagues (Name, Description, CreatedAt) 
-                                     VALUES (@Name, @Description, @CreatedAt);";
+            await _context.Database.ExecuteSqlRawAsync(sql, parameters);
 
-                var parameters = new[]
-                {
-                    new SqlParameter("@Name", leagueEntity.Name),
-                    new SqlParameter("@Description", leagueEntity.Description ?? (object)DBNull.Value),
-                    new SqlParameter("@CreatedAt", leagueEntity.CreatedAt)
-                };
+            var newId = await _context.Leagues
+                .FromSqlRaw("SELECT TOP 1 * FROM Leagues ORDER BY ID DESC")
+                .Select(l => l.ID)
+                .FirstAsync();
 
-                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
+            var entity = await _context.Leagues
+                .FromSqlRaw("SELECT * FROM Leagues WHERE ID = @ID", new SqlParameter("@ID", newId))
+                .FirstAsync();
 
-                string selectSql = "SELECT TOP 1 LeagueID FROM Leagues ORDER BY LeagueID DESC";
-                var newLeagueId = await _context.Leagues
-                    .FromSqlRaw(selectSql)
-                    .Select(l => l.LeagueID)
-                    .FirstOrDefaultAsync();
-
-                return new League(
-                    new LeagueID(newLeagueId),
-                    league.Name,
-                    league.Description,
-                    league.CreatedAt
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al agregar una nueva liga");
-                throw;
-            }
+            return _leagueMapper.MapToDomain(entity);
         }
 
         /// <summary>
-        /// Update an existing league
+        /// Actualiza una liga existente
         /// </summary>
+        /// <param name="league">Liga con datos actualizados</param>
         public async Task UpdateAsync(League league)
         {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league), "La liga no puede ser null");
+            const string sql = @"
+                UPDATE Leagues
+                SET Name = @Name,
+                    Description = @Description
+                WHERE ID = @ID";
 
-            try
+            var parameters = new[]
             {
-                var leagueEntity = _mapper.MapToEntity(league);
+                new SqlParameter("@ID", league.LeagueID.Value),
+                new SqlParameter("@Name", league.Name.Value),
+                new SqlParameter("@Description", league.Description ?? (object)DBNull.Value)
+            };
 
-                string updateSql = @"UPDATE Leagues 
-                                     SET Name = @Name, Description = @Description, CreatedAt = @CreatedAt
-                                     WHERE LeagueID = @LeagueID";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@LeagueID", leagueEntity.LeagueID),
-                    new SqlParameter("@Name", leagueEntity.Name),
-                    new SqlParameter("@Description", leagueEntity.Description ?? (object)DBNull.Value),
-                    new SqlParameter("@CreatedAt", leagueEntity.CreatedAt)
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar la liga con ID {LeagueID}", league.LeagueID.Value);
-                throw;
-            }
+            await _context.Database.ExecuteSqlRawAsync(sql, parameters);
         }
 
         /// <summary>
-        /// Delete a league by ID
+        /// Elimina una liga por su ID
         /// </summary>
+        /// <param name="leagueId">ID de la liga</param>
+        /// <returns>true si la liga fue eliminada</returns>
         public async Task<bool> DeleteAsync(LeagueID leagueId)
         {
-            try
-            {
-                string sql = "DELETE FROM Leagues WHERE LeagueID = @LeagueID";
-                var parameter = new SqlParameter("@LeagueID", leagueId.Value);
+            const string sql = "DELETE FROM Leagues WHERE ID = @ID";
 
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
-                return rowsAffected > 0;
-            }
-            catch (Exception ex)
+            var rows = await _context.Database
+                .ExecuteSqlRawAsync(sql, new SqlParameter("@ID", leagueId.Value));
+
+            return rows > 0;
+        }
+
+        /// <summary>
+        /// Obtiene la clasificación de una liga
+        /// </summary>
+        /// <param name="leagueId">ID de la liga</param>
+        /// <returns>Lista de clasificaciones</returns>
+        public async Task<IEnumerable<Standing>> GetStandingsAsync(LeagueID leagueId)
+        {
+            var standings = await _context.Standings
+                .FromSqlRaw("SELECT * FROM Standings WHERE LeagueID = @LeagueID",
+                    new SqlParameter("@LeagueID", leagueId.Value))
+                .Include(s => s.Team)
+                .ToListAsync();
+
+            var league = await GetByIdAsync(leagueId);
+            if (league == null)
+                return Enumerable.Empty<Standing>();
+
+            return standings.Select(s => _standingMapper.MapToDomain(
+                s,
+                league,
+                _teamMapper.ToDomain(s.Team, Enumerable.Empty<Domain.Entities.Players.Player>(), Enumerable.Empty<Standing>())
+            ));
+        }
+
+        /// <summary>
+        /// Actualiza la clasificación de una liga
+        /// </summary>
+        /// <param name="leagueId">ID de la liga</param>
+        /// <param name="standings">Clasificaciones actualizadas</param>
+        public async Task UpdateStandingsAsync(LeagueID leagueId, IEnumerable<Standing> standings)
+        {
+            foreach (var standing in standings)
             {
-                _logger.LogError(ex, "Error al eliminar la liga con ID {LeagueID}", leagueId.Value);
-                return false;
+                const string sql = @"
+                    UPDATE Standings
+                    SET Points = @Points,
+                        Wins = @Wins,
+                        Draws = @Draws,
+                        Losses = @Losses,
+                        GoalDifference = @GoalDifference
+                    WHERE ID = @ID AND LeagueID = @LeagueID AND TeamID = @TeamID";
+
+                var parameters = new[]
+                {
+                    new SqlParameter("@ID", standing.StandingID.Value),
+                    new SqlParameter("@LeagueID", leagueId.Value),
+                    new SqlParameter("@TeamID", standing.TeamID.Value),
+                    new SqlParameter("@Points", standing.Points.Value),
+                    new SqlParameter("@Wins", standing.Wins.Value),
+                    new SqlParameter("@Draws", standing.Draws.Value),
+                    new SqlParameter("@Losses", standing.Losses.Value),
+                    new SqlParameter("@GoalDifference", standing.GoalDifference.Value)
+                };
+
+                var rows = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
+
+                // Si no existe, lo insertamos
+                if (rows == 0)
+                {
+                    const string insertSql = @"
+                        INSERT INTO Standings (LeagueID, TeamID, Points, Wins, Draws, Losses, GoalDifference, CreatedAt)
+                        VALUES (@LeagueID, @TeamID, @Points, @Wins, @Draws, @Losses, @GoalDifference, @CreatedAt)";
+
+                    var insertParameters = new[]
+                    {
+                        new SqlParameter("@LeagueID", leagueId.Value),
+                        new SqlParameter("@TeamID", standing.TeamID.Value),
+                        new SqlParameter("@Points", standing.Points.Value),
+                        new SqlParameter("@Wins", standing.Wins.Value),
+                        new SqlParameter("@Draws", standing.Draws.Value),
+                        new SqlParameter("@Losses", standing.Losses.Value),
+                        new SqlParameter("@GoalDifference", standing.GoalDifference.Value),
+                        new SqlParameter("@CreatedAt", DateTime.UtcNow)
+                    };
+
+                    await _context.Database.ExecuteSqlRawAsync(insertSql, insertParameters);
+                }
             }
         }
     }

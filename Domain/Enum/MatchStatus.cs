@@ -2,9 +2,9 @@
 {
     public enum MatchStatus
     {
-        Pendiente,
-        Jugando,
-        Suspendido,
+        Finished,
+        InProgress,
+        Scheduled,
         Aplazado
     }
 }

@@ -41,6 +41,11 @@ namespace Domain.Entities.TeamPlayers
 
         protected TeamPlayer() { }
 
+        public TeamPlayer(TeamID teamID, PlayerID playerID, JoinedAt? joinedAt = null, RoleInTeam? roleInTeam = null, Team team = null, Player player = null) : this(teamID, playerID, joinedAt, roleInTeam)
+        {
+        }
+
+
         public void UpdateRole(RoleInTeam? newRole)
             => RoleInTeam = newRole;
 

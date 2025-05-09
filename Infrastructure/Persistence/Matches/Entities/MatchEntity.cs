@@ -4,6 +4,7 @@ using Domain.Enum;
 using Infrastructure.Persistence.Teams.Entities;
 using Infrastructure.Persistence.MatchEvents.Entities;
 using Infrastructure.Persistence.PlayerStatistics.Entities;
+using Infrastructure.Persistence.Leagues.Entities;
 
 namespace Infrastructure.Persistence.Matches.Entities
 {
@@ -26,6 +27,15 @@ namespace Infrastructure.Persistence.Matches.Entities
         public TeamEntity Team2 { get; set; }
 
         [Required]
+        public int LeagueID { get; set; }
+
+        [ForeignKey(nameof(LeagueID))]
+        public LeagueEntity League { get; set; }
+
+        [Required]
+        public int Jornada { get; set; }
+
+        [Required]
         public DateTime DateTime { get; set; }
 
         public int ScoreTeam1 { get; set; } = 0;
@@ -45,4 +55,5 @@ namespace Infrastructure.Persistence.Matches.Entities
 
         public ICollection<PlayerStatisticEntity> PlayerStatistics { get; set; } = new List<PlayerStatisticEntity>();
     }
+
 }

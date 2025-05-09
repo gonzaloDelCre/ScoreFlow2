@@ -3,6 +3,7 @@ using Domain.Entities.MatchEvents;
 using Domain.Entities.PlayerStatistics;
 using Domain.Entities.Teams;
 using Domain.Shared;
+using Domain.Entities.Leagues;
 
 namespace Domain.Entities.Matches
 {
@@ -14,6 +15,11 @@ namespace Domain.Entities.Matches
         public DateTime MatchDate { get; private set; }
         public MatchStatus Status { get; private set; }
         public string Location { get; private set; }
+        public int ScoreTeam1 { get; private set; }
+        public int ScoreTeam2 { get; private set; }
+        public League League { get; private set; }
+        public int Jornada { get; private set; }
+
         public DateTime CreatedAt { get; private set; }
 
         public ICollection<MatchEvent> MatchEvents { get; private set; }
@@ -45,18 +51,38 @@ namespace Domain.Entities.Matches
         protected Match() { }
 
         public void Update(
-            Team team1,
-            Team team2,
-            DateTime matchDate,
-            MatchStatus status,
-            string location)
+                Team team1,
+                Team team2,
+                DateTime matchDate,
+                MatchStatus status,
+                string location,
+                League league,
+                int jornada)
         {
             Team1 = team1;
             Team2 = team2;
             MatchDate = matchDate;
             Status = status;
             Location = location;
+            League = league;
+            Jornada = jornada;
         }
+
+        public Match(
+                MatchID matchID,
+                Team team1,
+                Team team2,
+                DateTime matchDate,
+                MatchStatus status,
+                string location,
+                League league,
+                int jornada)
+        : this(matchID, team1, team2, matchDate, status, location)
+        {
+            League = league ?? throw new ArgumentNullException(nameof(league));
+            Jornada = jornada;
+        }
+
 
         public void AddMatchEvent(MatchEvent ev)
         {
@@ -78,6 +104,15 @@ namespace Domain.Entities.Matches
         {
             PlayerStatistics.Clear();
             foreach (var s in stats) PlayerStatistics.Add(s);
+        }
+
+        public void UpdateScore(int team1, int team2)
+        {
+            if (team1 < 0 || team2 < 0)
+                throw new ArgumentException("El marcador no puede ser negativo.");
+
+            ScoreTeam1 = team1;
+            ScoreTeam2 = team2;
         }
     }
 }

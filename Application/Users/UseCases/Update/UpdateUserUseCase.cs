@@ -2,7 +2,6 @@
 using Application.Users.Mapper;
 using Domain.Entities.Users;
 using Domain.Ports.Users;
-using Domain.Services.Users;
 using Domain.Shared;
 using System;
 using System.Threading.Tasks;
@@ -11,41 +10,27 @@ namespace Application.Users.UseCases.Update
 {
     public class UpdateUserUseCase
     {
-        private readonly IUserRepository _userRepository;
-        private readonly UserService _userService;
+        private readonly IUserRepository _repo;
+        public UpdateUserUseCase(IUserRepository repo) => _repo = repo;
 
-        public UpdateUserUseCase(IUserRepository userRepository, UserService userService)
+        public async Task<UserResponseDTO?> ExecuteAsync(UserRequestDTO dto)
         {
-            _userRepository = userRepository;
-            _userService = userService;
-        }
+            if (!dto.ID.HasValue)
+                throw new ArgumentException("El ID es obligatorio");
 
-        /// <summary>
-        /// Update User Case
-        /// </summary>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InvalidOperationException"></exception>
-        public async Task<UserResponseDTO> ExecuteAsync(UserRequestDTO userDTO)
-        {
-            if (userDTO == null || !userDTO.UserID.HasValue)
-                throw new ArgumentNullException(nameof(userDTO), "Los detalles del usuario no pueden ser nulos.");
+            var existing = await _repo.GetByIdAsync(new UserID(dto.ID.Value));
+            if (existing == null) return null;
 
-            var existingUser = await _userRepository.GetByIdAsync(new UserID(userDTO.UserID.Value));
-            if (existingUser == null)
-                throw new InvalidOperationException("El usuario no existe. No se puede actualizar.");
-
-            existingUser.Update(
-                new UserFullName(userDTO.FullName),
-                new UserEmail(userDTO.Email),
-                new UserPasswordHash(userDTO.PasswordHash)
+            existing.Update(
+                fullName: new UserFullName(dto.FullName),
+                email: new UserEmail(dto.Email),
+                passwordHash: new UserPasswordHash(dto.PasswordHash),
+                role: dto.Role
             );
 
-            await _userRepository.UpdateAsync(existingUser);
-            return UserMapper.ToResponseDTO(existingUser);
+            await _repo.UpdateAsync(existing);
+            var updated = await _repo.GetByIdAsync(new UserID(dto.ID.Value));
+            return updated?.ToDTO();
         }
-
-
     }
 }

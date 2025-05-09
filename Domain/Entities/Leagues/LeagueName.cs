@@ -18,8 +18,7 @@ namespace Domain.Entities.Leagues
             if (value.Length > 100)
                 throw new ArgumentException("El nombre de la liga no puede superar los 100 caracteres.", nameof(value));
 
-            if (!ValidNameRegex.IsMatch(value))
-                throw new ArgumentException("El nombre de la liga solo puede contener letras, números y espacios.", nameof(value));
+            
 
             Value = value;
         }

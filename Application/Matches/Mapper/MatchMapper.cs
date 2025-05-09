@@ -1,5 +1,7 @@
 ﻿using Application.Matches.DTOs;
+using Domain.Entities.Leagues;
 using Domain.Entities.Matches;
+using Domain.Entities.Teams;
 using Domain.Enum;
 using Domain.Ports.Teams;
 using Domain.Shared;
@@ -7,54 +9,46 @@ using System;
 
 namespace Application.Matches.Mapper
 {
-    public class MatchMapper
+    public static class MatchMapper
     {
-        public MatchResponseDTO MapToDTO(Match match)
-        {
-            if (match == null)
-                throw new ArgumentNullException(nameof(match), "La entidad de dominio Match no puede ser nula.");
-
-            return new MatchResponseDTO
+        public static MatchResponseDTO ToDTO(this Match m)
+            => new MatchResponseDTO
             {
-                MatchID = match.MatchID,
-                Team1 = match.Team1,
-                Team2 = match.Team2,
-                MatchDate = match.MatchDate,
-                Status = match.Status.ToString(),
-                Location = match.Location,
-                CreatedAt = match.CreatedAt
+                ID = m.MatchID.Value,
+                Team1ID = m.Team1.TeamID.Value,
+                Team1Name = m.Team1.Name.Value,
+                Team2ID = m.Team2.TeamID.Value,
+                Team2Name = m.Team2.Name.Value,
+                LeagueID = m.League.LeagueID.Value,    
+                LeagueName = m.League.Name.Value,        
+                Jornada = m.Jornada,                  
+                MatchDate = m.MatchDate,
+                Status = m.Status,
+                Location = m.Location,
+                ScoreTeam1 = m.ScoreTeam1,
+                ScoreTeam2 = m.ScoreTeam2,
+                CreatedAt = m.CreatedAt
             };
-        }
 
-        public async Task<Match> MapToDomainAsync(MatchRequestDTO matchDTO, ITeamRepository teamRepository)
+        public static Match ToDomain(
+            this MatchRequestDTO dto,
+            Team team1,
+            Team team2,
+            League league)                        
         {
-            if (matchDTO == null)
-                throw new ArgumentNullException(nameof(matchDTO), "El DTO MatchRequestDTO no puede ser nulo.");
-
-            var team1 = await teamRepository.GetByIdAsync(new TeamID(matchDTO.Team1ID));
-            var team2 = await teamRepository.GetByIdAsync(new TeamID(matchDTO.Team2ID));
-
-            if (team1 == null || team2 == null)
-                throw new InvalidOperationException("Uno o ambos equipos no existen.");
-
-            MatchStatus status;
-            try
-            {
-                status = Enum.Parse<MatchStatus>(matchDTO.Status);
-            }
-            catch (ArgumentException)
-            {
-                throw new InvalidOperationException($"El valor de status '{matchDTO.Status}' no es válido.");
-            }
-
-            return new Match(
-                new MatchID(matchDTO.MatchID),
-                team1,
-                team2,
-                matchDTO.MatchDate,
-                status,
-                matchDTO.Location ?? string.Empty
+            var match = new Match(
+                matchID: dto.ID.HasValue ? new MatchID(dto.ID.Value) : new MatchID(1),
+                team1: team1,
+                team2: team2,
+                matchDate: dto.MatchDate,
+                status: dto.Status,
+                location: dto.Location,
+                league: league,                 
+                jornada: dto.Jornada               
             );
+
+            match.UpdateScore(dto.ScoreTeam1, dto.ScoreTeam2);
+            return match;
         }
     }
 }

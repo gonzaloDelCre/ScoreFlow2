@@ -12,53 +12,37 @@ using System.Threading.Tasks;
 
 namespace Application.PlayerStatistics.Mappers
 {
-    public class PlayerStatisticMapper
+    public static class PlayerStatisticMapper
     {
-        public PlayerStatisticResponseDTO MapToDTO(PlayerStatistic playerStatistic)
-        {
-            if (playerStatistic == null)
-                throw new ArgumentNullException(nameof(playerStatistic), "La entidad de dominio PlayerStatistic no puede ser nula.");
-
-            return new PlayerStatisticResponseDTO
+        public static PlayerStatisticResponseDTO ToDTO(this PlayerStatistic s)
+            => new PlayerStatisticResponseDTO
             {
-                PlayerStatisticID = playerStatistic.PlayerStatisticID.Value,
-                MatchID = playerStatistic.MatchID.Value,
-                PlayerID = playerStatistic.PlayerID.Value,
-                Goals = playerStatistic.Goals.Value,
-                Assists = playerStatistic.Assists.Value,
-                YellowCards = playerStatistic.YellowCards.Value,
-                RedCards = playerStatistic.RedCards.Value,
-                MinutesPlayed = playerStatistic.MinutesPlayed,
-                CreatedAt = playerStatistic.CreatedAt
+                ID = s.PlayerStatisticID.Value,
+                MatchID = s.MatchID.Value,
+                PlayerID = s.PlayerID.Value,
+                PlayerName = s.Player.Name.Value,
+                Goals = s.Goals.Value,
+                Assists = s.Assists.Value,
+                YellowCards = s.YellowCards.Value,
+                RedCards = s.RedCards.Value,
+                MinutesPlayed = s.MinutesPlayed,
+                CreatedAt = s.CreatedAt
             };
-        }
 
-        public PlayerStatistic MapToDomain(PlayerStatisticRequestDTO playerStatisticDTO)
+        public static PlayerStatistic ToDomain(this PlayerStatisticRequestDTO dto)
         {
-            if (playerStatisticDTO == null)
-                throw new ArgumentNullException(nameof(playerStatisticDTO), "El DTO PlayerStatisticRequestDTO no puede ser nulo.");
-
-            var playerStatisticID = new PlayerStatisticID(1);  
-            var matchID = new MatchID(playerStatisticDTO.MatchID);
-            var playerID = new PlayerID(playerStatisticDTO.PlayerID);
-            var goals = new Goals(playerStatisticDTO.Goals);
-            var assists = new Assists(playerStatisticDTO.Assists);
-            var yellowCards = new YellowCards(playerStatisticDTO.YellowCards);
-            var redCards = new RedCards(playerStatisticDTO.RedCards);
-            var createdAt = playerStatisticDTO.CreatedAt;
-
             return new PlayerStatistic(
-                playerStatisticID,
-                matchID,
-                playerID,
-                goals,
-                assists,
-                yellowCards,
-                redCards,
-                null,  
-                null, 
-                createdAt,
-                playerStatisticDTO.MinutesPlayed
+                playerStatisticID: new PlayerStatisticID(dto.ID ?? 0),
+                matchID: new MatchID(dto.MatchID),
+                playerID: new PlayerID(dto.PlayerID),
+                goals: new Goals(dto.Goals),
+                assists: new Assists(dto.Assists),
+                yellowCards: new YellowCards(dto.YellowCards),
+                redCards: new RedCards(dto.RedCards),
+                match: null!,
+                player: null!,
+                createdAt: null,
+                minutesPlayed: dto.MinutesPlayed
             );
         }
     }

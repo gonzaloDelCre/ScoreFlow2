@@ -1,185 +1,262 @@
 ﻿using Application.Users.DTOs;
 using Application.Users.UseCases;
-using Application.Users.UseCases.Access;
-using Application.Users.UseCases.Profile;
+using Domain.Enum;
 using Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
 namespace API3.Controllers.Users
 {
-    [Route("api/users")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly GeneralUserUseCaseHandler _useCaseHandler;
+        private readonly ILogger<UserController> _logger;
+        private readonly UserUseCaseHandler _handler;
 
-        public UserController(GeneralUserUseCaseHandler useCaseHandler)
+        public UserController(
+            ILogger<UserController> logger,
+            UserUseCaseHandler handler)
         {
-            _useCaseHandler = useCaseHandler;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _handler = handler ?? throw new ArgumentNullException(nameof(handler));
         }
 
         /// <summary>
-        /// Get All Users
+        /// Obtiene todos los usuarios
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<ActionResult<IEnumerable<UserResponseDTO>>> GetAllUsers()
         {
-            var result = await _useCaseHandler.GetAllUsersAsync();
-            return Ok(result);
+            try
+            {
+                var list = await _handler.GetAllUsersAsync();
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener usuarios");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get User By Id
+        /// Obtiene un usuario por su ID
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetUserById(int id)
+        public async Task<ActionResult<UserResponseDTO>> GetUserById(int id)
         {
-            var result = await _useCaseHandler.GetUserByIdAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            try
+            {
+                var user = await _handler.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogWarning($"Usuario con ID {id} no encontrado");
+                    return NotFound($"Usuario con ID {id} no encontrado");
+                }
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener usuario por ID");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get User By Email
+        /// Obtiene usuarios por rol
         /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
-        [HttpGet("email/{email}")]
-        public async Task<IActionResult> GetUserByEmail(string email)
+        [HttpGet("por-role/{role}")]
+        public async Task<ActionResult<IEnumerable<UserResponseDTO>>> GetUsersByRole(UserRole role)
         {
-            var result = await _useCaseHandler.GetUserByEmailAsync(email);
-            if (result == null) return NotFound();
-            return Ok(result);
+            try
+            {
+                var list = await _handler.GetUsersByRoleAsync(role);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener usuarios por rol");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Create User
+        /// Crea un nuevo usuario
         /// </summary>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserRequestDTO userDTO)
+        [HttpPost("crear")]
+        public async Task<IActionResult> CreateUser([FromBody] UserRequestDTO dto)
         {
-            if (userDTO == null) return BadRequest("User data is required.");
-
-            var result = await _useCaseHandler.CreateUserAsync(userDTO);
-            return CreatedAtAction(nameof(GetUserById), new { id = result.UserID }, result);
-        }
-
-        /// <summary>
-        /// Update User
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDTO userDTO)
-        {
-            if (userDTO == null) return BadRequest("User data is required.");
-
-            var result = await _useCaseHandler.UpdateUserAsync(id, userDTO);
-            return Ok(result);
-        }
-
-        /// <summary>
-        /// Delete User
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            await _useCaseHandler.DeleteUserAsync(id);
-            return NoContent();
-        }
-
-        /// <summary>
-        /// Login User
-        /// </summary>
-        /// <param name="loginRequest"></param>
-        /// <returns></returns>
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
-        {
-            if (loginRequest == null)
-                return BadRequest("Invalid login request.");
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de creación de usuario con datos nulos");
+                return BadRequest("Datos del usuario inválidos");
+            }
 
             try
             {
-                var userResponse = await _useCaseHandler.LoginUserAsync(loginRequest.Email, loginRequest.Password);
-                return Ok(userResponse);
+                var created = await _handler.CreateUserAsync(dto);
+                return CreatedAtAction(nameof(GetUserById), new { id = created.ID }, created);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear usuario");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Registra (sign-up) un usuario
+        /// </summary>
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO dto)
+        {
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de registro con datos nulos");
+                return BadRequest("Datos de registro inválidos");
+            }
+
+            try
+            {
+                var registered = await _handler.RegisterUserAsync(dto);
+                if (registered == null)
+                {
+                    _logger.LogWarning("Registro fallido: email ya existente");
+                    return BadRequest("No se pudo registrar el usuario");
+                }
+                return Ok(registered);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al registrar usuario");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al registrar usuario");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Inicia sesión de usuario
+        /// </summary>
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO dto)
+        {
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de login con datos nulos");
+                return BadRequest("Datos de login inválidos");
+            }
+
+            try
+            {
+                var user = await _handler.LoginUserAsync(dto);
+                if (user == null)
+                {
+                    _logger.LogWarning("Credenciales inválidas");
+                    return Unauthorized("Email o contraseña incorrectos");
+                }
+                return Ok(user);
             }
             catch (UnauthorizedAccessException ex)
             {
+                _logger.LogWarning(ex, "Acceso no autorizado");
                 return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error al iniciar sesión");
+                return StatusCode(500, "Error interno del servidor");
             }
         }
 
         /// <summary>
-        /// Register User
+        /// Actualiza un usuario existente
         /// </summary>
-        /// <param name="registerRequest"></param>
-        /// <returns></returns>
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDTO registerRequest)
+        [HttpPut("actualizar/{id}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDTO dto)
         {
+            if (dto == null || dto.ID != id)
+            {
+                _logger.LogWarning("ID en ruta no coincide o datos nulos");
+                return BadRequest("ID del usuario no coincide o datos inválidos");
+            }
+
             try
             {
-                var userResponse = await _useCaseHandler.RegisterUserAsync(registerRequest);
-                return Ok(userResponse);
+                var updated = await _handler.UpdateUserAsync(dto);
+                if (updated == null)
+                {
+                    _logger.LogWarning($"Usuario con ID {id} no encontrado");
+                    return NotFound($"Usuario con ID {id} no encontrado");
+                }
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al actualizar usuario");
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                _logger.LogError(ex, "Error al actualizar usuario");
+                return StatusCode(500, "Error interno del servidor");
             }
         }
 
         /// <summary>
-        /// Guest Login Access
+        /// Cambia la contraseña de un usuario
         /// </summary>
-        /// <returns></returns>
-        [HttpPost("guest-login")]
-        public async Task<IActionResult> GuestLogin()
+        [HttpPut("change-password/{id}")]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequestDTO dto)
         {
-            var guestUser = await _useCaseHandler.GuestLoginAsync();
-            return Ok(guestUser);
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de cambio de contraseña con datos nulos");
+                return BadRequest("Datos de cambio de contraseña inválidos");
+            }
+
+            try
+            {
+                var ok = await _handler.ChangeUserPasswordAsync(id, dto.CurrentPasswordHash, dto.NewPasswordHash);
+                if (!ok)
+                {
+                    _logger.LogWarning($"Cambio de contraseña inválido para usuario {id}");
+                    return BadRequest("No se pudo cambiar la contraseña");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar contraseña");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get User Profile
+        /// Elimina un usuario por su ID
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpGet("{id}/profile")]
-        public async Task<IActionResult> GetUserProfile(int id)
+        [HttpDelete("eliminar/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            var profile = await _useCaseHandler.GetUserProfileAsync(new UserID(id));
-            if (profile == null) return NotFound();
-            return Ok(profile);
+            try
+            {
+                var ok = await _handler.DeleteUserAsync(id);
+                if (!ok)
+                {
+                    _logger.LogWarning($"Usuario con ID {id} no encontrado o no pudo ser eliminado");
+                    return NotFound($"Usuario con ID {id} no encontrado");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar usuario");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
-
-        /// <summary>
-        /// Update User Profile
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="profileUpdateDTO"></param>
-        /// <returns></returns>
-        [HttpPut("{id}/profile")]
-        public async Task<IActionResult> UpdateUserProfile(int id, [FromBody] UserProfileUpdateDTO profileUpdateDTO)
-        {
-            if (profileUpdateDTO == null) return BadRequest("Profile data is required.");
-
-            var updatedProfile = await _useCaseHandler.UpdateUserProfileAsync(new UserID(id), profileUpdateDTO);
-            return Ok(updatedProfile);
-        }
-
     }
 }

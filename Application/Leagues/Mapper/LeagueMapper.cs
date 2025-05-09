@@ -5,35 +5,23 @@ using System;
 
 namespace Application.Leagues.Mapper
 {
-    public class LeagueMapper
+    public static class LeagueMapper
     {
-        public LeagueResponseDTO MapToDTO(League league)
-        {
-            if (league == null)
-                throw new ArgumentNullException(nameof(league), "La entidad de dominio League no puede ser nula.");
-
-            return new LeagueResponseDTO
+        public static LeagueResponseDTO ToDTO(this League l)
+            => new LeagueResponseDTO
             {
-                LeagueID = league.LeagueID.Value,
-                Name = league.Name.Value,
-                Description = league.Description,
-                CreatedAt = league.CreatedAt
+                ID = l.LeagueID.Value,
+                Name = l.Name.Value,
+                Description = l.Description,
+                CreatedAt = l.CreatedAt
             };
-        }
 
-        public League MapToDomain(LeagueRequestDTO leagueDTO)
-        {
-            if (leagueDTO == null)
-                throw new ArgumentNullException(nameof(leagueDTO), "El DTO LeagueRequestDTO no puede ser nulo.");
-
-            var leagueID = new LeagueID(1);
-
-            return new League(
-                leagueID,
-                new LeagueName(leagueDTO.Name),
-                leagueDTO.Description,
-                leagueDTO.CreatedAt
+        public static League ToDomain(this LeagueRequestDTO dto)
+            => new League(
+                leagueID: new LeagueID(1),  
+                name: new LeagueName(dto.Name),
+                description: dto.Description,
+                createdAt: DateTime.UtcNow
             );
-        }
     }
 }

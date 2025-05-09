@@ -5,6 +5,10 @@ using Infrastructure.Persistence.PlayerStatistics.Mapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Domain.Shared;
+using System;
+using Infrastructure.Persistence.Matches.Mapper;
+using Infrastructure.Persistence.Players.Mapper;
 
 namespace Infrastructure.Persistence.PlayerStatistics.Repositories
 {
@@ -12,134 +16,172 @@ namespace Infrastructure.Persistence.PlayerStatistics.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<PlayerStatisticRepository> _logger;
-        private readonly PlayerStatisticMapper _mapper;
+        private readonly IPlayerStatisticMapper _statMapper;
+        private readonly IPlayerMapper _playerMapper;
+        private readonly IMatchMapper _matchMapper;
 
-        public PlayerStatisticRepository(ApplicationDbContext context, ILogger<PlayerStatisticRepository> logger, PlayerStatisticMapper mapper)
+        public PlayerStatisticRepository(
+            ApplicationDbContext context,
+            ILogger<PlayerStatisticRepository> logger,
+            IPlayerStatisticMapper statMapper,
+            IPlayerMapper playerMapper,
+            IMatchMapper matchMapper)
         {
             _context = context;
             _logger = logger;
-            _mapper = mapper;
+            _statMapper = statMapper;
+            _playerMapper = playerMapper;
+            _matchMapper = matchMapper;
+        }
+
+        public async Task<PlayerStatistic> AddAsync(PlayerStatistic stat)
+        {
+            var e = _statMapper.MapToEntity(stat);
+            const string sql = @"
+                INSERT INTO PlayerStatistics
+                  (ID, PlayerID, MatchID, Goals, Assists, YellowCards, RedCards, MinutesPlayed, CreatedAt)
+                VALUES
+                  (@ID, @PlayerID, @MatchID, @Goals, @Assists, @YC, @RC, @Min, @CreatedAt)";
+            var p = new[]
+            {
+                new SqlParameter("@ID",         e.ID),
+                new SqlParameter("@PlayerID",   e.PlayerID),
+                new SqlParameter("@MatchID",    e.MatchID),
+                new SqlParameter("@Goals",      e.Goals),
+                new SqlParameter("@Assists",    e.Assists),
+                new SqlParameter("@YC",         e.YellowCards),
+                new SqlParameter("@RC",         e.RedCards),
+                new SqlParameter("@Min",        e.MinutesPlayed),
+                new SqlParameter("@CreatedAt",  e.CreatedAt)
+            };
+            await _context.Database.ExecuteSqlRawAsync(sql, p);
+            return stat;
+        }
+
+        public async Task UpdateAsync(PlayerStatistic stat)
+        {
+            var e = _statMapper.MapToEntity(stat);
+            const string sql = @"
+                UPDATE PlayerStatistics
+                SET
+                  Goals        = @Goals,
+                  Assists      = @Assists,
+                  YellowCards  = @YC,
+                  RedCards     = @RC,
+                  MinutesPlayed= @Min
+                WHERE ID = @ID";
+            var p = new[]
+            {
+                new SqlParameter("@ID",    e.ID),
+                new SqlParameter("@Goals", e.Goals),
+                new SqlParameter("@Assists", e.Assists),
+                new SqlParameter("@YC",    e.YellowCards),
+                new SqlParameter("@RC",    e.RedCards),
+                new SqlParameter("@Min",   e.MinutesPlayed)
+            };
+            await _context.Database.ExecuteSqlRawAsync(sql, p);
+        }
+
+        public async Task<bool> DeleteAsync(PlayerStatisticID statId)
+        {
+            const string sql = "DELETE FROM PlayerStatistics WHERE ID = @ID";
+            var rows = await _context.Database.ExecuteSqlRawAsync(
+                sql,
+                new SqlParameter("@ID", statId.Value));
+            return rows > 0;
+        }
+
+        public async Task<PlayerStatistic?> GetByIdAsync(PlayerStatisticID statId)
+        {
+            var entity = await _context.PlayerStatistics
+                .FromSqlRaw("SELECT * FROM PlayerStatistics WHERE ID = @ID", new SqlParameter("@ID", statId.Value))
+                .Include(ps => ps.Player)
+                .Include(ps => ps.Match)
+                .FirstOrDefaultAsync();
+
+            if (entity == null) return null;
+
+            var playerDomain = _playerMapper.ToDomain(
+                entity.Player,
+                await _context.TeamPlayers
+                    .Where(tp => tp.PlayerID == entity.PlayerID)
+                    .ToListAsync()
+            );
+
+            var matchDomain = _matchMapper.ToDomain(entity.Match);
+
+            return _statMapper.MapToDomain(entity, playerDomain, matchDomain);
         }
 
         public async Task<IEnumerable<PlayerStatistic>> GetAllAsync()
         {
-            try
+            var list = await _context.PlayerStatistics
+                .FromSqlRaw("SELECT * FROM PlayerStatistics")
+                .Include(ps => ps.Player)
+                .Include(ps => ps.Match)
+                .ToListAsync();
+
+            return list.Select(entity =>
             {
-                string sql = "SELECT * FROM PlayerStatistics";
-                var dbStats = await _context.PlayerStatistics.FromSqlRaw(sql).ToListAsync();
-                return dbStats.Select(dbStat => _mapper.MapToDomain(dbStat, null, null)).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener las estadísticas de los jugadores");
-                return new List<PlayerStatistic>();
-            }
+                var playerDomain = _playerMapper.ToDomain(
+                    entity.Player,
+                    _context.TeamPlayers
+                        .Where(tp => tp.PlayerID == entity.PlayerID)
+                        .ToList()
+                );
+
+                var matchDomain = _matchMapper.ToDomain(entity.Match);
+
+                return _statMapper.MapToDomain(entity, playerDomain, matchDomain);
+            }).ToList();
         }
 
-        public async Task<PlayerStatistic?> GetByIdAsync(int playerStatisticId)
+        public Task<IEnumerable<PlayerStatistic>> GetByPlayerIdAsync(Domain.Shared.PlayerID playerId)
+            => FilterBySqlAsync(
+                "SELECT * FROM PlayerStatistics WHERE PlayerID = @PID",
+                new SqlParameter("@PID", playerId.Value));
+
+        public Task<IEnumerable<PlayerStatistic>> GetByMatchIdAsync(Domain.Shared.MatchID matchId)
+            => FilterBySqlAsync(
+                "SELECT * FROM PlayerStatistics WHERE MatchID = @MID",
+                new SqlParameter("@MID", matchId.Value));
+
+        public Task<IEnumerable<PlayerStatistic>> GetByGoalsRangeAsync(int minGoals, int maxGoals)
+            => FilterBySqlAsync(
+                "SELECT * FROM PlayerStatistics WHERE Goals BETWEEN @Min AND @Max",
+                new SqlParameter("@Min", minGoals),
+                new SqlParameter("@Max", maxGoals));
+
+        public Task<IEnumerable<PlayerStatistic>> GetByAssistsRangeAsync(int minAssists, int maxAssists)
+            => FilterBySqlAsync(
+                "SELECT * FROM PlayerStatistics WHERE Assists BETWEEN @Min AND @Max",
+                new SqlParameter("@Min", minAssists),
+                new SqlParameter("@Max", maxAssists));
+
+        private async Task<IEnumerable<PlayerStatistic>> FilterBySqlAsync(string sql, params SqlParameter[] ps)
         {
-            try
-            {
-                string sql = "SELECT * FROM PlayerStatistics WHERE StatID = @StatID";
-                var parameter = new SqlParameter("@StatID", playerStatisticId);
-                var dbStats = await _context.PlayerStatistics.FromSqlRaw(sql, parameter).ToListAsync();
-                var dbStat = dbStats.FirstOrDefault();
-                return dbStat != null ? _mapper.MapToDomain(dbStat, null, null) : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la estadística con ID {StatID}", playerStatisticId);
-                return null;
-            }
-        }
+            var list = await _context.PlayerStatistics
+                .FromSqlRaw(sql, ps)
+                .Include(ps => ps.Player)
+                .Include(ps => ps.Match)
+                .ToListAsync();
 
-        public async Task<IEnumerable<PlayerStatistic>> GetByPlayerIdAsync(int playerId)
-        {
-            try
+            var result = new List<PlayerStatistic>();
+            foreach (var entity in list)
             {
-                string sql = "SELECT * FROM PlayerStatistics WHERE PlayerID = @PlayerID";
-                var parameter = new SqlParameter("@PlayerID", playerId);
-                var dbStats = await _context.PlayerStatistics.FromSqlRaw(sql, parameter).ToListAsync();
-                return dbStats.Select(dbStat => _mapper.MapToDomain(dbStat, null, null)).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener estadísticas del jugador con ID {PlayerID}", playerId);
-                return new List<PlayerStatistic>();
-            }
-        }
+                var playerDomain = _playerMapper.ToDomain(
+                    entity.Player,
+                    await _context.TeamPlayers
+                        .Where(tp => tp.PlayerID == entity.PlayerID)
+                        .ToListAsync()
+                );
 
-        public async Task<PlayerStatistic> AddAsync(PlayerStatistic playerStatistic)
-        {
-            try
-            {
-                var statEntity = _mapper.MapToEntity(playerStatistic);
-                string sql = "INSERT INTO PlayerStatistics (PlayerID, MatchID, Goals, Assists, YellowCards, RedCards, MinutesPlayed, CreatedAt) " +
-                             "VALUES (@PlayerID, @MatchID, @Goals, @Assists, @YellowCards, @RedCards, @MinutesPlayed, @CreatedAt);";
+                var matchDomain = _matchMapper.ToDomain(entity.Match);
 
-                var parameters = new[]
-                {
-                    new SqlParameter("@PlayerID", statEntity.PlayerID),
-                    new SqlParameter("@MatchID", statEntity.MatchID),
-                    new SqlParameter("@Goals", statEntity.Goals),
-                    new SqlParameter("@Assists", statEntity.Assists),
-                    new SqlParameter("@YellowCards", statEntity.YellowCards),
-                    new SqlParameter("@RedCards", statEntity.RedCards),
-                    new SqlParameter("@MinutesPlayed", statEntity.MinutesPlayed ?? (object)DBNull.Value),
-                    new SqlParameter("@CreatedAt", statEntity.CreatedAt)
-                };
+                result.Add(_statMapper.MapToDomain(entity, playerDomain, matchDomain));
+            }
 
-                await _context.Database.ExecuteSqlRawAsync(sql, parameters);
-                return playerStatistic;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al agregar una nueva estadística de jugador");
-                throw;
-            }
-        }
-
-        public async Task UpdateAsync(PlayerStatistic playerStatistic)
-        {
-            try
-            {
-                var statEntity = _mapper.MapToEntity(playerStatistic);
-                string sql = "UPDATE PlayerStatistics SET Goals = @Goals, Assists = @Assists, YellowCards = @YellowCards, " +
-                             "RedCards = @RedCards, MinutesPlayed = @MinutesPlayed WHERE StatID = @StatID";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@StatID", statEntity.StatID),
-                    new SqlParameter("@Goals", statEntity.Goals),
-                    new SqlParameter("@Assists", statEntity.Assists),
-                    new SqlParameter("@YellowCards", statEntity.YellowCards),
-                    new SqlParameter("@RedCards", statEntity.RedCards),
-                    new SqlParameter("@MinutesPlayed", statEntity.MinutesPlayed ?? (object)DBNull.Value)
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(sql, parameters);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar la estadística con ID {StatID}", playerStatistic.PlayerStatisticID.Value);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteAsync(int playerStatisticId)
-        {
-            try
-            {
-                string sql = "DELETE FROM PlayerStatistics WHERE StatID = @StatID";
-                var parameter = new SqlParameter("@StatID", playerStatisticId);
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
-                return rowsAffected > 0;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al eliminar la estadística con ID {StatID}", playerStatisticId);
-                return false;
-            }
+            return result;
         }
     }
 }

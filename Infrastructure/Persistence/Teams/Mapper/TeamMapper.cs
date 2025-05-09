@@ -8,6 +8,7 @@ using Infrastructure.Persistence.Players.Entities;
 using Domain.Entities.Standings;
 using Infrastructure.Persistence.Players.Mapper;
 
+
 namespace Infrastructure.Persistence.Teams.Mapper
 {
     public class TeamMapper : ITeamMapper

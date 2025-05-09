@@ -14,9 +14,12 @@ namespace Infrastructure.Persistence.Users.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<UserRepository> _logger;
-        private readonly UserMapper _mapper;
+        private readonly IUserMapper _mapper;
 
-        public UserRepository(ApplicationDbContext context, ILogger<UserRepository> logger, UserMapper mapper)
+        public UserRepository(
+            ApplicationDbContext context,
+            ILogger<UserRepository> logger,
+            IUserMapper mapper)
         {
             _context = context;
             _logger = logger;
@@ -24,214 +27,242 @@ namespace Infrastructure.Persistence.Users.Repositories
         }
 
         /// <summary>
-        /// Get All Users
+        /// Añade un nuevo usuario al sistema
         /// </summary>
-        /// <returns></returns>
-        public async Task<IEnumerable<User>> GetAllAsync()
-        {
-            try
-            {
-                string sql = "SELECT * FROM Users";
-                var dbUsers = await _context.Users
-                    .FromSqlRaw(sql)
-                    .ToListAsync();
-
-                return dbUsers.Select(dbUser => _mapper.MapToDomain(dbUser)).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la lista de usuarios");
-                return new List<User>();
-            }
-        }
-
-        /// <summary>
-        /// Get User By Id
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
-        public async Task<User?> GetByIdAsync(UserID userId)
-        {
-            try
-            {
-                string sql = "SELECT * FROM Users WHERE UserID = @UserID";
-                var parameter = new SqlParameter("@UserID", userId.Value);
-
-                var dbUsers = await _context.Users
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbUser = dbUsers.FirstOrDefault();
-                return dbUser != null ? _mapper.MapToDomain(dbUser) : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener el usuario con ID {UserID}", userId.Value);
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Create User
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
+        /// <param name="user">Usuario a añadir</param>
+        /// <returns>Usuario creado con ID asignado</returns>
         public async Task<User> AddAsync(User user)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user), "El usuario no puede ser null");
+            var entity = _mapper.ToEntity(user);
 
-            try
+            const string sql = @"
+                INSERT INTO Users (FullName, Email, PasswordHash, Role, CreatedAt)
+                VALUES (@FullName, @Email, @PasswordHash, @Role, @CreatedAt)";
+
+            var parameters = new[]
             {
-                var userEntity = _mapper.MapToEntity(user);
+                new SqlParameter("@FullName", entity.FullName),
+                new SqlParameter("@Email", entity.Email),
+                new SqlParameter("@PasswordHash", entity.PasswordHash),
+                new SqlParameter("@Role", entity.Role),
+                new SqlParameter("@CreatedAt", entity.CreatedAt)
+            };
 
-                var role = userEntity.Role != null ? userEntity.Role.ToString() : "Espectador";
+            await _context.Database.ExecuteSqlRawAsync(sql, parameters);
 
-                string insertSql = @"INSERT INTO Users (FullName, Email, PasswordHash, CreatedAt, Role) 
-                             VALUES (@FullName, @Email, @PasswordHash, @CreatedAt, @Role);";
+            var newId = await _context.Users
+                .FromSqlRaw("SELECT TOP 1 * FROM Users ORDER BY UserID DESC")
+                .Select(u => u.UserID)
+                .FirstAsync();
 
-                var parameters = new[]
-                {
-                    new SqlParameter("@FullName", userEntity.FullName),
-                    new SqlParameter("@Email", userEntity.Email),
-                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
-                    new SqlParameter("@CreatedAt", userEntity.CreatedAt),
-                    new SqlParameter("@Role", role)
-                };
+            var newEntity = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WHERE UserID = @UserID", new SqlParameter("@UserID", newId))
+                .FirstAsync();
 
-                await _context.Database.ExecuteSqlRawAsync(insertSql, parameters);
-
-                string selectSql = "SELECT TOP 1 UserID FROM Users ORDER BY UserID DESC";
-                var newUserId = await _context.Users
-                    .FromSqlRaw(selectSql)
-                    .Select(u => u.UserID)
-                    .FirstOrDefaultAsync();
-
-                return new User(
-                    new UserID(newUserId),
-                    user.FullName,
-                    user.Email,
-                    user.PasswordHash,
-                    user.Role,
-                    user.CreatedAt
-                );
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al agregar un nuevo usuario");
-                throw;
-            }
+            return _mapper.ToDomain(newEntity);
         }
 
         /// <summary>
-        /// Delete User
+        /// Autentica un usuario con email y contraseña
         /// </summary>
-        /// <param name="userId"></param>
-        /// <returns></returns>
+        /// <param name="email">Email del usuario</param>
+        /// <param name="passwordHash">Hash de la contraseña</param>
+        /// <returns>Usuario autenticado o null si las credenciales son inválidas</returns>
+        public async Task<User?> AuthenticateAsync(string email, string passwordHash)
+        {
+            var entity = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WHERE Email = @Email AND PasswordHash = @PasswordHash",
+                    new SqlParameter("@Email", email),
+                    new SqlParameter("@PasswordHash", passwordHash))
+                .FirstOrDefaultAsync();
+
+            return entity == null ? null : _mapper.ToDomain(entity);
+        }
+
+        /// <summary>
+        /// Elimina un usuario del sistema
+        /// </summary>
+        /// <param name="userId">ID del usuario a eliminar</param>
+        /// <returns>true si se eliminó, false si no existía</returns>
         public async Task<bool> DeleteAsync(UserID userId)
         {
-            try
-            {
-                string sql = "DELETE FROM Users WHERE UserID = @UserID";
-                var parameter = new SqlParameter("@UserID", userId.Value);
+            const string sql = "DELETE FROM Users WHERE UserID = @UserID";
 
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
-                return rowsAffected > 0;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al eliminar el usuario con ID {UserID}", userId.Value);
-                return false;
-            }
+            var rows = await _context.Database
+                .ExecuteSqlRawAsync(sql, new SqlParameter("@UserID", userId.Value));
+
+            return rows > 0;
         }
 
         /// <summary>
-        /// Update User
+        /// Verifica si existe un usuario con el email especificado
         /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public async Task UpdateAsync(User user)
+        /// <param name="email">Email a verificar</param>
+        /// <returns>true si existe, false si no</returns>
+        public async Task<bool> ExistsByEmailAsync(string email)
         {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user), "El usuario no puede ser null");
+            var count = await _context.Users
+                .FromSqlRaw("SELECT COUNT(1) FROM Users WHERE Email = @Email",
+                    new SqlParameter("@Email", email))
+                .CountAsync();
 
-            try
-            {
-                
-                var userEntity = _mapper.MapToEntity(user);
-
-                string updateSql = @"UPDATE Users 
-                             SET FullName = @FullName, Email = @Email, PasswordHash = @PasswordHash, Role = @Role
-                             WHERE UserID = @UserID";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@UserID", userEntity.UserID),
-                    new SqlParameter("@FullName", userEntity.FullName),
-                    new SqlParameter("@Email", userEntity.Email),
-                    new SqlParameter("@PasswordHash", userEntity.PasswordHash),
-                    new SqlParameter("@Role", userEntity.Role.ToString()) 
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el usuario con ID {UserID}", user.UserID.Value);
-                throw;
-            }
+            return count > 0;
         }
 
+        /// <summary>
+        /// Obtiene todos los usuarios del sistema
+        /// </summary>
+        /// <returns>Lista de usuarios</returns>
+        public async Task<IEnumerable<User>> GetAllAsync()
+        {
+            var entities = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users")
+                .ToListAsync();
+
+            return entities.Select(e => _mapper.ToDomain(e));
+        }
 
         /// <summary>
-        /// Get By Email
+        /// Obtiene un usuario por su email
         /// </summary>
-        /// <param name="email"></param>
-        /// <returns></returns>
+        /// <param name="email">Email del usuario</param>
+        /// <returns>Usuario o null si no existe</returns>
         public async Task<User?> GetByEmailAsync(string email)
         {
-            try
-            {
-                string sql = "SELECT * FROM Users WHERE Email = @Email";
-                var parameter = new SqlParameter("@Email", email);
+            var entity = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WHERE Email = @Email",
+                    new SqlParameter("@Email", email))
+                .FirstOrDefaultAsync();
 
-                var dbUsers = await _context.Users
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbUser = dbUsers.FirstOrDefault();
-                return dbUser != null ? _mapper.MapToDomain(dbUser) : null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener el usuario con correo electrónico {Email}", email);
-                return null;
-            }
+            return entity == null ? null : _mapper.ToDomain(entity);
         }
 
         /// <summary>
-        /// Register User
+        /// Obtiene un usuario por su ID
         /// </summary>
-        /// <param name="fullName"></param>
-        /// <param name="email"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public async Task<User> RegisterAsync(string fullName, string email, string password)
+        /// <param name="userId">ID del usuario</param>
+        /// <returns>Usuario o null si no existe</returns>
+        public async Task<User?> GetByIdAsync(UserID userId)
         {
-            var existingUser = await GetByEmailAsync(email);
-            if (existingUser != null)
+            var entity = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WHERE UserID = @UserID",
+                    new SqlParameter("@UserID", userId.Value))
+                .FirstOrDefaultAsync();
+
+            return entity == null ? null : _mapper.ToDomain(entity);
+        }
+
+        /// <summary>
+        /// Obtiene todos los usuarios con un rol específico
+        /// </summary>
+        /// <param name="role">Rol a filtrar</param>
+        /// <returns>Lista de usuarios con el rol especificado</returns>
+        public async Task<IEnumerable<User>> GetByRoleAsync(UserRole role)
+        {
+            var entities = await _context.Users
+                .FromSqlRaw("SELECT * FROM Users WHERE Role = @Role",
+                    new SqlParameter("@Role", role.ToString()))
+                .ToListAsync();
+
+            return entities.Select(e => _mapper.ToDomain(e));
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un usuario
+        /// </summary>
+        /// <param name="user">Usuario con los datos actualizados</param>
+        public async Task UpdateAsync(User user)
+        {
+            var entity = _mapper.ToEntity(user);
+
+            const string sql = @"
+                UPDATE Users
+                SET FullName = @FullName,
+                    Email = @Email,
+                    PasswordHash = @PasswordHash,
+                    Role = @Role
+                WHERE UserID = @UserID";
+
+            var parameters = new[]
             {
-                throw new InvalidOperationException("El correo electrónico ya está registrado.");
+                new SqlParameter("@UserID", entity.UserID),
+                new SqlParameter("@FullName", entity.FullName),
+                new SqlParameter("@Email", entity.Email),
+                new SqlParameter("@PasswordHash", entity.PasswordHash),
+                new SqlParameter("@Role", entity.Role)
+            };
+
+            await _context.Database.ExecuteSqlRawAsync(sql, parameters);
+        }
+
+        /// <summary>
+        /// Registra un nuevo usuario en el sistema
+        /// </summary>
+        /// <param name="fullName">Nombre completo del usuario</param>
+        /// <param name="email">Email del usuario</param>
+        /// <param name="password">Contraseña sin encriptar</param>
+        /// <param name="role">Rol del usuario (opcional, por defecto User)</param>
+        /// <returns>Usuario registrado con ID asignado o null si el email ya existe</returns>
+        public async Task<User?> RegisterAsync(string fullName, string email, string password, UserRole role = UserRole.Jugador)
+        {
+            if (await ExistsByEmailAsync(email))
+            {
+                _logger.LogWarning("Intento de registro con email ya existente: {Email}", email);
+                return null;
             }
 
-            var user = new User(fullName, email, password, UserRole.Jugador);
+            string passwordHash = HashPassword(password);
+
+            var user = new User(
+                userID: UserID.New(),  
+                fullName: fullName,
+                email: email,
+                passwordHash: passwordHash,
+                role: role,
+                createdAt: DateTime.UtcNow
+            );
 
             return await AddAsync(user);
         }
-        
+
+        /// <summary>
+        /// Autentica un usuario con email y contraseña
+        /// </summary>
+        /// <param name="email">Email del usuario</param>
+        /// <param name="password">Contraseña sin encriptar</param>
+        /// <returns>Usuario autenticado o null si las credenciales son inválidas</returns>
+        public async Task<User?> LoginAsync(string email, string password)
+        {
+            var user = await GetByEmailAsync(email);
+            if (user == null)
+            {
+                _logger.LogWarning("Intento de login con email inexistente: {Email}", email);
+                return null;
+            }
+
+            string passwordHash = HashPassword(password);
+            if (!user.PasswordHash.Equals(passwordHash))
+            {
+                _logger.LogWarning("Intento de login con contraseña incorrecta para: {Email}", email);
+                return null;
+            }
+
+            _logger.LogInformation("Login exitoso para: {Email}", email);
+            return user;
+        }
+
+        /// <summary>
+        /// Método privado para generar el hash de una contraseña
+        /// </summary>
+        /// <param name="password">Contraseña en texto plano</param>
+        /// <returns>Hash de la contraseña</returns>
+        private string HashPassword(string password)
+        {
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
+                return Convert.ToBase64String(hashBytes);
+            }
+        }
     }
 }

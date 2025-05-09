@@ -1,4 +1,5 @@
 ﻿using Application.Teams.DTOs;
+using Application.Teams.Mapper;
 using Domain.Ports.Teams;
 using Domain.Shared;
 using System;
@@ -8,32 +9,13 @@ namespace Application.Teams.UseCases.Get
 {
     public class GetTeamByIdUseCase
     {
-        private readonly ITeamRepository _teamRepository;
+        private readonly ITeamRepository _repo;
+        public GetTeamByIdUseCase(ITeamRepository repo) => _repo = repo;
 
-        public GetTeamByIdUseCase(ITeamRepository teamRepository)
+        public async Task<TeamResponseDTO?> ExecuteAsync(int id)
         {
-            _teamRepository = teamRepository;
-        }
-
-        public async Task<TeamResponseDTO> ExecuteAsync(int teamID)
-        {
-            var teamId = new TeamID(teamID);
-
-            var team = await _teamRepository.GetByIdAsync(teamId);
-            if (team == null)
-                throw new Exception("El equipo no existe.");
-
-            return new TeamResponseDTO
-            {
-                TeamID = team.TeamID.Value,
-                TeamName = team.Name.Value,
-                PlayerIds = team.Players.Select(p => p.PlayerID.Value).ToList(),
-                LogoUrl = team.Logo,
-                CreatedAt = team.CreatedAt,
-                Category = team.Category,
-                Club = team.Club,
-                Stadium = team.Stadium
-            };
+            var t = await _repo.GetByIdAsync(new TeamID(id));
+            return t is null ? null : t.ToDTO();
         }
     }
 }

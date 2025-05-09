@@ -8,44 +8,24 @@ namespace Application.Users.Mapper
 {
     public static class UserMapper
     {
-        /// <summary>
-        /// UserResponseDTO to User Entity Domain
-        /// </summary>
-        /// <param name="userDTO"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static User ToDomain(UserRequestDTO userDTO)
-        {
-            if (userDTO == null)
-                throw new ArgumentNullException(nameof(userDTO), "El DTO UserRequestDTO no puede ser nulo.");
-
-            var role = Enum.TryParse(userDTO.Role, out UserRole parsedRole) ? parsedRole : UserRole.Espectador;
-
-            return new User(
-                new UserID(0),
-                new UserFullName(userDTO.FullName),
-                new UserEmail(userDTO.Email),
-                new UserPasswordHash(userDTO.PasswordHash),
-                role,
-                DateTime.UtcNow
-            );
-        } 
-
-        /// <summary>
-        /// User Entity Domain to UserResponseDTO
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        public static UserResponseDTO ToResponseDTO(User user)
-        {
-            return new UserResponseDTO
+        public static UserResponseDTO ToDTO(this User u)
+            => new UserResponseDTO
             {
-                UserID = user.UserID.Value,
-                FullName = user.FullName.Value,
-                Email = user.Email.Value,
-                Role = user.Role.ToString(),
-                CreatedAt = user.CreatedAt
+                ID = u.UserID.Value,
+                FullName = u.FullName.Value,
+                Email = u.Email.Value,
+                Role = u.Role,
+                CreatedAt = u.CreatedAt
             };
-        }
+
+        public static User ToDomain(this UserRequestDTO dto)
+            => new User(
+                userID: new UserID(dto.ID ?? 0),
+                fullName: new UserFullName(dto.FullName),
+                email: new UserEmail(dto.Email),
+                passwordHash: new UserPasswordHash(dto.PasswordHash),
+                role: dto.Role,
+                createdAt: DateTime.UtcNow
+            );
     }
 }

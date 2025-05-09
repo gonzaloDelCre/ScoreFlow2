@@ -7,91 +7,158 @@ using System.Threading.Tasks;
 
 namespace API3.Controllers.Teams
 {
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("api/teams")]
     public class TeamController : ControllerBase
     {
-        private readonly TeamUseCaseHandler _useCaseHandler;
+        private readonly ILogger<TeamController> _logger;
+        private readonly TeamUseCaseHandler _handler;
 
-        public TeamController(TeamUseCaseHandler useCaseHandler)
+        public TeamController(
+            ILogger<TeamController> logger,
+            TeamUseCaseHandler handler)
         {
-            _useCaseHandler = useCaseHandler;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _handler = handler ?? throw new ArgumentNullException(nameof(handler));
         }
 
         /// <summary>
-        /// Get All Teams
+        /// Obtiene todos los equipos
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> GetAllTeams()
+        public async Task<ActionResult<IEnumerable<TeamResponseDTO>>> GetAllTeams()
         {
-            var result = await _useCaseHandler.GetAllTeamsAsync();
-            return Ok(result);
+            try
+            {
+                var list = await _handler.GetAllTeamsAsync();
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener equipos");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Get Team By Id
+        /// Obtiene un equipo por su ID
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTeamById(int id)
+        public async Task<ActionResult<TeamResponseDTO>> GetTeamById(int id)
         {
-            var result = await _useCaseHandler.GetTeamByIdAsync(id);
-            if (result == null) return NotFound();
-            return Ok(result);
+            try
+            {
+                var team = await _handler.GetTeamByIdAsync(id);
+                if (team == null)
+                {
+                    _logger.LogWarning($"Equipo con ID {id} no encontrado");
+                    return NotFound($"Equipo con ID {id} no encontrado");
+                }
+                return Ok(team);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener equipo por ID");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Create Team
+        /// Crea un nuevo equipo
         /// </summary>
-        /// <param name="teamDTO"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<IActionResult> CreateTeam([FromBody] TeamRequestDTO teamDTO)
+        [HttpPost("crear")]
+        public async Task<IActionResult> CreateTeam([FromBody] TeamRequestDTO dto)
         {
-            if (teamDTO == null) return BadRequest("Team data is required.");
+            if (dto == null)
+            {
+                _logger.LogWarning("Petición de creación de equipo con datos nulos");
+                return BadRequest("Datos del equipo inválidos");
+            }
 
-            var result = await _useCaseHandler.CreateTeamAsync(teamDTO);
-            return CreatedAtAction(nameof(GetTeamById), new { id = result.TeamID }, result);
+            try
+            {
+                var result = await _handler.CreateTeamAsync(dto);
+                return CreatedAtAction(nameof(GetTeamById), new { id = result.ID }, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Update Team
+        /// Actualiza un equipo existente
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="teamDTO"></param>
-        /// <returns></returns>
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamRequestDTO teamDTO)
+        [HttpPut("actualizar/{id}")]
+        public async Task<IActionResult> UpdateTeam(int id, [FromBody] TeamRequestDTO dto)
         {
-            if (teamDTO == null) return BadRequest("Team data is required.");
+            if (dto == null || dto.ID != id)
+            {
+                _logger.LogWarning("ID en ruta no coincide o datos nulos");
+                return BadRequest("ID del equipo no coincide o datos inválidos");
+            }
 
-            var result = await _useCaseHandler.UpdateTeamAsync(teamDTO);
-            return Ok(result);
+            try
+            {
+                var updated = await _handler.UpdateTeamAsync(dto);
+                if (updated == null)
+                {
+                    _logger.LogWarning($"Equipo con ID {id} no encontrado");
+                    return NotFound($"Equipo con ID {id} no encontrado");
+                }
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al actualizar equipo");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
         /// <summary>
-        /// Delete Team
+        /// Elimina un equipo por su ID
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpDelete("{id}")]
+        [HttpDelete("eliminar/{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
-            await _useCaseHandler.DeleteTeamAsync(id);
-            return NoContent();
+            try
+            {
+                var ok = await _handler.DeleteTeamAsync(id);
+                if (!ok)
+                {
+                    _logger.LogWarning($"Equipo con ID {id} no encontrado o no pudo ser eliminado");
+                    return NotFound($"Equipo con ID {id} no encontrado");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
 
-        // <summary>
-        // Scraping teams
-        // </summary>
-        // <returns></returns>
-        [HttpPost("scrape")]
-        public async Task<IActionResult> ScrapeTeams()
+        [HttpPost("importar")]
+        public async Task<IActionResult> ImportarEquipos()
         {
-            await _useCaseHandler.ScrapeAsync();
-            return Ok("Equipos importados correctamente.");
+            try
+            {
+                await _handler.ImportTeamsAsync();
+                return Ok("Importación completada con éxito");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al importar standings");
+                return StatusCode(500, "Error interno del servidor");
+            }
         }
+
+
     }
 }

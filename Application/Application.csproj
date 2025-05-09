@@ -27,4 +27,10 @@
 	<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MatchEvents\UseCases\Scraping\" />
+    <Folder Include="PlayerStatistics\UseCases\Scraping\" />
+    <Folder Include="Users\UseCases\Scraping\" />
+  </ItemGroup>
+
 </Project>

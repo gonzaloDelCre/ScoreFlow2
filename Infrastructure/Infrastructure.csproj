@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Persistence\MatchEvents\Repositories\" />
+    <Folder Include="Services\Scraping\PlayersStatistics\Import\" />
+    <Folder Include="Services\Scraping\PlayersStatistics\Services\" />
     <Folder Include="Services\Scraping\TeamPlayers\Services\" />
   </ItemGroup>
 

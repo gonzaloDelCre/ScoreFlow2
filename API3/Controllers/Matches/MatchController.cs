@@ -1,41 +1,205 @@
-﻿//using Application.Matches.DTOs;
-//using Application.Matches.UseCases;
-//using Microsoft.AspNetCore.Mvc;
+﻿using Application.Matches.DTOs;
+using Application.Matches.UseCases;
+using Application.Matches.UseCases.Scraping;
+using Microsoft.AspNetCore.Mvc;
 
-//namespace API.Controllers.MatchController
-//{
-//    [ApiController]
-//    [Route("api/match")]
-//    public class MatchController : ControllerBase
-//    {
-//        private readonly GeneralMatchUseCaseHandler _useCaseHandler;
+namespace API3.Controllers.Matches
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class MatchController : ControllerBase
+    {
+        private readonly ILogger<MatchController> _logger;
+        private readonly MatchUseCaseHandler _handler;
 
-//        public MatchController(GeneralMatchUseCaseHandler useCaseHandler)
-//        {
-//            _useCaseHandler = useCaseHandler;
-//        }
+        public MatchController(
+            ILogger<MatchController> logger,
+            MatchUseCaseHandler handler)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        }
 
-//        [HttpPost]
-//        public async Task<IActionResult> ExecuteMatchAction([FromBody] MatchActionDTO actionDTO)
-//        {
-//            if (actionDTO == null)
-//                return BadRequest("La acción es necesaria.");
+        /// <summary>
+        /// Crea un nuevo partido
+        /// </summary>
+        [HttpPost("crear")]
+        public async Task<IActionResult> CreateMatch([FromBody] MatchRequestDTO matchRequestDTO)
+        {
+            if (matchRequestDTO == null)
+            {
+                _logger.LogWarning("Petición de creación de partido con datos nulos");
+                return BadRequest("Datos del partido inválidos");
+            }
 
-//            try
-//            {
-//                var result = await _useCaseHandler.Execute(actionDTO);
+            try
+            {
+                var result = await _handler.CreateMatchAsync(matchRequestDTO);
+                return CreatedAtAction(nameof(GetMatchById), new { id = result.ID }, result);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al crear partido");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear partido");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
 
-//                if (actionDTO.Action.ToLower() == "getall" || actionDTO.Action.ToLower() == "getbyid")
-//                {
-//                    return Ok(result);
-//                }
+        /// <summary>
+        /// Actualiza un partido existente
+        /// </summary>
+        [HttpPut("actualizar/{id}")]
+        public async Task<IActionResult> UpdateMatch(int id, [FromBody] MatchRequestDTO matchRequestDTO)
+        {
+            if (matchRequestDTO == null || matchRequestDTO.ID != id)
+            {
+                _logger.LogWarning("ID en ruta no coincide o datos nulos");
+                return BadRequest("ID del partido no coincide o datos inválidos");
+            }
 
-//                return CreatedAtAction(nameof(ExecuteMatchAction), new { action = actionDTO.Action }, result);
-//            }
-//            catch (Exception ex)
-//            {
-//                return BadRequest($"Error: {ex.Message}");
-//            }
-//        }
-//    }
-//}
+            try
+            {
+                var updated = await _handler.UpdateMatchAsync(matchRequestDTO);
+                if (updated == null)
+                {
+                    _logger.LogWarning($"Partido con ID {id} no encontrado");
+                    return NotFound($"Partido con ID {id} no encontrado");
+                }
+                return Ok(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validación al actualizar partido");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar partido");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Obtiene todos los partidos
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<MatchResponseDTO>>> GetMatches()
+        {
+            try
+            {
+                var list = await _handler.GetAllMatchesAsync();
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener partidos");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Obtiene un partido por su ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MatchResponseDTO>> GetMatchById(int id)
+        {
+            try
+            {
+                var match = await _handler.GetMatchByIdAsync(id);
+                if (match == null)
+                {
+                    _logger.LogWarning($"Partido con ID {id} no encontrado");
+                    return NotFound($"Partido con ID {id} no encontrado");
+                }
+                return Ok(match);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener partido por ID");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Obtiene los partidos de un equipo
+        /// </summary>
+        [HttpGet("por-team/{teamId}")]
+        public async Task<ActionResult<IEnumerable<MatchResponseDTO>>> GetByTeam(int teamId)
+        {
+            try
+            {
+                var list = await _handler.GetMatchesByTeamAsync(teamId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener partidos por equipo");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Obtiene los partidos de una liga
+        /// </summary>
+        [HttpGet("por-league/{leagueId}")]
+        public async Task<ActionResult<IEnumerable<MatchResponseDTO>>> GetByLeague(int leagueId)
+        {
+            try
+            {
+                var list = await _handler.GetMatchesByLeagueAsync(leagueId);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener partidos por liga");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Elimina un partido por su ID
+        /// </summary>
+        [HttpDelete("eliminar/{id}")]
+        public async Task<IActionResult> DeleteMatch(int id)
+        {
+            try
+            {
+                var ok = await _handler.DeleteMatchAsync(id);
+                if (!ok)
+                {
+                    _logger.LogWarning($"Partido con ID {id} no encontrado o no pudo ser eliminado");
+                    return NotFound($"Partido con ID {id} no encontrado");
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar partido");
+                return StatusCode(500, "Error interno del servidor");
+            }
+        }
+
+        /// <summary>
+        /// Importa partidos vía scraping
+        /// </summary>
+        [HttpPost("importar")]
+        public async Task<IActionResult> ImportMatches(
+                [FromServices] ImportMatchUseCase importUseCase)
+        {
+            try
+            {
+                await importUseCase.ExecuteAsync();
+                return Ok("Importación de partidos completada.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al importar partidos");
+                return StatusCode(500, "Error interno durante la importación de partidos");
+            }
+        }
+    }
+}

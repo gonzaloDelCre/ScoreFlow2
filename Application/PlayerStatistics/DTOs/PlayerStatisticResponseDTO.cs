@@ -10,9 +10,10 @@ namespace Application.PlayerStatistics.DTOs
 {
     public class PlayerStatisticResponseDTO
     {
-        public int PlayerStatisticID { get; set; }
+        public int ID { get; set; }
         public int MatchID { get; set; }
         public int PlayerID { get; set; }
+        public string PlayerName { get; set; } = null!;
         public int Goals { get; set; }
         public int Assists { get; set; }
         public int YellowCards { get; set; }

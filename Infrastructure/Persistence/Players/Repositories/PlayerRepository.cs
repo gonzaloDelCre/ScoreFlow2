@@ -12,6 +12,7 @@ using Infrastructure.Persistence.Players.Mapper;
 using Infrastructure.Persistence.Players.Entities;
 using Infrastructure.Persistence.TeamPlayers.Entities;
 using System.Text;
+using System;
 
 namespace Infrastructure.Persistence.Players.Repositories
 {
@@ -19,235 +20,232 @@ namespace Infrastructure.Persistence.Players.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<PlayerRepository> _logger;
-        private readonly PlayerMapper _mapper;
+        private readonly IPlayerMapper _mapper;
 
-        public PlayerRepository(ApplicationDbContext context, ILogger<PlayerRepository> logger, PlayerMapper mapper)
+        public PlayerRepository(
+            ApplicationDbContext context,
+            ILogger<PlayerRepository> logger,
+            IPlayerMapper mapper)
         {
             _context = context;
             _logger = logger;
             _mapper = mapper;
         }
 
-        // Obtiene todos los jugadores usando una consulta SQL explícita.
-        public async Task<IEnumerable<Player>> GetAllAsync()
-        {
-            try
-            {
-                string sql = "SELECT * FROM Players";
-                var dbPlayers = await _context.Players
-                    .FromSqlRaw(sql)
-                    .ToListAsync();
-
-                // Obtiene todas las relaciones de TeamPlayers (para todos los jugadores)
-                var teamPlayers = await _context.TeamPlayers.ToListAsync();
-
-                // Mapea cada entidad a dominio usando el mapper (filtrando las relaciones correspondientes)
-                var result = dbPlayers.Select(dbPlayer =>
-                    _mapper.MapToDomain(dbPlayer, teamPlayers.Where(tp => tp.PlayerID == dbPlayer.PlayerID).ToList()))
-                    .ToList();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener la lista de jugadores");
-                return new List<Player>();
-            }
-        }
-
-        // Obtiene un jugador por su PlayerID
-        public async Task<Player?> GetByIdAsync(PlayerID playerId)
-       {
-            try
-            {
-                string sql = "SELECT * FROM Players WHERE PlayerID = @PlayerID";
-                var parameter = new SqlParameter("@PlayerID", playerId.Value);
-
-                var dbPlayers = await _context.Players
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbPlayer = dbPlayers.FirstOrDefault();
-
-                if (dbPlayer == null)
-                    return null;
-
-                // Para obtener sus relaciones, obtenemos los registros de TeamPlayers correspondientes
-                var teamPlayers = await _context.TeamPlayers
-                    .Where(tp => tp.PlayerID == dbPlayer.PlayerID)
-                    .ToListAsync();
-
-                return _mapper.MapToDomain(dbPlayer, teamPlayers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener el jugador con ID {PlayerID}", playerId.Value);
-                return null;
-            }
-        }
-
-        // Obtiene un jugador por nombre (exacto)
-        public async Task<Player?> GetByNameAsync(string playerName)
-        {
-            try
-            {
-                string sql = "SELECT * FROM Players WHERE Name = @Name";
-                var parameter = new SqlParameter("@Name", playerName);
-
-                var dbPlayers = await _context.Players
-                    .FromSqlRaw(sql, parameter)
-                    .ToListAsync();
-
-                var dbPlayer = dbPlayers.FirstOrDefault();
-
-                if (dbPlayer == null)
-                    return null;
-
-                var teamPlayers = await _context.TeamPlayers
-                    .Where(tp => tp.PlayerID == dbPlayer.PlayerID)
-                    .ToListAsync();
-
-                return _mapper.MapToDomain(dbPlayer, teamPlayers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener el jugador con Nombre {PlayerName}", playerName);
-                return null;
-            }
-        }
-
-        // Obtiene los jugadores asociados a un equipo mediante la tabla intermedia
-        public async Task<IEnumerable<Player>> GetByTeamIdAsync(TeamID teamId)
-        {
-            try
-            {
-                // Se obtiene primero la lista de PlayerIDs que están asociados al equipo
-                string sql = "SELECT DISTINCT PlayerID FROM TeamPlayers WHERE TeamID = @TeamID";
-                var parameter = new SqlParameter("@TeamID", teamId.Value);
-                var playerIds = await _context.TeamPlayers
-                    .FromSqlRaw(sql, parameter)
-                    .Select(tp => tp.PlayerID)
-                    .ToListAsync();
-
-                // Ahora se obtienen los jugadores cuyos IDs estén en la lista
-                string sqlPlayers = "SELECT * FROM Players WHERE PlayerID IN ({0})";
-                // Convertimos la lista de IDs en una cadena separada por comas
-                string ids = string.Join(",", playerIds);
-                sqlPlayers = string.Format(sqlPlayers, ids);
-
-                var dbPlayers = await _context.Players
-                    .FromSqlRaw(sqlPlayers)
-                    .ToListAsync();
-
-                // Obtenemos las relaciones de TeamPlayers para cada jugador
-                var teamPlayers = await _context.TeamPlayers.ToListAsync();
-
-                return dbPlayers.Select(dbPlayer =>
-                    _mapper.MapToDomain(dbPlayer, teamPlayers.Where(tp => tp.PlayerID == dbPlayer.PlayerID).ToList()))
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener los jugadores del equipo con ID {TeamID}", teamId.Value);
-                return new List<Player>();
-            }
-        }
-
-        // Agrega un nuevo jugador a la base de datos mediante consulta SQL
+        /// <summary>
+        /// Inserta un nuevo jugador en la tabla Players.
+        /// </summary>
         public async Task<Player> AddAsync(Player player)
         {
-            if (player == null)
-                throw new ArgumentNullException(nameof(player));
-
-            var pe = _mapper.MapToEntity(player);
-
-            // 1) Insert solo en Players + SCOPE_IDENTITY
-            var sql = @"
-        INSERT INTO Players (Name, Position, Age, Goals, Photo, CreatedAt)
-         VALUES (@Name, @Position, @Age, @Goals, @Photo, @CreatedAt);
-        SELECT CAST(SCOPE_IDENTITY() AS INT);
-    ";
-
-            var conn = _context.Database.GetDbConnection();
-            await conn.OpenAsync();
-            int newPlayerId;
-            try
+            var e = _mapper.ToEntity(player);
+            const string sql = @"
+                INSERT INTO Players
+                  (PlayerID, Name, Position, Age, Goals, Photo, CreatedAt)
+                VALUES
+                  (@ID, @Name, @Position, @Age, @Goals, @Photo, @CreatedAt)";
+            var p = new[]
             {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = sql;
-                cmd.Parameters.Add(new SqlParameter("@Name", pe.Name));
-                cmd.Parameters.Add(new SqlParameter("@Position", pe.Position));
-                cmd.Parameters.Add(new SqlParameter("@Age", pe.Age));
-                cmd.Parameters.Add(new SqlParameter("@Goals", pe.Goals));
-                cmd.Parameters.Add(new SqlParameter("@Photo", (object?)pe.Photo ?? DBNull.Value));
-                cmd.Parameters.Add(new SqlParameter("@CreatedAt", pe.CreatedAt));
-
-                newPlayerId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
-            finally
-            {
-                await conn.CloseAsync();
-            }
-
-            // 2) Recarga el jugador sin tocar TeamPlayers
-            var dbPlayer = await _context.Players
-                .FromSqlRaw("SELECT * FROM Players WHERE PlayerID = {0}", newPlayerId)
-                .AsNoTracking()
-                .FirstAsync();
-
-            return _mapper.MapToDomain(dbPlayer, new List<TeamPlayerEntity>());
+                new SqlParameter("@ID",        e.PlayerID),
+                new SqlParameter("@Name",      e.Name),
+                new SqlParameter("@Position",  e.Position),
+                new SqlParameter("@Age",       e.Age),
+                new SqlParameter("@Goals",     e.Goals),
+                new SqlParameter("@Photo",     (object?)e.Photo ?? DBNull.Value),
+                new SqlParameter("@CreatedAt", e.CreatedAt)
+            };
+            await _context.Database.ExecuteSqlRawAsync(sql, p);
+            return player;
         }
 
-        // Actualiza la información de un jugador mediante consulta SQL
+        /// <summary>
+        /// Actualiza los datos de un jugador existente.
+        /// </summary>
         public async Task UpdateAsync(Player player)
         {
-            if (player == null)
-                throw new ArgumentNullException(nameof(player), "El jugador no puede ser null");
-
-            try
+            var e = _mapper.ToEntity(player);
+            const string sql = @"
+                UPDATE Players
+                SET
+                  Name     = @Name,
+                  Position = @Position,
+                  Age      = @Age,
+                  Goals    = @Goals,
+                  Photo    = @Photo
+                WHERE PlayerID = @ID";
+            var p = new[]
             {
-                var playerEntity = _mapper.MapToEntity(player);
-
-                string updateSql = @"UPDATE Players 
-                                     SET Name = @Name, Position = @Position, Age = @Age, Goals = @Goals, Photo = @Photo, CreatedAt = @CreatedAt
-                                     WHERE PlayerID = @PlayerID";
-
-                var parameters = new[]
-                {
-                    new SqlParameter("@PlayerID", playerEntity.PlayerID),
-                    new SqlParameter("@Name", playerEntity.Name),
-                    new SqlParameter("@Position", playerEntity.Position),
-                    new SqlParameter("@Age", playerEntity.Age),
-                    new SqlParameter("@Goals", playerEntity.Goals),
-                    new SqlParameter("@Photo", (object)playerEntity.Photo ?? DBNull.Value),
-                    new SqlParameter("@CreatedAt", playerEntity.CreatedAt)
-                };
-
-                await _context.Database.ExecuteSqlRawAsync(updateSql, parameters);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el jugador con ID {PlayerID}", player.PlayerID.Value);
-                throw;
-            }
+                new SqlParameter("@ID",       e.PlayerID),
+                new SqlParameter("@Name",     e.Name),
+                new SqlParameter("@Position", e.Position),
+                new SqlParameter("@Age",      e.Age),
+                new SqlParameter("@Goals",    e.Goals),
+                new SqlParameter("@Photo",    (object?)e.Photo ?? DBNull.Value)
+            };
+            await _context.Database.ExecuteSqlRawAsync(sql, p);
         }
 
-        // Elimina un jugador mediante consulta SQL
+        /// <summary>
+        /// Elimina un jugador por su ID.
+        /// </summary>
         public async Task<bool> DeleteAsync(PlayerID playerId)
         {
-            try
-            {
-                string sql = "DELETE FROM Players WHERE PlayerID = @PlayerID";
-                var parameter = new SqlParameter("@PlayerID", playerId.Value);
+            const string sql = "DELETE FROM Players WHERE PlayerID = @ID";
+            var rows = await _context.Database.ExecuteSqlRawAsync(
+                sql,
+                new SqlParameter("@ID", playerId.Value));
+            return rows > 0;
+        }
 
-                int rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, parameter);
-                return rowsAffected > 0;
-            }
-            catch (Exception ex)
+        /// <summary>
+        /// Obtiene un jugador por su ID, incluyendo sus TeamPlayers.
+        /// </summary>
+        public async Task<Player?> GetByIdAsync(PlayerID playerId)
+        {
+            var entity = await _context.Players
+                .FromSqlRaw("SELECT * FROM Players WHERE PlayerID = @ID",
+                    new SqlParameter("@ID", playerId.Value))
+                .FirstOrDefaultAsync();
+
+            if (entity == null)
+                return null;
+
+            var tps = await _context.TeamPlayers
+                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE PlayerID = @ID",
+                    new SqlParameter("@ID", entity.PlayerID))
+                .ToListAsync();
+
+            return _mapper.ToDomain(entity, tps);
+        }
+
+        /// <summary>
+        /// Devuelve todos los jugadores.
+        /// </summary>
+        public async Task<IEnumerable<Player>> GetAllAsync()
+        {
+            var entities = await _context.Players
+                .FromSqlRaw("SELECT * FROM Players")
+                .ToListAsync();
+
+            var result = new List<Player>();
+            foreach (var e in entities)
             {
-                _logger.LogError(ex, "Error al eliminar el jugador con ID {PlayerID}", playerId.Value);
-                return false;
+                var tps = await _context.TeamPlayers
+                    .FromSqlRaw("SELECT * FROM TeamPlayers WHERE PlayerID = @ID",
+                        new SqlParameter("@ID", e.PlayerID))
+                    .ToListAsync();
+
+                result.Add(_mapper.ToDomain(e, tps));
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Busca un jugador por nombre exacto.
+        /// </summary>
+        public async Task<Player?> GetByNameAsync(string name)
+        {
+            var entity = await _context.Players
+                .FromSqlRaw("SELECT * FROM Players WHERE Name = @Name",
+                    new SqlParameter("@Name", name))
+                .FirstOrDefaultAsync();
+
+            if (entity == null)
+                return null;
+
+            var tps = await _context.TeamPlayers
+                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE PlayerID = @ID",
+                    new SqlParameter("@ID", entity.PlayerID))
+                .ToListAsync();
+
+            return _mapper.ToDomain(entity, tps);
+        }
+
+        /// <summary>
+        /// Obtiene todos los jugadores de un equipo.
+        /// </summary>
+        public async Task<IEnumerable<Player>> GetByTeamIdAsync(int teamId)
+        {
+            var tps = await _context.TeamPlayers
+                .FromSqlRaw("SELECT * FROM TeamPlayers WHERE TeamID = @TID",
+                    new SqlParameter("@TID", teamId))
+                .Include(tp => tp.Player)
+                .ToListAsync();
+
+            return tps
+                .Select(tp => _mapper.ToDomain(tp.Player, tps))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Filtra jugadores por posición.
+        /// </summary>
+        public Task<IEnumerable<Player>> GetByPositionAsync(PlayerPosition position)
+            => SearchBySqlAsync(
+                "SELECT * FROM Players WHERE Position = @Pos",
+                new SqlParameter("@Pos", position.ToString()));
+
+        /// <summary>
+        /// Filtra jugadores por rango de edad.
+        /// </summary>
+        public Task<IEnumerable<Player>> GetByAgeRangeAsync(int minAge, int maxAge)
+            => SearchBySqlAsync(
+                "SELECT * FROM Players WHERE Age BETWEEN @Min AND @Max",
+                new SqlParameter("@Min", minAge),
+                new SqlParameter("@Max", maxAge));
+
+        /// <summary>
+        /// Devuelve los top N goleadores.
+        /// </summary>
+        public async Task<IEnumerable<Player>> GetTopScorersAsync(int topN)
+        {
+            var entities = await _context.Players
+                .FromSqlRaw($"SELECT TOP {topN} * FROM Players ORDER BY Goals DESC")
+                .ToListAsync();
+
+            var result = new List<Player>();
+            foreach (var e in entities)
+            {
+                var tps = await _context.TeamPlayers
+                    .FromSqlRaw("SELECT * FROM TeamPlayers WHERE PlayerID = @ID",
+                        new SqlParameter("@ID", e.PlayerID))
+                    .ToListAsync();
+
+                result.Add(_mapper.ToDomain(e, tps));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Busca jugadores cuyo nombre contenga la cadena dada.
+        /// </summary>
+        public Task<IEnumerable<Player>> SearchByNameAsync(string partialName)
+            => SearchBySqlAsync(
+                "SELECT * FROM Players WHERE Name LIKE @Patt",
+                new SqlParameter("@Patt", $"%{partialName}%"));
+
+        /// <summary>
+        /// Helper para ejecutar consultas SQL y mapear resultados.
+        /// </summary>
+        private async Task<IEnumerable<Player>> SearchBySqlAsync(string sql, params SqlParameter[] parms)
+        {
+            var entities = await _context.Players
+                .FromSqlRaw(sql, parms)
+                .ToListAsync();
+
+            var result = new List<Player>();
+            foreach (var e in entities)
+            {
+                var tps = await _context.TeamPlayers
+                    .FromSqlRaw("SELECT * FROM TeamPlayers WHERE PlayerID = @ID",
+                        new SqlParameter("@ID", e.PlayerID))
+                    .ToListAsync();
+
+                result.Add(_mapper.ToDomain(e, tps));
+            }
+
+            return result;
         }
     }
 }

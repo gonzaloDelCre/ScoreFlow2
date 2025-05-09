@@ -7,6 +7,12 @@ namespace Domain.Entities.Users
 {
     public class User
     {
+        private UserID userID;
+        private string fullName;
+        private string email;
+        private string passwordHash;
+        private UserRole role;
+
         public UserID UserID { get; private set; }
         public UserFullName FullName { get; private set; }
         public UserEmail Email { get; private set; }
@@ -32,6 +38,16 @@ namespace Domain.Entities.Users
             CreatedAt = createdAt;
         }
 
+        public User(UserID userID, string fullName, string email, string passwordHash, UserRole role, DateTime createdAt)
+        {
+            this.userID = userID;
+            this.fullName = fullName;
+            this.email = email;
+            this.passwordHash = passwordHash;
+            this.role = role;
+            CreatedAt = createdAt;
+        }
+
         public static User Create(
             string fullName,
             string email,
@@ -51,16 +67,28 @@ namespace Domain.Entities.Users
         public void Update(
             UserFullName? fullName = null,
             UserEmail? email = null,
-            UserPasswordHash? passwordHash = null)
+            UserPasswordHash? passwordHash = null,
+            UserRole role = UserRole.Entrenador)
         {
             if (fullName != null) FullName = fullName;
             if (email != null) Email = email;
             if (passwordHash != null) PasswordHash = passwordHash;
+            if (role != null) Role = role;
         }
 
         public void UpdateRole(UserRole newRole)
         {
             Role = newRole;
+        }
+
+        public void UpdatePassword(UserPasswordHash userPasswordHash)
+        {
+            PasswordHash = userPasswordHash;
+        }
+
+        public void SetPassword(UserPasswordHash pasword)
+        {
+            PasswordHash = pasword;
         }
     }
 }

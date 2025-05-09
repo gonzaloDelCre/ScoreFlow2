@@ -33,49 +33,64 @@ namespace Infrastructure.Services.Scraping.Players.Import
 
         public async Task ImportByTeamExternalIdAsync(int teamExternalId)
         {
-            var team = await _teamRepo.GetByExternalIdAsync(teamExternalId.ToString());
+            // 1) Obtiene el equipo por ExternalID
+            var externalId = teamExternalId.ToString();
+            var team = await _teamRepo.GetByExternalIdAsync(externalId);
             if (team == null)
-                throw new InvalidOperationException($"Equipo con ExternalID={teamExternalId} no existe.");
+                throw new InvalidOperationException($"Equipo con ExternalID={externalId} no existe.");
 
+            // 2) Scrapea la plantilla de jugadores
             var scraped = await _scraper.GetPlayersByTeamExternalIdAsync(teamExternalId);
 
-            foreach (var (name, age, position, goals, extId, photoUrl) in scraped)
+            // 3) Para cada jugador scrappeado, añadir o actualizar
+            foreach (var (name, age, positionRaw, goals, _, photoUrl) in scraped)
             {
-                var existingPlayer = await _playerRepo.GetByNameAsync(name);
+                // 3.1) Intentamos recuperar por nombre
+                var existing = await _playerRepo.GetByNameAsync(name);
+                var pos = TryParsePosition(positionRaw);
+                var ageVo = new PlayerAge(age);
 
-                if (existingPlayer != null)
+                if (existing != null)
                 {
-                    // Si no cambian ni foto ni goles, saltamos
-                    if (existingPlayer.Photo == photoUrl && existingPlayer.Goals == goals)
-                        continue;
+                    // 3.2) Si cambian foto o goles, actualizamos
+                    if (existing.Photo != photoUrl || existing.Goals != goals)
+                    {
+                        existing.Update(
+                            name: existing.Name,         // no cambiamos nombre
+                            position: pos,
+                            age: ageVo,
+                            goals: goals,
+                            photo: photoUrl,
+                            createdAt: existing.CreatedAt     // mantenemos CreatedAt original
+                        );
 
-                    // Actualizamos los campos que han cambiado
-                    existingPlayer.Update(
-                        existingPlayer.Name,                         // Mantenemos el nombre
-                        TryParsePosition(position),                  // Convertimos string → enum
-                        new PlayerAge(age),                          // Wrappeamos el age
-                        goals,                                       // Goals es int
-                        photoUrl,                                    // Url de la foto
-                        existingPlayer.CreatedAt                     // O DateTime.UtcNow si prefieres
-                    );
-
-                    await _playerRepo.UpdateAsync(existingPlayer);
+                        await _playerRepo.UpdateAsync(existing);
+                    }
                 }
                 else
                 {
-                    // Creamos nuevo jugador con foto y lo asociamos al equipo
-                    var created = await _playerRepo.AddAsync(new Player(
-                        new PlayerID(0),
-                        new PlayerName(name),
-                        TryParsePosition(position),
-                        new PlayerAge(age),
-                        goals,
+                    // 3.3) Si no existe, lo creamos
+                    var toCreate = new Player(
+                        playerID: new PlayerID(0),
+                        name: new PlayerName(name),
+                        position: pos,
+                        age: ageVo,
+                        goals: goals,
                         photo: photoUrl,
                         createdAt: DateTime.UtcNow,
-                        teamPlayers: new List<TeamPlayer>()
-                    ));
+                        teamPlayers: new List<TeamPlayer>()  // vacío, se vincula más abajo
+                    );
 
-                    await _tpRepo.AddAsync(team.TeamID, created.PlayerID);
+                    var created = await _playerRepo.AddAsync(toCreate);
+
+                    // 3.4) Y vinculamos el nuevo jugador al equipo
+                    var tp = new TeamPlayer(
+                        team.TeamID,
+                        created.PlayerID,
+                        new JoinedAt(DateTime.UtcNow),
+                        null
+                    );
+                    await _tpRepo.AddAsync(tp);
                 }
             }
         }
@@ -85,9 +100,8 @@ namespace Infrastructure.Services.Scraping.Players.Import
             if (string.IsNullOrWhiteSpace(raw))
                 return PlayerPosition.JUGADOR;
 
-            raw = raw.ToUpper().Replace(" ", "");
-
-            return raw switch
+            var key = raw.Trim().ToUpper().Replace(" ", "_");
+            return key switch
             {
                 "JUGADOR" => PlayerPosition.JUGADOR,
                 "INVITADO" => PlayerPosition.INVITADO,
@@ -95,12 +109,9 @@ namespace Infrastructure.Services.Scraping.Players.Import
                 "AYTE_ENTRENADOR" => PlayerPosition.AYTE_ENTRENADOR,
                 "OFICIAL" => PlayerPosition.OFICIAL,
                 "STAFF_ADICIONAL" => PlayerPosition.STAFF_ADICIONAL,
-                _ => PlayerPosition.STAFF_ADICIONAL,
+                _ => PlayerPosition.JUGADOR
             };
         }
-
-
-
     }
 
 }

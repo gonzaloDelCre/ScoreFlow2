@@ -8,29 +8,27 @@ namespace Application.TeamPlayers.Mappers
 {
     public static class TeamPlayerMapper
     {
-        public static TeamPlayerResponseDTO ToResponseDTO(this TeamPlayer teamPlayer)
-        {
-            return new TeamPlayerResponseDTO
+        public static TeamPlayerResponseDTO ToDTO(this TeamPlayer tp)
+            => new TeamPlayerResponseDTO
             {
-                TeamID = teamPlayer.TeamID.Value,
-                PlayerID = teamPlayer.PlayerID.Value,
-                TeamName = teamPlayer.Team?.Name.Value ?? "Sin nombre",
-                PlayerName = teamPlayer.Player?.Name.Value ?? "Sin nombre",
-                JoinedAt = teamPlayer.JoinedAt,
-                RoleInTeam = teamPlayer.RoleInTeam
+                ID = tp.ID.Value,
+                TeamID = tp.TeamID.Value,
+                TeamName = tp.Team.Name.Value,
+                PlayerID = tp.PlayerID.Value,
+                PlayerName = tp.Player.Name.Value,
+                JoinedAt = tp.JoinedAt.Value,
+                RoleInTeam = tp.RoleInTeam
             };
-        }
 
-        public static TeamPlayer ToDomain(this TeamPlayerRequestDTO dto, Team team, Player player)
-        {
-            return new TeamPlayer(
-                new TeamID(dto.TeamID),
-                new PlayerID(dto.PlayerID),
-                dto.JoinedAt,
-                dto.RoleInTeam,
-                team,
-                player
+        public static TeamPlayer ToDomain(this TeamPlayerRequestDTO dto)
+            => new TeamPlayer(
+                id: new TeamPlayerID(dto.ID ?? 0),
+                teamID: new TeamID(dto.TeamID),
+                playerID: new PlayerID(dto.PlayerID),
+                joinedAt: new JoinedAt(dto.JoinedAt),
+                roleInTeam: dto.RoleInTeam,
+                team: null!,
+                player: null!
             );
-        }
     }
 }
