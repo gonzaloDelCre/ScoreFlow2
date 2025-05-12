@@ -7,6 +7,8 @@ using Application.Leagues.UseCases.Get;
 using Application.Standings.DTOs;
 using Application.Standings.Mappers;
 using Application.Leagues.UseCases.Scraping;
+using Microsoft.Extensions.Logging;
+using Infrastructure.Services.Scraping.Leagues.Import;
 
 namespace Application.Leagues.UseCases
 {
@@ -21,6 +23,8 @@ namespace Application.Leagues.UseCases
         private readonly UpdateStandingsUseCase _updateStandings;
         private readonly DeleteLeagueUseCase _delete;
         private readonly ImportLeaguesUseCase _import;
+        private readonly ILogger<LeagueUseCaseHandler> _logger;
+        private readonly LeagueImportService _importService;
 
 
         public LeagueUseCaseHandler(
@@ -32,7 +36,9 @@ namespace Application.Leagues.UseCases
             GetStandingsUseCase getStandings,
             UpdateStandingsUseCase updateStandings,
             DeleteLeagueUseCase delete,
-            ImportLeaguesUseCase import)
+            ImportLeaguesUseCase import,
+            ILogger<LeagueUseCaseHandler> logger,
+            LeagueImportService importService)
 
         {
             _create = create;
@@ -44,6 +50,8 @@ namespace Application.Leagues.UseCases
             _updateStandings = updateStandings;
             _delete = delete;
             _import = import;
+            _logger = logger;
+            _importService = importService;
         }
 
         public Task<LeagueResponseDTO> CreateLeagueAsync(LeagueRequestDTO dto) =>
@@ -79,6 +87,37 @@ namespace Application.Leagues.UseCases
         public Task ImportLeaguesAsync(string competitionId)
         {
             return _import.ExecuteAsync(competitionId);
+        }
+
+        public async Task ImportLeaguesAsync(string competitionId, bool importMatches = true)
+        {
+            _logger.LogInformation(
+                "Iniciando caso de uso: Importación de ligas{0} para competición {1}",
+                importMatches ? " y partidos" : " (sin partidos)",
+                competitionId);
+
+            if (string.IsNullOrWhiteSpace(competitionId))
+            {
+                throw new ArgumentException("ID de competición inválido", nameof(competitionId));
+            }
+
+            try
+            {
+                // Delegar la ejecución al servicio de importación
+                await _importService.ImportAsync(competitionId, importMatches);
+
+                _logger.LogInformation(
+                    "Completada importación de ligas{0} para competición {1}",
+                    importMatches ? " y partidos" : " (sin partidos)",
+                    competitionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error en caso de uso ImportLeaguesAsync: {0}",
+                    ex.Message);
+                throw; // Propagar la excepción para que el controlador pueda manejarla
+            }
         }
 
     }

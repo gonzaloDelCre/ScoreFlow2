@@ -207,8 +207,13 @@ namespace API3.Controllers.Leagues
             }
         }
 
-        [HttpPost("importar/{competitionId}")]
-        public async Task<IActionResult> ImportarLigas(string competitionId)
+        /// <summary>
+        /// Importa ligas y sus partidos para una competición específica
+        /// </summary>
+        /// <param name="competitionId">ID de la competición</param>
+        /// <returns>Resultado de la operación de importación</returns>
+        [HttpGet("importar/{competitionId}")]
+        public async Task<IActionResult> ImportLeagues(string competitionId)
         {
             if (string.IsNullOrWhiteSpace(competitionId))
             {
@@ -218,16 +223,40 @@ namespace API3.Controllers.Leagues
 
             try
             {
-                await _handler.ImportLeaguesAsync(competitionId);
-                return Ok($"Importación de ligas de competición {competitionId} completada con éxito");
+                await _handler.ImportLeaguesAsync(competitionId, importMatches: true);
+                return Ok(new { message = $"Importación de ligas y partidos para competición {competitionId} completada con éxito" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al importar ligas para competición {competitionId}");
-                return StatusCode(500, "Error interno del servidor");
+                _logger.LogError(ex, $"Error al importar ligas para competición {competitionId}: {ex.Message}");
+                return StatusCode(500, new { error = "Error interno del servidor" });
             }
         }
 
+        /// <summary>
+        /// Importa solamente las ligas (sin partidos) para una competición específica
+        /// </summary>
+        /// <param name="competitionId">ID de la competición</param>
+        /// <returns>Resultado de la operación de importación</returns>
+        [HttpGet("importar/{competitionId}/solo-ligas")]
+        public async Task<IActionResult> ImportLeaguesOnly(string competitionId)
+        {
+            if (string.IsNullOrWhiteSpace(competitionId))
+            {
+                _logger.LogWarning("CompetitionId nulo o vacío");
+                return BadRequest("ID de competición inválido");
+            }
 
+            try
+            {
+                await _handler.ImportLeaguesAsync(competitionId, importMatches: false);
+                return Ok(new { message = $"Importación de ligas (sin partidos) para competición {competitionId} completada con éxito" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al importar ligas para competición {competitionId}: {ex.Message}");
+                return StatusCode(500, new { error = "Error interno del servidor" });
+            }
+        }
     }
 }
