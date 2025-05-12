@@ -82,13 +82,14 @@ namespace Infrastructure.Services.Scraping.Players.Import
                     );
 
                     var created = await _playerRepo.AddAsync(toCreate);
+                    var role = TryParseRole(positionRaw);
 
                     // 3.4) Y vinculamos el nuevo jugador al equipo
                     var tp = new TeamPlayer(
                         team.TeamID,
                         created.PlayerID,
                         new JoinedAt(DateTime.UtcNow),
-                        null
+                        role
                     );
                     await _tpRepo.AddAsync(tp);
                 }
@@ -112,6 +113,23 @@ namespace Infrastructure.Services.Scraping.Players.Import
                 _ => PlayerPosition.JUGADOR
             };
         }
+        private RoleInTeam? TryParseRole(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return null;
+
+            return raw.Trim().ToUpper() switch
+            {
+                "JUGADOR" => RoleInTeam.JUGADOR,
+                "INVITADO" => RoleInTeam.INVITADO,
+                "ENTRENADOR" => RoleInTeam.ENTRENADOR,
+                "AYTE_ENTRENADOR" => RoleInTeam.AYTE_ENTRENADOR,
+                "OFICIAL" => RoleInTeam.OFICIAL,
+                "STAFF_ADICIONAL" => RoleInTeam.STAFF_ADICIONAL,
+                _ => RoleInTeam.STAFF_ADICIONAL
+            };
+        }
+
     }
 
 }

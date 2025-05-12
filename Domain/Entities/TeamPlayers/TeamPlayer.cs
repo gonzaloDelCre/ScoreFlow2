@@ -45,7 +45,16 @@ namespace Domain.Entities.TeamPlayers
         {
         }
 
-
+        public TeamPlayer WithId(TeamPlayerID newId) =>
+            new TeamPlayer(
+                newId,
+                TeamID,
+                PlayerID,
+                JoinedAt,
+                RoleInTeam,
+                Team,
+                Player
+            ); 
         public void UpdateRole(RoleInTeam? newRole)
             => RoleInTeam = newRole;
 

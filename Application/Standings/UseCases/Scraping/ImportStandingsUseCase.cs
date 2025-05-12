@@ -1,4 +1,5 @@
-﻿using Infrastructure.Services.Scraping.Standings.Import;
+﻿using Domain.Shared;
+using Infrastructure.Services.Scraping.Standings.Import;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,10 @@ namespace Application.Standings.UseCases.Scraping
             _importService = importService;
         }
 
-        public async Task ExecuteAsync()
+        public Task<int> ExecuteAsync(int competitionId, int leagueId)
         {
-            await _importService.ImportAsync();
+            return _importService.ImportAsync(competitionId, leagueId);
         }
+
     }
 }

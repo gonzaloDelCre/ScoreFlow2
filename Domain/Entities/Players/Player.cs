@@ -75,5 +75,7 @@ namespace Domain.Entities.Players
             teamPlayers.Clear();
             foreach (var tp in list) AddTeamPlayer(tp);
         }
+        public Player WithId(PlayerID newId) =>
+                new Player(newId, Name, Position, Age, Goals, Photo, CreatedAt, TeamPlayers);
     }
 }

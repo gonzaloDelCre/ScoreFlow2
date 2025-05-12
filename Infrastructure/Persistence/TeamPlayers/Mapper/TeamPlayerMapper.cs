@@ -38,8 +38,17 @@ namespace Infrastructure.Persistence.TeamPlayers.Mappers
         {
             if (e == null) throw new ArgumentNullException(nameof(e));
 
-            var player = _playerMapper.ToDomain(e.Player, Enumerable.Empty<Infrastructure.Persistence.TeamPlayers.Entities.TeamPlayerEntity>());
-            var team = _teamMapper.ToDomain(e.Team, Enumerable.Empty<Player>(), (IEnumerable<Domain.Entities.Standings.Standing>)Enumerable.Empty<Infrastructure.Persistence.Standings.Entities.StandingEntity>());
+            var player = _playerMapper.ToDomain(
+                e.Player,
+                Enumerable.Empty<Infrastructure.Persistence.TeamPlayers.Entities.TeamPlayerEntity>()
+            );
+
+
+            var team = _teamMapper.ToDomain(
+                e.Team,
+                Enumerable.Empty<Domain.Entities.Players.Player>(),
+                Enumerable.Empty<Domain.Entities.Standings.Standing>()
+            );
 
             return new TeamPlayer(
                 new TeamPlayerID(e.ID),
@@ -51,5 +60,6 @@ namespace Infrastructure.Persistence.TeamPlayers.Mappers
                 player
             );
         }
+
     }
 }

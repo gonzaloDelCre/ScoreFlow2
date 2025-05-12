@@ -5,6 +5,7 @@ using Domain.Ports.Matches;
 using Domain.Ports.Teams;
 using Domain.Shared;
 using Infrastructure.Services.Scraping.Matches.Services;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,6 @@ namespace Infrastructure.Services.Scraping.Matches.Import
         private readonly IMatchRepository _matchRepo;
         private readonly ITeamRepository _teamRepo;
         private readonly ILeagueRepository _leagueRepo;
-        private const int LeagueId = 42; // Ajusta este ID a tu competición
 
         public MatchImportService(
             MatchScraperService scraper,
@@ -33,24 +33,47 @@ namespace Infrastructure.Services.Scraping.Matches.Import
             _leagueRepo = leagueRepo;
         }
 
-        public async Task ImportAsync()
+        /// <summary>
+        /// Importa partidos para una liga específica de la base de datos
+        /// </summary>
+        /// <param name="leagueId">ID interno de la liga en la base de datos</param>
+        /// <param name="competitionId">ID externo de la competición en RFEBM (opcional, si no se proporciona se usará el guardado en la descripción de la liga)</param>
+        public async Task ImportAsync(int leagueId, string competitionId = null)
         {
-            Console.WriteLine("🚀 Iniciando import de todos los partidos...");
+            Console.WriteLine($"🚀 Iniciando import de partidos para la liga ID {leagueId}...");
 
             // 1) Cargar dominio de la liga
-            var leagueDomain = await _leagueRepo.GetByIdAsync(new LeagueID(LeagueId));
+            var leagueDomain = await _leagueRepo.GetByIdAsync(new LeagueID(leagueId));
             if (leagueDomain == null)
             {
-                Console.WriteLine($"❌ Liga con ID {LeagueId} no encontrada. Abortando import.");
+                Console.WriteLine($"❌ Liga con ID {leagueId} no encontrada. Abortando import.");
                 return;
             }
 
+            // Si no se proporciona competitionId, intentar extraerlo de la descripción de la liga
+            if (string.IsNullOrEmpty(competitionId))
+            {
+                // Buscamos el patrón "CompID=X" en la descripción
+                var description = leagueDomain.Description ?? "";
+                var compIdMatch = System.Text.RegularExpressions.Regex.Match(description, @"CompID=(\d+)");
+                if (compIdMatch.Success)
+                {
+                    competitionId = compIdMatch.Groups[1].Value;
+                    Console.WriteLine($"📌 Usando CompetitionId={competitionId} extraído de la descripción de la liga");
+                }
+                else
+                {
+                    Console.WriteLine("❌ No se pudo determinar el ID de competición. Asegúrate de que la liga tiene el formato correcto en su descripción (CompID=X).");
+                    return;
+                }
+            }
+
             // 2) Scrapeo de todas las jornadas
-            var scraped = await _scraper.GetAllMatchesAsync();
+            var scraped = await _scraper.GetAllMatchesAsync(competitionId);
             Console.WriteLine($"📦 Scrapeados {scraped.Count} partidos en todas las jornadas.");
 
             // 3) Partidos ya existentes en BD
-            var existing = (await _matchRepo.GetByLeagueIdAsync(LeagueId)).ToList();
+            var existing = (await _matchRepo.GetByLeagueIdAsync(leagueId)).ToList();
 
             // 4) Procesar cada partido scrapeado
             foreach (var m in scraped)

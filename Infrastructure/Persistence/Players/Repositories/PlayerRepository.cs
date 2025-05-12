@@ -37,25 +37,36 @@ namespace Infrastructure.Persistence.Players.Repositories
         /// </summary>
         public async Task<Player> AddAsync(Player player)
         {
+            // 1) Mapea dominio → entidad
             var e = _mapper.ToEntity(player);
-            const string sql = @"
-                INSERT INTO Players
-                  (PlayerID, Name, Position, Age, Goals, Photo, CreatedAt)
-                VALUES
-                  (@ID, @Name, @Position, @Age, @Goals, @Photo, @CreatedAt)";
-            var p = new[]
-            {
-                new SqlParameter("@ID",        e.PlayerID),
-                new SqlParameter("@Name",      e.Name),
-                new SqlParameter("@Position",  e.Position),
-                new SqlParameter("@Age",       e.Age),
-                new SqlParameter("@Goals",     e.Goals),
-                new SqlParameter("@Photo",     (object?)e.Photo ?? DBNull.Value),
-                new SqlParameter("@CreatedAt", e.CreatedAt)
-            };
-            await _context.Database.ExecuteSqlRawAsync(sql, p);
-            return player;
+
+            // 2) Obtén la conexión y crea comando
+            var conn = _context.Database.GetDbConnection();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        INSERT INTO Players (Name, Position, Age, Goals, Photo, CreatedAt)
+        VALUES (@Name, @Position, @Age, @Goals, @Photo, @CreatedAt);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);
+    ";
+            cmd.Parameters.Add(new SqlParameter("@Name", e.Name));
+            cmd.Parameters.Add(new SqlParameter("@Position", e.Position));
+            cmd.Parameters.Add(new SqlParameter("@Age", e.Age));
+            cmd.Parameters.Add(new SqlParameter("@Goals", e.Goals));
+            cmd.Parameters.Add(new SqlParameter("@Photo", (object?)e.Photo ?? DBNull.Value));
+            cmd.Parameters.Add(new SqlParameter("@CreatedAt", e.CreatedAt));
+
+            // 3) Asegúrate de abrir la conexión
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            // 4) Ejecuta y lee el ID nuevo
+            var result = await cmd.ExecuteScalarAsync();
+            var newId = Convert.ToInt32(result);
+
+            // 5) Devuelve tu objeto de dominio con el ID asignado
+            return player.WithId(new PlayerID(newId));
         }
+
 
         /// <summary>
         /// Actualiza los datos de un jugador existente.

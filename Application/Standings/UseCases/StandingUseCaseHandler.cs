@@ -4,6 +4,7 @@ using Application.Standings.UseCases.Delete;
 using Application.Standings.UseCases.Get;
 using Application.Standings.UseCases.Scraping;
 using Application.Standings.UseCases.Update;
+using Domain.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,9 +63,7 @@ namespace Application.Standings.UseCases
         public Task<List<StandingResponseDTO>> GetClassificationAsync(int leagueId) => _getClassification.ExecuteAsync(leagueId);
         public Task<List<StandingResponseDTO>> GetTopByPointsAsync(int topN) => _getTop.ExecuteAsync(topN);
         public Task<List<StandingResponseDTO>> GetByGoalDifferenceRangeAsync(int minGD, int maxGD) => _getByGdRange.ExecuteAsync(minGD, maxGD);
-        public async Task ImportStandingsAsync()
-        {
-            await _importStandings.ExecuteAsync();
-        }
+        public Task<int> ImportStandingsAsync(int competitionId, int leagueId) => _importStandings.ExecuteAsync(competitionId, leagueId);
+
     }
 }

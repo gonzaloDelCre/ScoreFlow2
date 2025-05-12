@@ -186,13 +186,13 @@ namespace API3.Controllers.Matches
         /// <summary>
         /// Importa partidos vía scraping
         /// </summary>
-        [HttpPost("importar")]
-        public async Task<IActionResult> ImportMatches(
+        [HttpPost("importar/{leagueId}")]
+        public async Task<IActionResult> ImportMatches(int leagueId,
                 [FromServices] ImportMatchUseCase importUseCase)
         {
             try
             {
-                await importUseCase.ExecuteAsync();
+                await importUseCase.ExecuteAsync(leagueId);
                 return Ok("Importación de partidos completada.");
             }
             catch (Exception ex)

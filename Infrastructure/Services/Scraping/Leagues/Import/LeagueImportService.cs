@@ -62,7 +62,7 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
 
                         if (importMatches && league != null)
                         {
-                            await ImportMatchesForLeagueAsync(league.LeagueID.Value, metadata.CompetitionId);
+                            await ImportMatchesForLeagueAsync(league.LeagueID.Value, metadata);
                         }
                     }
                     catch (Exception ex)
@@ -84,7 +84,11 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
         private async Task<League> ImportLeagueFromMetadataAsync(LeagueMetadata metadata)
         {
             var leagueName = $"{metadata.CategoryName} - {metadata.CompetitionName} ({metadata.SeasonName})";
-            var description = $"Federación: {metadata.TerritorialName}, CompID={metadata.CompetitionId}, FaseID={metadata.PhaseId}";
+
+            // Guardar los IDs externos en la descripción para poder recuperarlos después
+            var description = $"Federación: {metadata.TerritorialName}, CompID={metadata.CompetitionId}, " +
+                            $"FaseID={metadata.PhaseId}, CategoryID={metadata.CategoryId}";
+
             var existing = await _leagueRepo.GetByNameAsync(leagueName);
 
             if (existing == null)
@@ -130,19 +134,16 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
         }
 
         /// <summary>
-        /// Importa todos los partidos de una liga específica
+        /// Importa todos los partidos de una liga específica usando la metadata completa
         /// </summary>
-        private async Task ImportMatchesForLeagueAsync(int leagueId, string competitionId)
+        private async Task ImportMatchesForLeagueAsync(int leagueId, LeagueMetadata metadata)
         {
             _logger.LogInformation("📊 Iniciando importación de partidos para liga ID {LeagueId}...", leagueId);
 
             try
             {
                 // Crear un scraper para esta liga específica
-                var matchScraper = new MatchScraperService(
-                    new HttpClient(),
-                    competitionId  // Pasamos el ID de competición para construir las URLs
-                );
+                var matchScraper = new MatchScraperService(new HttpClient());
 
                 // Obtener la liga
                 var leagueDomain = await _leagueRepo.GetByIdAsync(new LeagueID(leagueId));
@@ -152,8 +153,8 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
                     return;
                 }
 
-                // Obtener partidos de esta liga
-                var scraped = await matchScraper.GetAllMatchesAsync();
+                // Obtener partidos de esta liga usando el competition ID de la metadata
+                var scraped = await matchScraper.GetAllMatchesAsync(metadata.CompetitionId);
                 _logger.LogInformation("📦 Scrapeados {Count} partidos en todas las jornadas.", scraped.Count);
 
                 // Obtener partidos existentes en BD para esta liga
@@ -195,7 +196,7 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
                         try
                         {
                             var match = new Domain.Entities.Matches.Match(
-                                new MatchID(1), 
+                                new MatchID(1),
                                 team1,
                                 team2,
                                 m.Date,

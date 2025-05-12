@@ -17,51 +17,48 @@ namespace Infrastructure.Services.Scraping.Standings.Import
         private readonly StandingsScraperService _scraper;
         private readonly ITeamRepository _teamRepo;
         private readonly IStandingRepository _standingRepo;
-        private readonly LeagueID _leagueId;
-        private readonly int _competitionId;
 
         public StandingsImportService(
             StandingsScraperService scraper,
             ITeamRepository teamRepo,
-            IStandingRepository standingRepo,
-            IOptions<StandingsImportOptions> options)
+            IStandingRepository standingRepo)
         {
             _scraper = scraper;
             _teamRepo = teamRepo;
             _standingRepo = standingRepo;
-            _competitionId = options.Value.CompetitionId;
-            _leagueId = new LeagueID(options.Value.LeagueId);
         }
 
-        public async Task ImportAsync()
+        /// <summary>
+        /// Importa la clasificación y devuelve el número de filas procesadas.
+        /// </summary>
+        public async Task<int> ImportAsync(int competitionId, int leagueId)
         {
-            Console.WriteLine("🚀 Iniciando import de clasificación...");
-            var scraped = await _scraper.GetStandingsAsync(_competitionId, _leagueId.Value);
+            Console.WriteLine($"🚀 Iniciando import: competitionId={competitionId}, leagueId={leagueId}");
+            var scraped = await _scraper.GetStandingsAsync(competitionId);
             Console.WriteLine($"📦 Filas obtenidas: {scraped.Count}");
 
-            // Resto del código igual...
+            int processed = 0;
+
             foreach (var (extId, pts, played, won, drawn, lost, gf, ga, gd) in scraped)
             {
-                var ext = extId.ToString();
-                Console.WriteLine($"– Procesando equipo ExternalID={ext}...");
+                Console.WriteLine($"– Procesando equipo ExternalID={extId}...");
 
-                var team = await _teamRepo.GetByExternalIdAsync(ext);
+                var team = await _teamRepo.GetByExternalIdAsync(extId.ToString());
                 if (team == null)
                 {
-                    Console.WriteLine($"   ⚠️ Equipo {ext} no encontrado, saltando.");
+                    Console.WriteLine($"   ⚠️ Equipo {extId} no encontrado, saltando.");
                     continue;
                 }
 
-                // 2) Buscar standing existente
                 var existing = await _standingRepo
-                    .GetByTeamIdAndLeagueIdAsync(team.TeamID, _leagueId);
+                    .GetByTeamIdAndLeagueIdAsync(team.TeamID, new LeagueID(leagueId));
 
                 if (existing == null)
                 {
-                    Console.WriteLine("   → Nuevo standing, añadiendo...");
+                    Console.WriteLine("   → Añadiendo nuevo standing...");
                     var newStanding = new Standing(
-                        new StandingID(0),
-                        _leagueId,
+                        new StandingID(1),
+                        new LeagueID(leagueId),
                         team.TeamID,
                         new Points(pts),
                         new MatchesPlayed(played),
@@ -75,9 +72,8 @@ namespace Infrastructure.Services.Scraping.Standings.Import
                 }
                 else
                 {
-                    Console.WriteLine("   → Ya existía, comprobando diferencias...");
+                    Console.WriteLine("   → Actualizando si hay cambios...");
                     bool dirty = false;
-
                     if (existing.Points.Value != pts) { existing.UpdatePoints(new Points(pts)); dirty = true; }
                     if (existing.MatchesPlayed.Value != played) { existing.UpdateMatchesPlayed(new MatchesPlayed(played)); dirty = true; }
                     if (existing.Wins.Value != won) { existing.UpdateWins(new Wins(won)); dirty = true; }
@@ -87,7 +83,7 @@ namespace Infrastructure.Services.Scraping.Standings.Import
 
                     if (dirty)
                     {
-                        Console.WriteLine("   → Actualizando standing...");
+                        Console.WriteLine("   → Guardando cambios...");
                         await _standingRepo.UpdateAsync(existing);
                     }
                     else
@@ -95,9 +91,12 @@ namespace Infrastructure.Services.Scraping.Standings.Import
                         Console.WriteLine("   → Sin cambios.");
                     }
                 }
+
+                processed++;
             }
 
-            Console.WriteLine("✅ Import de clasificación completado.");
+            Console.WriteLine("✅ Import completado.");
+            return processed;
         }
     }
 }

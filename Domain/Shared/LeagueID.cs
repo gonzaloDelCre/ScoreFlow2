@@ -9,7 +9,7 @@ namespace Domain.Shared
 
         public LeagueID(int value)
         {
-            if (value <= 0) throw new ArgumentException("El ID de la liga debe ser mayor que 0.");
+            //if (value <= 0) throw new ArgumentException("El ID de la liga debe ser mayor que 0.");
             Value = value;
         }
     }

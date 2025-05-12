@@ -14,7 +14,7 @@ namespace Infrastructure.Persistence.Standings.Mapper
 
             return new StandingEntity
             {
-                ID = domain.StandingID.Value,
+                ID = domain.StandingID?.Value ?? 0,
                 LeagueID = domain.LeagueID.Value,
                 TeamID = domain.TeamID.Value,
                 Points = domain.Points.Value,

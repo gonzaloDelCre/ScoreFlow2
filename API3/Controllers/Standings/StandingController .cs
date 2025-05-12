@@ -239,12 +239,17 @@ namespace API3.Controllers.Standings
         }
 
         [HttpPost("importar")]
-        public async Task<IActionResult> ImportarClasificacion()
+        public async Task<IActionResult> ImportarClasificacion(
+            [FromQuery] int competitionId,
+            [FromQuery] int leagueId)
         {
+            if (competitionId <= 0 || leagueId <= 0)
+                return BadRequest("Debe indicar competitionId y leagueId válidos");
+
             try
             {
-                await _handler.ImportStandingsAsync();
-                return Ok("Importación completada con éxito");
+                var result = await _handler.ImportStandingsAsync(competitionId, leagueId);
+                return Ok($"Importación completada: {result} filas procesadas");
             }
             catch (Exception ex)
             {
@@ -252,6 +257,7 @@ namespace API3.Controllers.Standings
                 return StatusCode(500, "Error interno del servidor");
             }
         }
+
 
     }
 }

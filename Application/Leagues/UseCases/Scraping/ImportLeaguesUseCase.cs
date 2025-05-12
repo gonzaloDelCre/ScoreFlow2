@@ -21,9 +21,9 @@ namespace Application.Leagues.UseCases.Scraping
             _service = service;
         }
 
-        public Task ExecuteAsync(string competitionId)
+        public Task ExecuteAsync(string competitionId, bool importMatches)
         {
-            return _service.ImportAsync(competitionId);
+            return _service.ImportAsync(competitionId,importMatches);
         }
     }
 }

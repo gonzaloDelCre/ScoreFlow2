@@ -13,12 +13,17 @@ namespace Application.Matches.UseCases.Scraping
 
         public ImportMatchUseCase(MatchImportService importService)
         {
-            _importService = importService;
+            _importService = importService ?? throw new ArgumentNullException(nameof(importService));
         }
 
-        public async Task ExecuteAsync()
+        /// <summary>
+        /// Importa partidos para una liga específica
+        /// </summary>
+        /// <param name="leagueId">ID de la liga en la base de datos</param>
+        /// <param name="competitionId">ID externo de la competición (opcional)</param>
+        public async Task ExecuteAsync(int leagueId, string competitionId = null)
         {
-            await _importService.ImportAsync();
+            await _importService.ImportAsync(leagueId, competitionId);
         }
     }
 }

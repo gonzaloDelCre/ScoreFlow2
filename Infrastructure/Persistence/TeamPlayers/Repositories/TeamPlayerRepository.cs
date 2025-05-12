@@ -36,23 +36,34 @@ namespace Infrastructure.Persistence.TeamPlayers.Repositories
 
         public async Task<TeamPlayer> AddAsync(TeamPlayer tp)
         {
+            // 1) Mapea dominio → entidad
             var e = _mapper.MapToEntity(tp);
-            const string sql = @"
-                INSERT INTO TeamPlayers
-                  (ID, TeamID, PlayerID, RoleInTeam, JoinedAt)
-                VALUES
-                  (@ID, @TID, @PID, @Role, @Joined)";
-            var p = new[]
-            {
-                new SqlParameter("@ID",     e.ID),
-                new SqlParameter("@TID",    e.TeamID),
-                new SqlParameter("@PID",    e.PlayerID),
-                new SqlParameter("@Role",   e.RoleInTeam),
-                new SqlParameter("@Joined", e.JoinedAt)
-            };
-            await _context.Database.ExecuteSqlRawAsync(sql, p);
-            return tp;
+
+            // 2) Crea el comando
+            var conn = _context.Database.GetDbConnection();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+        INSERT INTO TeamPlayers (TeamID, PlayerID, RoleInTeam, JoinedAt)
+        VALUES (@TeamID, @PlayerID, @Role, @JoinedAt);
+        SELECT CAST(SCOPE_IDENTITY() AS INT);
+    ";
+            cmd.Parameters.Add(new SqlParameter("@TeamID", e.TeamID));
+            cmd.Parameters.Add(new SqlParameter("@PlayerID", e.PlayerID));
+            cmd.Parameters.Add(new SqlParameter("@Role", (object?)e.RoleInTeam ?? DBNull.Value));
+            cmd.Parameters.Add(new SqlParameter("@JoinedAt", e.JoinedAt));
+
+            // 3) Abre la conexión si no lo está
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            // 4) Ejecuta y recupera el nuevo ID
+            var result = await cmd.ExecuteScalarAsync();
+            var newId = Convert.ToInt32(result);
+
+            // 5) Devuelve dominio con el ID real
+            return tp.WithId(new TeamPlayerID(newId));
         }
+
 
         public async Task UpdateAsync(TeamPlayer tp)
         {

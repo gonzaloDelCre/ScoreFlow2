@@ -30,7 +30,7 @@ namespace Application.Standings.Mappers
 
         public static Standing ToDomain(this StandingRequestDTO dto)
             => new Standing(
-                standingID: new StandingID(dto.ID ?? 0),
+                standingID: new StandingID(1),
                 leagueID: new LeagueID(dto.LeagueID),
                 teamID: new TeamID(dto.TeamID),
                 points: new Points(dto.Points),
