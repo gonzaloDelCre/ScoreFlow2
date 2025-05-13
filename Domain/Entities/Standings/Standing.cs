@@ -63,19 +63,30 @@ namespace Domain.Entities.Standings
         }
         protected Standing() { }
 
-        public Standing(StandingID standingID, LeagueID leagueId, TeamID teamID, Points points, MatchesPlayed matchesPlayed, Wins wins, Draws draws, Losses losses, GoalDifference goalDifference, DateTime utcNow)
+        public Standing(
+    StandingID standingID,
+    LeagueID leagueId,
+    TeamID teamID,
+    Points points,
+    MatchesPlayed matchesPlayed,
+    Wins wins,
+    Draws draws,
+    Losses losses,
+    GoalDifference goalDifference,
+    DateTime utcNow)
         {
-            this.standingID = standingID;
-            this.leagueId = leagueId;
-            this.teamID = teamID;
-            this.points = points;
-            this.matchesPlayed = matchesPlayed;
-            this.wins = wins;
-            this.draws = draws;
-            this.losses = losses;
-            this.goalDifference = goalDifference;
-            this.utcNow = utcNow;
+            StandingID = standingID ?? throw new ArgumentNullException(nameof(standingID));
+            LeagueID = leagueId ?? throw new ArgumentNullException(nameof(leagueId));
+            TeamID = teamID ?? throw new ArgumentNullException(nameof(teamID));
+            Points = points ?? throw new ArgumentNullException(nameof(points));
+            MatchesPlayed = matchesPlayed ?? throw new ArgumentNullException(nameof(matchesPlayed));
+            Wins = wins ?? throw new ArgumentNullException(nameof(wins));
+            Draws = draws ?? throw new ArgumentNullException(nameof(draws));
+            Losses = losses ?? throw new ArgumentNullException(nameof(losses));
+            GoalDifference = goalDifference ?? throw new ArgumentNullException(nameof(goalDifference));
+            CreatedAt = utcNow;
         }
+
 
         public void Update(
             Points points,

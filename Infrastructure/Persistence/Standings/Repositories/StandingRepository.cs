@@ -36,12 +36,11 @@ namespace Infrastructure.Persistence.Standings.Repositories
             var e = _mapper.MapToEntity(standing);
             const string sql = @"
                 INSERT INTO Standings
-                  (ID, LeagueID, TeamID, Points, Wins, Draws, Losses, GoalDifference, CreatedAt)
+                  (LeagueID, TeamID, Points, Wins, Draws, Losses, GoalDifference, CreatedAt)
                 VALUES
-                  (@ID, @LeagueID, @TeamID, @Points, @Wins, @Draws, @Losses, @GD, @CreatedAt)";
+                  (@LeagueID, @TeamID, @Points, @Wins, @Draws, @Losses, @GD, @CreatedAt)";
             var p = new[]
             {
-                new SqlParameter("@ID",        e.ID),
                 new SqlParameter("@LeagueID",  e.LeagueID),
                 new SqlParameter("@TeamID",    e.TeamID),
                 new SqlParameter("@Points",    e.Points),

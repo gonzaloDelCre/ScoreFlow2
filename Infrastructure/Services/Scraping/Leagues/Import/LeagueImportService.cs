@@ -143,7 +143,7 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
             try
             {
                 // Crear un scraper para esta liga específica
-                var matchScraper = new MatchScraperService(new HttpClient());
+                //var matchScraper = new MatchScraperService(new HttpClient());
 
                 // Obtener la liga
                 var leagueDomain = await _leagueRepo.GetByIdAsync(new LeagueID(leagueId));
@@ -154,8 +154,8 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
                 }
 
                 // Obtener partidos de esta liga usando el competition ID de la metadata
-                var scraped = await matchScraper.GetAllMatchesAsync(metadata.CompetitionId);
-                _logger.LogInformation("📦 Scrapeados {Count} partidos en todas las jornadas.", scraped.Count);
+                //var scraped = await matchScraper.GetAllMatchesAsync(metadata.CompetitionId);
+                //_logger.LogInformation("📦 Scrapeados {Count} partidos en todas las jornadas.", scraped.Count);
 
                 // Obtener partidos existentes en BD para esta liga
                 var existing = (await _matchRepo.GetByLeagueIdAsync(leagueId)).ToList();
@@ -165,7 +165,7 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
                 int updated = 0;
                 int skipped = 0;
 
-                foreach (var m in scraped)
+                /*foreach (var m in scraped)
                 {
                     _logger.LogDebug("– {Local} vs {Visitor} (J{Jornada}) {Date}",
                         m.LocalName, m.VisitorName, m.Jornada, m.Date.ToString("dd/MM/yyyy HH:mm"));
@@ -252,7 +252,7 @@ namespace Infrastructure.Services.Scraping.Leagues.Import
                         }
                     }
                 }
-
+                */
                 _logger.LogInformation("✅ Import de partidos completado. Creados: {Created}, Actualizados: {Updated}, Omitidos: {Skipped}",
                     created, updated, skipped);
             }

@@ -187,18 +187,45 @@ namespace API3.Controllers.Matches
         /// Importa partidos vía scraping
         /// </summary>
         [HttpPost("importar/{leagueId}")]
-        public async Task<IActionResult> ImportMatches(int leagueId,
-                [FromServices] ImportMatchUseCase importUseCase)
+        public async Task<IActionResult> ImportMatches(int leagueId, [FromQuery] string competitionId = null)
         {
             try
             {
-                await importUseCase.ExecuteAsync(leagueId);
-                return Ok("Importación de partidos completada.");
+                _logger.LogInformation($"Iniciando importación de partidos para liga ID {leagueId}");
+                await _handler.ExecuteAsync(leagueId, competitionId);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Importación de partidos completada correctamente"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, $"Error de validación al importar partidos para liga ID {leagueId}");
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, $"Error de operación al importar partidos para liga ID {leagueId}");
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al importar partidos");
-                return StatusCode(500, "Error interno durante la importación de partidos");
+                _logger.LogError(ex, $"Error al importar partidos para liga ID {leagueId}");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno durante la importación de partidos",
+                    error = ex.Message
+                });
             }
         }
     }

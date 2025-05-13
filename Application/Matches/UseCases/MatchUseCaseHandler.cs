@@ -5,6 +5,7 @@ using Application.Matches.UseCases.Get;
 using Application.Matches.UseCases.Create;
 using Application.Matches.UseCases.Delete;
 using Application.Matches.UseCases.Update;
+using Application.Matches.UseCases.Scraping;
 
 namespace Application.Matches.UseCases
 {
@@ -17,6 +18,7 @@ namespace Application.Matches.UseCases
         private readonly GetMatchesByTeamUseCase _getByTeam;
         private readonly GetMatchesByLeagueUseCase _getByLeague;
         private readonly DeleteMatchUseCase _delete;
+        private readonly ImportMatchUseCase _import;
 
         public MatchUseCaseHandler(
             CreateMatchUseCase create,
@@ -25,7 +27,8 @@ namespace Application.Matches.UseCases
             GetMatchByIdUseCase getById,
             GetMatchesByTeamUseCase getByTeam,
             GetMatchesByLeagueUseCase getByLeague,
-            DeleteMatchUseCase delete)
+            DeleteMatchUseCase delete,
+            ImportMatchUseCase import)
         {
             _create = create;
             _update = update;
@@ -34,6 +37,7 @@ namespace Application.Matches.UseCases
             _getByTeam = getByTeam;
             _getByLeague = getByLeague;
             _delete = delete;
+            _import = import;
         }
 
         public Task<MatchResponseDTO> CreateMatchAsync(MatchRequestDTO dto) =>
@@ -56,5 +60,11 @@ namespace Application.Matches.UseCases
 
         public Task<bool> DeleteMatchAsync(int id) =>
             _delete.ExecuteAsync(id);
+
+        public async Task ExecuteAsync(int leagueId, string competitionId)
+        {
+            await _import.ExecuteAsync(leagueId, competitionId);
+        }
+
     }
 }
