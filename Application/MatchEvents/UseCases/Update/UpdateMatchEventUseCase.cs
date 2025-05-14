@@ -26,7 +26,7 @@ namespace Application.MatchEvents.UseCases.Update
             existing.Update(
                 eventType: dto.EventType,
                 minute: dto.Minute,
-                player: null // assume handling outside
+                player: null 
             );
 
             await _repo.UpdateAsync(existing);

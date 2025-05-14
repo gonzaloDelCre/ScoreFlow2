@@ -13,7 +13,7 @@ namespace Application.Matches.UseCases.Update
     {
         private readonly IMatchRepository _repo;
         private readonly ITeamRepository _teamRepo;
-        private readonly ILeagueRepository _leagueRepo;  // <— nuevo
+        private readonly ILeagueRepository _leagueRepo;  
 
         public UpdateMatchUseCase(
             IMatchRepository repo,

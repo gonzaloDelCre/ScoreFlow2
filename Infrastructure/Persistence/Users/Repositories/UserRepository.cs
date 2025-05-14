@@ -102,12 +102,11 @@ namespace Infrastructure.Persistence.Users.Repositories
         public async Task<bool> ExistsByEmailAsync(string email)
         {
             var count = await _context.Users
-                .FromSqlRaw("SELECT COUNT(1) FROM Users WHERE Email = @Email",
-                    new SqlParameter("@Email", email))
-                .CountAsync();
-
+                                      .AsNoTracking()
+                                      .CountAsync(u => u.Email == email);
             return count > 0;
         }
+
 
         /// <summary>
         /// Obtiene todos los usuarios del sistema

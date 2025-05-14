@@ -24,7 +24,6 @@ namespace Application.Standings.UseCases.Scraping
 
         public async Task<int> ExecuteAsync(int competitionId, int leagueId)
         {
-            // Validar parámetros de entrada
             if (competitionId <= 0)
             {
                 _logger.LogWarning("Intento de importar clasificación con competitionId inválido: {CompetitionId}", competitionId);

@@ -17,7 +17,6 @@ namespace Application.TeamPlayers.UseCases.Update
             if (!dto.ID.HasValue)
                 throw new ArgumentException("El ID es obligatorio para actualizar TeamPlayer");
 
-            // Fetch existing by composite keys
             var existing = await _repo.GetByIdsAsync(
                 new TeamID(dto.TeamID),
                 new PlayerID(dto.PlayerID)

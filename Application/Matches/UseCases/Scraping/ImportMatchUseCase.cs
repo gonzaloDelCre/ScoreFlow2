@@ -20,15 +20,6 @@ namespace Application.Matches.UseCases.Scraping
             _importService = importService ?? throw new ArgumentNullException(nameof(importService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        /// <summary>
-        /// Importa partidos para una liga específica
-        /// </summary>
-        /// <param name="leagueId">ID de la liga en la base de datos</param>
-        /// <param name="competitionId">ID externo de la competición (opcional)</param>
-        /// <returns>Tarea asincrónica</returns>
-        /// <exception cref="ArgumentException">Si la liga no existe</exception>
-        /// <exception cref="InvalidOperationException">Si hay problemas con la extracción</exception>
         public async Task ExecuteAsync(int leagueId, string competitionId = null)
         {
             if (leagueId <= 0)
@@ -44,7 +35,7 @@ namespace Application.Matches.UseCases.Scraping
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error durante la importación de partidos para liga ID {leagueId}");
-                throw; // Propagar la excepción para que el controlador la maneje
+                throw; 
             }
         }
     }

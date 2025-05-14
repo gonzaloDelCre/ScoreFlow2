@@ -21,7 +21,6 @@ namespace Application.Teams.UseCases.Update
             var existing = await _repo.GetByIdAsync(new TeamID(dto.ID.Value));
             if (existing == null) return null;
 
-            // Actualizar propiedades
             existing.UpdateInfo(
                 name: string.IsNullOrWhiteSpace(dto.Name) ? null : new TeamName(dto.Name),
                 logo: string.IsNullOrWhiteSpace(dto.LogoUrl) ? null : new LogoUrl(dto.LogoUrl),

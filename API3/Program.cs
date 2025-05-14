@@ -79,7 +79,6 @@ using Application.Leagues.UseCases.Scraping;
 using Application.Matches.UseCases.Scraping;
 using Application.Playes.UseCases.Scraping;
 using Application.Standings.UseCases.Scraping;
-using Application.TeamPlayers.UseCases.Scraping;
 using Application.Teams.UseCases.Scraping;
 using Application.Standings.UseCases.Update;
 using Infrastructure.Services.Scraping.Leagues.Services;
@@ -92,6 +91,7 @@ using Infrastructure.Services.Scraping.Matches.Services;
 using Infrastructure.Services.Scraping.Players.Services;
 using Infrastructure.Services.Scraping.Standings.Services;
 using Infrastructure.Services.Scraping.Teams.Services;
+using Application.TeamPlayers.UseCases.Scraping;
 
 var builder = WebApplication.CreateBuilder(args);
 
